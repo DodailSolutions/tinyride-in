@@ -1,0 +1,21 @@
+{
+  "name": "tinyride-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TinyRide School Transportation Platform Monorepo by Dodail Solutions",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint",
+    "clean": "pnpm -r run clean",
+    "start:api": "pnpm --filter @tinyride/api start",
+    "start:admin": "pnpm --filter @tinyride/admin-web start",
+    "start:school": "pnpm --filter @tinyride/school-web start",
+    "dev:api": "pnpm --filter @tinyride/api start:dev",
+    "dev:admin": "pnpm --filter @tinyride/admin-web dev",
+    "dev:school": "pnpm --filter @tinyride/school-web dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

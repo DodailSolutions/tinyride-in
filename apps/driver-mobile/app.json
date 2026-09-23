@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "TinyRide Driver",
+    "slug": "tinyride-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#012646"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "in.dodail.tinyride.driver"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A9C49"
+      },
+      "package": "in.dodail.tinyride.driver"
+    },
+    "extra": {
+      "apiUrl": "http://localhost:3000/api/v1",
+      "company": "Dodail Solutions Private Limited",
+      "tagline": "Little Rides. Big Peace of Mind."
+    }
+  }
+}

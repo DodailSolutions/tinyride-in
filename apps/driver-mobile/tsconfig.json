@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "typeRoots": [
+      "../../node_modules/@types",
+      "../../apps/school-web/node_modules/@types"
+    ],
+    "paths": {
+      "@tinyride/design-system": ["../../packages/design-system/dist/index.d.ts"],
+      "@tinyride/shared-types": ["../../packages/shared-types/dist/index.d.ts"],
+      "@tinyride/shared-validation": ["../../packages/shared-validation/dist/index.d.ts"]
+    },
+    "noEmit": true
+  },
+  "include": ["src/**/*"]
+}

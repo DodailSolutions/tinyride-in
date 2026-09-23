@@ -1,0 +1,56 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: '#006b2f',
+        'primary-container': '#00873d',
+        'primary-container-text': '#f7fff3',
+        'on-primary': '#ffffff',
+        surface: '#F4F7F9',
+        'surface-container-low': '#eff6eb',
+        'surface-container-high': '#e3ede0',
+        'surface-container-lowest': '#ffffff',
+        'surface-bright': '#fbfdf8',
+        'secondary-container': '#b8eebc',
+        'tertiary-container': '#3381a4',
+        'primary-text': '#012646',
+        'secondary-text': '#526B7F',
+        'sun-gold': '#FEA707',
+        'deep-blue': '#022D53',
+        'danger-error': '#ba1a1a',
+        'danger-container': '#ffdad6',
+        tinyride: {
+          green: '#006b2f',
+          primary: '#006b2f',
+          primaryContainer: '#00873d',
+          navy: '#012646',
+          deepblue: '#022D53',
+          gold: '#FEA707',
+          surface: '#F4F7F9',
+          surfaceContainerLow: '#eff6eb',
+          surfaceContainerHigh: '#e3ede0',
+          border: '#D7E1E8',
+          textPrimary: '#012646',
+          textSecondary: '#526B7F',
+          primaryAction: '#006b2f',
+        },
+      },
+      fontFamily: {
+        headline: ['"Plus Jakarta Sans"', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+      },
+      spacing: {
+        margin: '96px',
+        gutter: '24px',
+      },
+    },
+  },
+  plugins: [],
+};
