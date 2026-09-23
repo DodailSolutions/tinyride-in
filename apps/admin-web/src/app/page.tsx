@@ -64,35 +64,45 @@ export default function OverviewDashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider mb-1">
+      {/* Brand Hero Banner */}
+      <div className="bg-gradient-to-r from-deep-blue via-[#022D53] to-primary rounded-2xl p-6 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+        <div className="max-w-2xl">
+          <div className="flex items-center gap-2 text-primary-container font-bold text-xs uppercase tracking-wider mb-2">
             <span className="material-symbols-outlined text-[16px]">speed</span>
             Central Fleet Telemetry &bull; Hyderabad Zone
           </div>
-          <h1 className="font-headline text-3xl font-extrabold text-primary-text tracking-tight">
+          <h1 className="font-headline text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
             Executive Operations Dashboard
           </h1>
-          <p className="text-secondary-text text-sm mt-1">
-            Real-time status of school transit runs, child safety handovers, driver compliance, and payments.
+          <p className="text-white/80 text-xs sm:text-sm mt-1 leading-relaxed">
+            Real-time status of school transit runs, child safety handovers, driver compliance, and double-entry ledger audits.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/trips"
-            className="bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 border border-border/60 transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px]">map</span>
-            Live GPS Map
-          </Link>
-          <Link
-            href="/kyc"
-            className="bg-primary hover:bg-primary-hover text-on-primary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px]">verified_user</span>
-            Review KYC ({metrics.approvedDrivers})
-          </Link>
+
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="hidden sm:flex w-20 h-20 bg-white rounded-2xl p-1 shadow-md items-center justify-center">
+            <img
+              src="/brand/logo-stacked.png"
+              alt="TinyRide — Little Rides. Big Peace of Mind."
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Link
+              href="/trips"
+              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-white/20 transition-all backdrop-blur-sm"
+            >
+              <span className="material-symbols-outlined text-[16px]">map</span>
+              Live GPS Radar
+            </Link>
+            <Link
+              href="/kyc"
+              className="bg-primary hover:bg-primary-container text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">verified_user</span>
+              Review KYC ({metrics.approvedDrivers})
+            </Link>
+          </div>
         </div>
       </div>
 

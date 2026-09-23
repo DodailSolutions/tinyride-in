@@ -115,24 +115,14 @@ export function DriverApp() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              backgroundColor: CORE_COLOURS.tinyRideGreen,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              fontSize: 16,
-            }}
-          >
-            🚐
-          </div>
+          <img
+            src="/brand/logo-wordmark.png"
+            alt="TinyRide — Little Rides. Big Peace of Mind."
+            style={{ height: 28, width: 'auto', objectFit: 'contain' }}
+          />
           <div>
-            <h1 style={{ fontSize: 15, fontWeight: 900, margin: 0 }}>TinyRide Driver Console</h1>
-            <p style={{ fontSize: 10, color: '#94A3B8', margin: 0 }}>Driver: Suresh Kumar &bull; TS09UB9876</p>
+            <h1 style={{ fontSize: 13, fontWeight: 900, margin: 0 }}>Driver Console</h1>
+            <p style={{ fontSize: 10, color: '#94A3B8', margin: 0 }}>Suresh Kumar &bull; TS09UB9876</p>
           </div>
         </div>
 

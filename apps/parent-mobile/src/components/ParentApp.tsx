@@ -61,25 +61,11 @@ export function ParentApp() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              backgroundColor: CORE_COLOURS.tinyRideGreen,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              fontSize: 16,
-            }}
-          >
-            T
-          </div>
-          <div>
-            <h1 style={{ fontSize: 16, fontWeight: 900, margin: 0, letterSpacing: -0.2 }}>TinyRide</h1>
-            <p style={{ fontSize: 10, color: '#94A3B8', margin: 0 }}>Little Rides. Big Peace of Mind.</p>
-          </div>
+          <img
+            src="/brand/logo-wordmark.png"
+            alt="TinyRide — Little Rides. Big Peace of Mind."
+            style={{ height: 32, width: 'auto', objectFit: 'contain' }}
+          />
         </div>
 
         <button

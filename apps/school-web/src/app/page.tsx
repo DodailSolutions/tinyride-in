@@ -32,12 +32,21 @@ export default function SchoolOverviewPage() {
           </p>
         </div>
 
-        <div className="relative z-10 flex items-center gap-3 text-xs bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/20">
-          <span className="material-symbols-outlined text-sun-gold text-2xl">schedule</span>
-          <div>
-            <p className="text-white/70 font-semibold">Active Gate Windows</p>
-            <p className="text-white font-bold font-headline">Morning Intake: 07:45 – 08:30 AM</p>
-            <p className="text-sun-gold font-bold font-headline">Afternoon Dismissal: 03:00 – 03:45 PM</p>
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="hidden lg:flex w-24 h-24 bg-white rounded-2xl p-1.5 shadow-md shrink-0 items-center justify-center">
+            <img
+              src="/brand/logo-stacked.png"
+              alt="TinyRide — Little Rides. Big Peace of Mind."
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div className="flex items-center gap-3 text-xs bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/20">
+            <span className="material-symbols-outlined text-sun-gold text-2xl">schedule</span>
+            <div>
+              <p className="text-white/70 font-semibold">Active Gate Windows</p>
+              <p className="text-white font-bold font-headline">Morning Intake: 07:45 – 08:30 AM</p>
+              <p className="text-sun-gold font-bold font-headline">Afternoon Dismissal: 03:00 – 03:45 PM</p>
+            </div>
           </div>
         </div>
       </div>

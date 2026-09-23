@@ -28,19 +28,17 @@ export function AdminShell({ children }: AdminShellProps) {
       {/* Stitch Fixed Left Sidebar */}
       <aside className="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col pt-6 pb-8 border-r border-border/50">
         {/* Brand Header */}
-        <div className="px-6 mb-8 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary font-black text-xl shadow-sm">
-            <span className="material-symbols-outlined text-[24px]">directions_bus</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-headline text-xl text-primary-text font-bold tracking-tight">TinyRide</span>
-              <span className="text-[10px] bg-primary/15 text-primary font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Ops
-              </span>
-            </div>
-            <p className="text-[11px] text-secondary-text font-medium">Dodail Solutions &bull; Hyd Pilot</p>
-          </div>
+        <div className="px-6 mb-7 flex items-center justify-between">
+          <Link href="/" className="flex items-center">
+            <img
+              src="/brand/logo-horizontal.png"
+              alt="TinyRide — Little Rides. Big Peace of Mind."
+              className="h-10 w-auto object-contain hover:opacity-90 transition-opacity"
+            />
+          </Link>
+          <span className="text-[10px] bg-primary/15 text-primary font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Ops
+          </span>
         </div>
 
         {/* Navigation Items */}

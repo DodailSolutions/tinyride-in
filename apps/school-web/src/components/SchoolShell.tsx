@@ -27,14 +27,17 @@ export function SchoolShell({ children }: SchoolShellProps) {
       {/* Stitch Fixed Sidebar */}
       <aside className="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col pt-6 pb-8 shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-surface-container-high/60">
         {/* Brand Header */}
-        <div className="px-6 mb-8 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-white shadow-sm font-black text-xl">
-            <span className="material-symbols-outlined text-2xl">directions_bus</span>
-          </div>
-          <div>
-            <h1 className="text-xl font-bold font-headline text-primary tracking-tight">TinyRide</h1>
-            <p className="text-xs font-semibold text-secondary-text">School Gate Portal</p>
-          </div>
+        <div className="px-6 mb-7 flex items-center justify-between">
+          <Link href="/" className="flex items-center">
+            <img
+              src="/brand/logo-horizontal.png"
+              alt="TinyRide — Little Rides. Big Peace of Mind."
+              className="h-10 w-auto object-contain hover:opacity-90 transition-opacity"
+            />
+          </Link>
+          <span className="text-[10px] bg-sun-gold/20 text-amber-900 border border-sun-gold/40 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Gate
+          </span>
         </div>
 
         {/* Navigation Links */}

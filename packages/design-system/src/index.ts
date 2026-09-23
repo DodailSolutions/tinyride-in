@@ -172,8 +172,11 @@ export const STITCH_THEME = {
     },
   },
   assets: {
-    logoUrl: 'https://lh3.googleusercontent.com/aida/AEtjO1Wfl4IBRA9EIfFp74ZiFjrsjI6yPc08dAJGGGjDVFu8MdtQRWOUGgXmrlHlt1vRus6UF6JlTrKm-TS0NjAZavkYwx3ftN3ueOViNiMbA-jSHFxSARvAL4jDJBJaizadlvJVJw3jFMItJYlYA1lrLQ0CJNCGSMHPk7NZz0I7B6R2QEPhyIkjINuiKZL66JYENgRBZW1RQxj1dq8gI6flNg3pIAcyDoW8Uu2Cyi3DJwsrzEyDXE3NgrvLWTapzXwJfwDTXlg-tV22bP8',
-    faviconUrl: 'https://lh3.googleusercontent.com/aida/AEtjO1X8kSEPFqwEDUP1tqsFs7DZcaInJd2VwLQMb6fa6o1n8weqnwM0wIcZyqo5JkkOiW3OISwgERmvB0BlyhupFafuHlqjlxe1BSX563CltqKBub3msnm_6ZxP7ExM7fQEF0VZ4fF3aJkYHXeTjERQMOJpGhJHD5xuCky3yo6X8hCZH9FQW4kpY7-WS0rEyfl8ZgGx4wacnn32Yy9RiiR9WHjV6y_-RHt9YfsFCc31TcKSv6ClxtGDfYrGdJB_eSWdKusYCt5-UDcHwA',
+    logoUrl: '/brand/logo-horizontal.png',
+    logoHorizontal: '/brand/logo-horizontal.png',
+    logoWordmark: '/brand/logo-wordmark.png',
+    logoStacked: '/brand/logo-stacked.png',
+    faviconUrl: '/brand/logo-stacked.png',
   },
 } as const;
 
