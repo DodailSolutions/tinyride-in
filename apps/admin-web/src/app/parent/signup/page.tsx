@@ -63,6 +63,7 @@ export default function ParentSignupPage() {
       setPendingAuth({
         phone: formattedPhone,
         mode: 'signup',
+        otpToken: data.otpToken,
       });
 
       router.push('/parent/verify');

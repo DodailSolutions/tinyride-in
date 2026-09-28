@@ -4,7 +4,7 @@ import { verifyPhoneOtp, SESSION_COOKIE_NAME } from '@/server/auth';
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { phone, token } = body;
+    const { phone, token, otpToken: bodyOtpToken } = body;
 
     if (!phone || typeof phone !== 'string') {
       return NextResponse.json(
@@ -20,9 +20,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await verifyPhoneOtp(phone, token);
+    const cookieHeader = request.headers.get('cookie') || '';
+    const cookieMatch = cookieHeader.match(/tinyride_pending_otp=([^;]+)/);
+    const cookieOtpToken = cookieMatch && cookieMatch[1] ? cookieMatch[1] : undefined;
+    const otpToken = bodyOtpToken || cookieOtpToken;
 
-    // Set secure cookie on response
+    const result = await verifyPhoneOtp(phone, token, otpToken);
+
+    // Set secure session cookie on response
     const response = NextResponse.json(result);
     response.cookies.set({
       name: SESSION_COOKIE_NAME,
@@ -32,6 +37,15 @@ export async function POST(request: Request) {
       sameSite: 'lax',
       path: '/',
       maxAge: 30 * 24 * 60 * 60, // 30 days
+    });
+
+    // Clear pending OTP cookie
+    response.cookies.set({
+      name: 'tinyride_pending_otp',
+      value: '',
+      httpOnly: true,
+      path: '/',
+      maxAge: 0,
     });
 
     return response;

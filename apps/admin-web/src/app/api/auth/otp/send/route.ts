@@ -14,7 +14,21 @@ export async function POST(request: Request) {
     }
 
     const result = await sendPhoneOtp(phone);
-    return NextResponse.json(result);
+    const response = NextResponse.json(result);
+
+    if (result.otpToken) {
+      response.cookies.set({
+        name: 'tinyride_pending_otp',
+        value: result.otpToken,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 15 * 60, // 15 minutes
+      });
+    }
+
+    return response;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to send verification code';
     return NextResponse.json({ error: message }, { status: 400 });

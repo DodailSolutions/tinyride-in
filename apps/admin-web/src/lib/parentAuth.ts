@@ -107,7 +107,7 @@ export function isAuthenticatedParent(): boolean {
 /**
  * Store pending signup/login inputs before OTP verification
  */
-export function setPendingAuth(data: { name?: string; phone: string; email?: string; mode: 'signup' | 'login' }): void {
+export function setPendingAuth(data: { name?: string; phone: string; email?: string; mode: 'signup' | 'login'; otpToken?: string }): void {
   if (typeof window === 'undefined') return;
   try {
     const payload = JSON.stringify(data);
@@ -121,7 +121,7 @@ export function setPendingAuth(data: { name?: string; phone: string; email?: str
 /**
  * Get pending signup/login inputs for OTP verification
  */
-export function getPendingAuth(): { name?: string; phone: string; email?: string; mode: 'signup' | 'login' } | null {
+export function getPendingAuth(): { name?: string; phone: string; email?: string; mode: 'signup' | 'login'; otpToken?: string } | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = sessionStorage.getItem(PENDING_SIGNUP_KEY) || localStorage.getItem(PENDING_SIGNUP_KEY);

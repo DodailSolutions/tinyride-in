@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import {
   getPendingAuth,
+  setPendingAuth,
   saveParentSession,
 } from '@/lib/parentAuth';
 
@@ -115,12 +116,17 @@ export default function ParentVerifyPage() {
     setError('');
 
     try {
+      const pending = getPendingAuth();
       const cleanDigits = phoneTarget.replace(/\D/g, '');
       const e164 = `+91${cleanDigits.slice(-10)}`;
       const res = await fetch('/api/auth/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: e164, token: code }),
+        body: JSON.stringify({
+          phone: e164,
+          token: code,
+          otpToken: pending?.otpToken,
+        }),
       });
       const data = await res.json();
 
@@ -132,7 +138,7 @@ export default function ParentVerifyPage() {
 
       // Save real session in parentAuth
       saveParentSession({
-        token: data.token,
+        token: data.sessionToken || data.token,
         user: data.user,
         children: data.children || [],
         activeChildId: data.children?.[0]?.id || '',
@@ -172,6 +178,15 @@ export default function ParentVerifyPage() {
       if (!res.ok) {
         setError(data.error || 'Failed to resend code');
       } else {
+        if (data.otpToken) {
+          const current = getPendingAuth();
+          setPendingAuth({
+            ...current,
+            phone: phoneTarget,
+            mode: authMode,
+            otpToken: data.otpToken,
+          });
+        }
         setTimer(30);
       }
     } catch {
