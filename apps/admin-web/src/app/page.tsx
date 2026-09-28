@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { LiveVehicleTracker } from '@/components/LiveVehicleTracker';
 
 // Lightweight, performant Scroll-Reveal Component using native IntersectionObserver
 function ScrollReveal({
@@ -59,7 +60,6 @@ export default function TinyRideLandingPage() {
 
   // Hero subtle telemetry alternation (simulates live GPS update without layout jump)
   const [heroEta, setHeroEta] = useState<'7 min' | '6 min'>('7 min');
-  const [heroSpeed, setHeroSpeed] = useState<number>(32);
 
   // Journey Stepper state + auto-advance demonstration loop
   const [activeJourneyStep, setActiveJourneyStep] = useState(2); // 0-indexed: 2 = Child boards
@@ -92,7 +92,6 @@ export default function TinyRideLandingPage() {
   useEffect(() => {
     const telemetryInterval = setInterval(() => {
       setHeroEta((prev) => (prev === '7 min' ? '6 min' : '7 min'));
-      setHeroSpeed((prev) => (prev === 32 ? 34 : 32));
     }, 9000);
     return () => clearInterval(telemetryInterval);
   }, []);
@@ -398,20 +397,6 @@ export default function TinyRideLandingPage() {
                 <p className="text-[11px] text-slate-500">Stop 4 of 6 • On schedule</p>
               </div>
 
-              {/* Contextual Boarding Token Card at bottom right */}
-              <div className="hidden sm:block absolute -bottom-4 -right-4 z-20 bg-white/95 border border-slate-200/90 rounded-xl p-3 shadow-md shadow-slate-200/60 max-w-[190px] transition-transform duration-300 hover:-translate-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-slate-500">Handover Token</span>
-                  <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                    VERIFIED
-                  </span>
-                </div>
-                <div className="mt-1 font-mono text-sm font-bold text-slate-900 tracking-wider">
-                  482 - 910
-                </div>
-                <p className="text-[10px] text-slate-500">Parent-to-driver check</p>
-              </div>
-
               {/* The Smartphone Mockup Frame */}
               <div className="relative w-[310px] sm:w-[330px] rounded-[44px] bg-slate-900 p-3 shadow-2xl shadow-slate-900/15 ring-1 ring-slate-800/10 transition-transform duration-500 hover:scale-[1.01]">
                 {/* Speaker slit & Dynamic Island */}
@@ -436,7 +421,7 @@ export default function TinyRideLandingPage() {
                   </div>
 
                   {/* App Header */}
-                  <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between">
+                  <div className="px-4 py-2.5 bg-white border-b border-slate-100 flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -445,120 +430,12 @@ export default function TinyRideLandingPage() {
                       <p className="text-[10px] text-slate-500">Grade 3A • Route 04 (Oakridge)</p>
                     </div>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-semibold text-[10px] border border-emerald-200/50">
-                      On the way
+                      LIVE TRACKING
                     </span>
                   </div>
 
-                  {/* Primary Hero Status Card with Subtle Telemetry Transition */}
-                  <div className="p-3.5 bg-gradient-to-b from-emerald-50/60 to-white border-b border-slate-100">
-                    <div className="flex items-baseline justify-between">
-                      <div>
-                        {/* Smoothly alternating ETA */}
-                        <div className="text-xl font-bold text-slate-900 transition-opacity duration-300">
-                          {heroEta} away
-                        </div>
-                        <p className="text-[11px] text-slate-600">Arriving at your gate at 8:35 AM</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-500 font-medium">Speed</span>
-                        <div className="text-xs font-semibold text-slate-700 transition-opacity duration-300">
-                          {heroSpeed} km/h
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar with Subtle Indicator Pulse */}
-                    <div className="mt-3 relative">
-                      <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-600 rounded-full w-3/5 transition-all duration-700"></div>
-                      </div>
-                      <div className="mt-1 flex justify-between text-[9px] text-slate-500 font-medium">
-                        <span>Depot 7:15</span>
-                        <span className="text-emerald-700 font-bold">Your Stop 8:35</span>
-                        <span>School 8:50</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Living Vector Map Canvas */}
-                  <div className="relative h-44 bg-slate-100 overflow-hidden">
-                    <svg className="w-full h-full object-cover" viewBox="0 0 300 170" fill="none">
-                      {/* Grid / Roads */}
-                      <rect width="300" height="170" fill="#F1F5F9" />
-                      <path d="M10 20 Q80 10 100 60 T40 130 Z" fill="#DCFCE7" opacity="0.6" />
-                      <path d="M220 100 Q260 120 290 90 L300 170 L200 170 Z" fill="#E0F2FE" opacity="0.7" />
-                      
-                      {/* Major roads */}
-                      <line x1="0" y1="70" x2="300" y2="70" stroke="#CBD5E1" strokeWidth="6" />
-                      <line x1="140" y1="0" x2="140" y2="170" stroke="#CBD5E1" strokeWidth="6" />
-                      <path d="M30 150 C90 140 110 90 200 85 C240 82 270 40 290 20" stroke="#E2E8F0" strokeWidth="4" />
-                      
-                      {/* Active Route Path with Progressive Stroke-Dash Drawing */}
-                      <path
-                        d="M 40 70 L 140 70 L 140 120 L 220 120 L 260 50"
-                        stroke="#006B2F"
-                        strokeWidth="3.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="animate-route-draw"
-                      />
-
-                      {/* Home Pin with Subtle Location Ring Pulse */}
-                      <g transform="translate(140, 120)">
-                        <circle cx="0" cy="0" r="11" stroke="#006B2F" strokeWidth="1.5" className="animate-marker-pulse" />
-                        <circle cx="0" cy="0" r="5" fill="#006B2F" />
-                        <text x="0" y="20" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#006B2F">
-                          Home (8:35 AM)
-                        </text>
-                      </g>
-
-                      {/* Living Moving Vehicle */}
-                      <g className="animate-vehicle-hero">
-                        <circle cx="0" cy="0" r="12" stroke="#006B2F" strokeWidth="1.5" strokeDasharray="2 2" className="animate-marker-pulse" />
-                        <circle cx="0" cy="0" r="8" fill="#006B2F" />
-                        <text x="0" y="3" textAnchor="middle" fontSize="7.5" fill="white">🚐</text>
-                      </g>
-
-                      {/* Destination School Pin */}
-                      <g transform="translate(260, 50)">
-                        <circle cx="0" cy="0" r="7" fill="#0F172A" />
-                        <text x="0" y="3" textAnchor="middle" fontSize="7" fill="white">🏫</text>
-                        <text x="0" y="-10" textAnchor="middle" fontSize="7.5" fontWeight="bold" fill="#0F172A">
-                          Oakridge
-                        </text>
-                      </g>
-                    </svg>
-
-                    {/* Floating HUD Pill on Map */}
-                    <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/95 rounded-lg px-2.5 py-1.5 shadow-sm border border-slate-200/80 flex items-center justify-between text-[10px]">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span className="font-semibold text-slate-800">Approaching Road No. 36</span>
-                      </div>
-                      <span className="text-slate-500">Traffic: Clear</span>
-                    </div>
-                  </div>
-
-                  {/* Driver & Vehicle Details Footer */}
-                  <div className="p-3 bg-white border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center font-bold text-slate-700 text-xs">
-                        RK
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1 font-semibold text-slate-900 text-xs">
-                          Ravi Kumar
-                          <span className="text-emerald-700 font-bold" title="Verified">✓</span>
-                        </div>
-                        <p className="text-[10px] text-slate-500">TR-102 • Force Traveller</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="px-2 py-1 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-medium">
-                        TS09-TR-102
-                      </div>
-                    </div>
-                  </div>
+                  {/* REAL-TIME VEHICLE TRACKING ENGINE */}
+                  <LiveVehicleTracker />
                 </div>
               </div>
             </div>
