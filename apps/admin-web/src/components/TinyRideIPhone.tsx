@@ -277,8 +277,22 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
                     <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                       ETA {trackingState.etaLabel}
                     </div>
-                    <div className="text-xl font-bold text-slate-900 leading-tight">
-                      {trackingState.etaMinutes > 0 ? `${trackingState.etaMinutes} min remaining` : 'At your stop'}
+                    <div className="text-xl font-bold text-slate-900 leading-tight flex items-baseline gap-1">
+                      {trackingState.etaMinutes > 0 ? (
+                        <>
+                          <span
+                            key={trackingState.etaMinutes}
+                            className="inline-block transition-all duration-300 animate-in fade-in slide-in-from-top-1"
+                          >
+                            {trackingState.etaMinutes}
+                          </span>
+                          <span>min remaining</span>
+                        </>
+                      ) : (
+                        <span key="at_stop" className="inline-block transition-all duration-300 animate-in fade-in">
+                          At your stop
+                        </span>
+                      )}
                     </div>
                     <p className="text-[10.5px] text-slate-600 font-medium mt-0.5">
                       {trackingState.subText}

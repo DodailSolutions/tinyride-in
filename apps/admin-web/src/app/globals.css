@@ -35,26 +35,37 @@ body {
   }
 }
 
+@keyframes stagedIPhoneEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .animate-staged-1 {
-  animation: stagedEntrance var(--motion-reveal) var(--motion-ease-out) 0ms forwards;
+  animation: stagedEntrance 450ms var(--motion-ease-out) 0ms forwards;
 }
 .animate-staged-2 {
-  animation: stagedEntrance var(--motion-reveal) var(--motion-ease-out) 80ms forwards;
+  animation: stagedEntrance 450ms var(--motion-ease-out) 80ms forwards;
 }
 .animate-staged-3 {
-  animation: stagedEntrance var(--motion-reveal) var(--motion-ease-out) 160ms forwards;
+  animation: stagedEntrance 500ms var(--motion-ease-out) 160ms forwards;
 }
 .animate-staged-4 {
-  animation: stagedEntrance var(--motion-reveal) var(--motion-ease-out) 240ms forwards;
+  animation: stagedEntrance 500ms var(--motion-ease-out) 240ms forwards;
 }
 .animate-staged-5 {
-  animation: stagedEntrance var(--motion-reveal) var(--motion-ease-out) 320ms forwards;
+  animation: stagedEntrance 500ms var(--motion-ease-out) 320ms forwards;
 }
-.animate-staged-6 {
-  animation: stagedEntrance var(--motion-reveal) var(--motion-ease-out) 400ms forwards;
+.animate-staged-iphone {
+  animation: stagedIPhoneEntrance 650ms var(--motion-ease-out) 400ms forwards;
 }
 .animate-staged-7 {
-  animation: stagedEntrance var(--motion-reveal) var(--motion-ease-out) 480ms forwards;
+  animation: stagedEntrance 500ms var(--motion-ease-out) 480ms forwards;
 }
 
 /* Route Progressive Line Drawing */
@@ -134,11 +145,11 @@ body {
 @keyframes gentleMarkerPulse {
   0%, 100% {
     transform: scale(1);
-    opacity: 0.35;
+    opacity: 0.45;
   }
   50% {
-    transform: scale(1.3);
-    opacity: 0.8;
+    transform: scale(1.15);
+    opacity: 0;
   }
 }
 

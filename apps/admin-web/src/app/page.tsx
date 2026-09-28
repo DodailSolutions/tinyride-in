@@ -169,7 +169,7 @@ export default function TinyRideLandingPage() {
     <div className="min-h-screen bg-[#FAFAF9] text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
       {/* 1. STICKY MODERN NAVIGATION */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
+        className={`sticky top-0 z-50 transition-all duration-300 animate-staged-1 ${
           scrolled
             ? 'bg-white/95 backdrop-blur-md shadow-xs py-3 border-b border-slate-200/80'
             : 'bg-white/80 backdrop-blur-xs py-4 border-b border-slate-200/40'
@@ -180,13 +180,13 @@ export default function TinyRideLandingPage() {
           <Link href="/" className="flex items-center gap-2 group">
             <img
               src="/brand/logo-horizontal.png"
-              alt="TinyRide — Little Rides. Big Peace of Mind."
+              alt="TinyRide — School transportation and live ride tracking"
               className="h-9 sm:h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
             />
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-[13.5px] font-medium text-slate-600">
+          <nav className="hidden md:flex items-center gap-7 lg:gap-8 text-[13.5px] font-medium text-slate-600">
             <a href="#how-it-works" className="hover:text-emerald-800 transition-colors duration-150">
               How It Works
             </a>
@@ -201,6 +201,9 @@ export default function TinyRideLandingPage() {
             </a>
             <a href="#trust" className="hover:text-emerald-800 transition-colors duration-150">
               Trust & Safety
+            </a>
+            <a href="#faq" className="hover:text-emerald-800 transition-colors duration-150">
+              FAQ
             </a>
           </nav>
 
@@ -275,6 +278,13 @@ export default function TinyRideLandingPage() {
             >
               Trust & Safety
             </a>
+            <a
+              href="#faq"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-800"
+            >
+              FAQ
+            </a>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
               <Link
                 href="/ops"
@@ -322,24 +332,24 @@ export default function TinyRideLandingPage() {
             {/* Left: Editorial Content with Apple-style Clarity & Restraint */}
             <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
               {/* Eyebrow */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wider uppercase">
+              <div className="animate-staged-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wider uppercase">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
                 School Transportation, Reimagined
               </div>
 
               {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.6rem] font-bold tracking-tight text-slate-900 leading-[1.08]">
+              <h1 className="animate-staged-3 text-4xl sm:text-5xl lg:text-[3.6rem] font-bold tracking-tight text-slate-900 leading-[1.08]">
                 School rides, <br />
                 <span className="text-[#006B2F]">without the worry.</span>
               </h1>
 
               {/* Supporting Copy */}
-              <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+              <p className="animate-staged-4 text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
                 See the ride. Know the driver. Know when your child arrives. One connected, calm experience for parents, schools and drivers.
               </p>
 
               {/* CTAs */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
+              <div className="animate-staged-5 pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
                 <button
                   onClick={() => setIsModalOpen(true)}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-[#006B2F] hover:bg-[#005525] text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow-md btn-micro group"
@@ -363,7 +373,7 @@ export default function TinyRideLandingPage() {
               </div>
 
               {/* Factual, quiet reassurance */}
-              <div className="pt-4 flex items-center justify-center lg:justify-start gap-4 text-xs text-slate-500 font-medium">
+              <div className="animate-staged-7 pt-4 flex items-center justify-center lg:justify-start gap-4 text-xs text-slate-500 font-medium">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   Verified driver
@@ -382,7 +392,7 @@ export default function TinyRideLandingPage() {
             </div>
 
             {/* Right: Authentic iPhone Showcase with Real-Time Smooth Traversal */}
-            <div className="lg:col-span-6 flex justify-center lg:justify-end">
+            <div className="lg:col-span-6 flex justify-center lg:justify-end animate-staged-iphone">
               <div className="relative">
                 {/* Authentic Modern iPhone Product Component */}
                 <TinyRideIPhone mode="parent_tracking" />
@@ -1101,8 +1111,70 @@ export default function TinyRideLandingPage() {
         </div>
       </section>
 
-      {/* 11. FINAL CONVERSION CTA — PREMIUM DARK SECTION */}
-      <section id="get-started" className="py-20 sm:py-28 bg-white">
+      {/* 11. FREQUENTLY ASKED QUESTIONS — ACCESSIBLE & SEO-READY */}
+      <section id="faq" className="py-24 lg:py-32 bg-white border-t border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal>
+            <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
+              <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest">
+                Common Questions
+              </span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900">
+                Frequently asked questions.
+              </h2>
+              <p className="text-base text-slate-600">
+                Clear answers about how TinyRide connects parents, schools, and drivers for safe daily school rides.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <div className="space-y-4">
+            {[
+              {
+                q: 'What is TinyRide?',
+                a: 'TinyRide is a dedicated school transportation platform connecting parents, schools, and drivers. It provides live vehicle tracking, verified driver details, SafeKey boarding verification, and automated arrival alerts for safe, predictable daily school commutes.',
+              },
+              {
+                q: 'How does TinyRide track school rides?',
+                a: 'TinyRide uses high-precision vehicle GPS telemetry combined with pre-approved school route corridors to calculate real-time, traffic-adjusted arrival times without requiring driver interaction while on the road.',
+              },
+              {
+                q: 'Can parents see where the school vehicle is in real time?',
+                a: "Yes. Parents can open the TinyRide parent app at any time during an active trip to see the vehicle's exact position along the route, current speed, and minute-by-minute estimated arrival time.",
+              },
+              {
+                q: 'How do parents know when their child boards the vehicle?',
+                a: "At each designated pickup stop, the driver confirms boarding using the student's unique SafeKey verification token. Parents receive an immediate lock-screen confirmation as soon as their child is safely on board.",
+              },
+              {
+                q: 'Can schools manage school transportation with TinyRide?',
+                a: 'Yes. Schools use the TinyRide school dashboard to monitor all active routes simultaneously, coordinate bus bay drop-offs to prevent gate congestion, and review student transit safety in real time.',
+              },
+              {
+                q: 'How does TinyRide work for drivers without causing distractions?',
+                a: 'The TinyRide driver interface features high-contrast, oversized touch targets with a sequential stop list. Boarding is confirmed with a single tap, automated proximity alerts are dispatched to parents 500 meters in advance, and incoming calls are completely eliminated while driving.',
+              },
+            ].map((faq, idx) => (
+              <ScrollReveal key={idx} delay={idx * 40}>
+                <details className="group bg-[#FAFAF9] rounded-2xl border border-slate-200/90 shadow-2xs open:bg-white open:shadow-xs transition-all duration-200 overflow-hidden">
+                  <summary className="cursor-pointer p-6 flex items-center justify-between text-base font-bold text-slate-900 list-none select-none hover:text-emerald-800 transition-colors">
+                    <span>{faq.q}</span>
+                    <span className="ml-4 w-6 h-6 rounded-full bg-slate-200/70 group-open:bg-emerald-50 text-slate-600 group-open:text-emerald-700 flex items-center justify-center text-xs font-bold transition-transform duration-200 group-open:rotate-180 shrink-0">
+                      ▼
+                    </span>
+                  </summary>
+                  <div className="px-6 pb-6 pt-1 text-sm text-slate-600 leading-relaxed border-t border-slate-100 mt-1">
+                    {faq.a}
+                  </div>
+                </details>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 12. FINAL CONVERSION CTA — PREMIUM DARK SECTION */}
+      <section id="get-started" className="py-20 sm:py-28 bg-[#FAFAF9]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal yOffset={20}>
             <div className="bg-slate-950 text-white rounded-3xl p-10 sm:p-14 lg:p-20 text-center relative overflow-hidden shadow-2xl">
@@ -1157,7 +1229,7 @@ export default function TinyRideLandingPage() {
             <div className="space-y-3">
               <img
                 src="/brand/logo-horizontal.png"
-                alt="TinyRide"
+                alt="TinyRide — School transportation and live ride tracking"
                 className="h-8 w-auto object-contain"
               />
               <p className="text-slate-500 text-xs leading-relaxed">
@@ -1178,6 +1250,7 @@ export default function TinyRideLandingPage() {
                 <li><a href="#for-schools" className="hover:text-emerald-800 transition-colors">For Schools</a></li>
                 <li><a href="#for-drivers" className="hover:text-emerald-800 transition-colors">For Drivers</a></li>
                 <li><a href="#trust" className="hover:text-emerald-800 transition-colors">Trust & Safety</a></li>
+                <li><a href="#faq" className="hover:text-emerald-800 transition-colors">FAQ</a></li>
               </ul>
             </div>
 
