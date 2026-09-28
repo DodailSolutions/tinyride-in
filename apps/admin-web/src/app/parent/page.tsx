@@ -153,18 +153,12 @@ export default function ParentDashboardPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Logo & Parent Identity */}
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#006B2F] to-[#005224] flex items-center justify-center shadow-sm">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                  <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.8 2 11 2 11.2V16c0 .6.4 1 1 1h2" />
-                  <circle cx="7" cy="17" r="2" />
-                  <path d="M9 17h6" />
-                  <circle cx="17" cy="17" r="2" />
-                </svg>
-              </span>
-              <span className="text-lg font-bold tracking-tight text-slate-900 hidden sm:inline">
-                Tiny<span className="text-[#006B2F]">Ride</span>
-              </span>
+            <Link href="/" className="flex items-center gap-2 group shrink-0">
+              <img
+                src="/brand/logo-horizontal.png"
+                alt="TinyRide — School transportation and live ride tracking"
+                className="h-8 sm:h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+              />
             </Link>
 
             <span className="h-5 w-px bg-slate-200 hidden sm:block" />

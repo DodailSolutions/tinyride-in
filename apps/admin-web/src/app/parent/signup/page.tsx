@@ -3,255 +3,189 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ShieldCheck, Phone, User, Mail, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { setPendingAuth } from '@/lib/parentAuth';
 
 export default function ParentSignupPage() {
   const router = useRouter();
-  const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [agreed, setAgreed] = useState(true);
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Clean raw digits
+  const rawDigits = phone.replace(/\D/g, '');
+  const isValid = rawDigits.length === 10 && /^[6-9]/.test(rawDigits);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setPhone(val);
+    if (error) setError('');
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    const trimmedPhone = phone.trim().replace(/\s+/g, '');
-    if (!fullName.trim()) {
-      setError('Please enter your full name');
+    if (!rawDigits) {
+      setError('Please enter your mobile number.');
       return;
     }
-    if (!trimmedPhone || trimmedPhone.length < 10) {
-      setError('Please enter a valid 10-digit mobile number');
+    if (!isValid) {
+      setError('Enter a valid 10-digit mobile number.');
       return;
     }
 
-    setIsLoading(true);
-
-    const formattedPhone = trimmedPhone.startsWith('+91')
-      ? trimmedPhone
-      : `+91 ${trimmedPhone.replace(/^0+/, '')}`;
+    setIsSubmitting(true);
+    const formattedPhone = `+91 ${rawDigits.slice(0, 5)} ${rawDigits.slice(5)}`;
 
     setPendingAuth({
-      name: fullName.trim(),
       phone: formattedPhone,
-      email: email.trim() || undefined,
       mode: 'signup',
     });
 
     setTimeout(() => {
       router.push('/parent/verify');
-    }, 400);
-  };
-
-  const handleDemoFill = () => {
-    setFullName('Priya Sharma');
-    setPhone('98765 43210');
-    setEmail('priya.sharma@example.com');
-    setError('');
+    }, 350);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between selection:bg-emerald-100 selection:text-emerald-900">
-      {/* Top Header */}
-      <header className="w-full bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-[#FAFAF9] flex flex-col justify-between selection:bg-emerald-100 selection:text-emerald-900 font-sans">
+      {/* 1. DEDICATED MINIMAL APPLICATION HEADER */}
+      <header className="w-full bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          {/* Approved Official TinyRide Logo */}
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
+            <img
+              src="/brand/logo-horizontal.png"
+              alt="TinyRide — School transportation and live ride tracking"
+              className="h-8 sm:h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+            />
+          </Link>
+
+          {/* Simple Back Action */}
           <Link
             href="/parents"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors py-2 px-3 rounded-lg hover:bg-slate-100 min-h-[44px]"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to For Parents</span>
+            <span className="hidden sm:inline">Back to Parents</span>
+            <span className="sm:hidden">Back</span>
           </Link>
-
-          <Link href="/" className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#006B2F] to-[#005224] flex items-center justify-center shadow-sm">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.8 2 11 2 11.2V16c0 .6.4 1 1 1h2" />
-                <circle cx="7" cy="17" r="2" />
-                <path d="M9 17h6" />
-                <circle cx="17" cy="17" r="2" />
-              </svg>
-            </span>
-            <span className="text-lg font-bold tracking-tight text-slate-900">
-              Tiny<span className="text-[#006B2F]">Ride</span>
-            </span>
-          </Link>
-
-          <div className="text-sm text-slate-500 hidden sm:block">Parent Portal</div>
         </div>
       </header>
 
-      {/* Main Content Form */}
+      {/* 2. REGISTRATION CARD / CONTENT */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
-        <div className="w-full max-w-md">
-          {/* Card */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/80">
-            {/* Header / Title */}
-            <div className="mb-6">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-[#006B2F] text-xs font-semibold mb-3 border border-emerald-100">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Parent Registration</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-                Get Started with TinyRide
+        <div className="w-full max-w-[460px]">
+          <div className="bg-white rounded-3xl p-6 sm:p-9 shadow-xl shadow-slate-200/40 border border-slate-200/80">
+            {/* Header Titles */}
+            <div className="mb-7">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                Create your parent account
               </h1>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                Connect with your child&apos;s school vehicle for real-time tracking, boarding confirmation, and peace of mind.
+                Stay connected to your child&apos;s school ride.
               </p>
             </div>
 
-            {/* Quick Demo Pre-fill Pill */}
-            <div className="mb-6 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/60 flex items-center justify-between gap-3">
-              <div className="text-xs text-amber-900">
-                <span className="font-semibold">Quick Demo?</span> Pre-fill sample parent details:
-              </div>
-              <button
-                type="button"
-                onClick={handleDemoFill}
-                className="px-2.5 py-1 text-xs font-semibold text-amber-950 bg-amber-200/80 hover:bg-amber-200 rounded-lg transition-colors whitespace-nowrap active:scale-95"
+            {/* Error Message */}
+            {error && (
+              <div
+                role="alert"
+                className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-700 leading-normal"
               >
-                Auto-fill
-              </button>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
-                  {error}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Parent / Guardian Full Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Priya Sharma"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#006B2F]/20 focus:border-[#006B2F] transition-all"
-                  />
-                </div>
+                {error}
               </div>
+            )}
 
+            {/* Phone-First Signup Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Mobile Phone Number
+                <label
+                  htmlFor="mobile-number"
+                  className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2"
+                >
+                  Mobile number
                 </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500">
+
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-sm font-bold text-slate-600 select-none pointer-events-none">
                     +91
                   </span>
                   <input
+                    id="mobile-number"
                     type="tel"
-                    required
-                    placeholder="98765 43210"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    maxLength={10}
+                    autoFocus
+                    placeholder="Enter 10-digit mobile number"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-14 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#006B2F]/20 focus:border-[#006B2F] transition-all"
+                    onChange={handlePhoneChange}
+                    className={`w-full pl-14 pr-4 py-3.5 rounded-xl bg-slate-50 border text-base text-slate-900 font-medium placeholder:text-slate-400 placeholder:text-sm focus:outline-none focus:ring-2 transition-all min-h-[48px] ${
+                      error
+                        ? 'border-red-300 focus:ring-red-200 focus:border-red-500'
+                        : 'border-slate-200 focus:ring-[#006B2F]/20 focus:border-[#006B2F]'
+                    }`}
+                    aria-describedby="phone-helper"
                   />
-                  <Phone className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  We will send a 6-digit one-time verification code to this number.
+
+                <p id="phone-helper" className="mt-2 text-xs text-slate-500">
+                  We&apos;ll send you a one-time verification code.
                 </p>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span>Email Address</span>
-                  <span className="text-[11px] font-normal text-slate-400 normal-case">Optional</span>
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="email"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#006B2F]/20 focus:border-[#006B2F] transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Consent checkbox */}
-              <div className="pt-1">
-                <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={agreed}
-                    onChange={(e) => setAgreed(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded text-[#006B2F] focus:ring-[#006B2F] border-slate-300"
-                  />
-                  <span className="text-xs text-slate-600 leading-normal">
-                    I agree to receive school ride alerts, arrival notifications, and OTP verification via SMS / WhatsApp.
-                  </span>
-                </label>
-              </div>
-
-              {/* Submit Button */}
+              {/* Primary CTA */}
               <button
                 type="submit"
-                disabled={isLoading || !agreed}
-                className="w-full py-3.5 px-4 rounded-xl bg-[#006B2F] hover:bg-[#005525] active:scale-[0.98] text-white font-semibold text-sm shadow-md shadow-emerald-900/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                disabled={isSubmitting}
+                className="w-full h-12 min-h-[48px] px-5 rounded-xl bg-[#006B2F] hover:bg-[#005525] active:scale-[0.98] text-white text-sm font-bold shadow-md shadow-emerald-900/10 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
-                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
                 ) : (
-                  <>
-                    <span>Continue with Phone Number</span>
-                    <span className="text-emerald-200 font-light">&rarr;</span>
-                  </>
+                  <span>Continue</span>
                 )}
               </button>
             </form>
 
-            {/* Reassurance badge */}
-            <div className="mt-6 pt-5 border-t border-slate-100 flex items-center gap-2.5 text-xs text-slate-500">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>
-                TinyRide connects directly with your school to keep school rides verified and secure.
-              </span>
-            </div>
+            {/* Privacy Agreement Text */}
+            <p className="mt-5 text-[11.5px] text-center text-slate-500 leading-relaxed">
+              By continuing, you agree to TinyRide&apos;s{' '}
+              <Link href="/terms" className="underline text-slate-700 hover:text-slate-900">
+                Terms
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="underline text-slate-700 hover:text-slate-900">
+                Privacy Policy
+              </Link>
+              .
+            </p>
 
-            {/* Existing user link */}
-            <div className="mt-5 text-center text-xs text-slate-600">
-              Already have a parent account?{' '}
+            {/* Returning Parent Link */}
+            <div className="mt-6 pt-5 border-t border-slate-100 text-center text-xs text-slate-600">
+              Already have an account?{' '}
               <Link
                 href="/parent/login"
-                className="font-semibold text-[#006B2F] hover:underline"
+                className="font-bold text-[#006B2F] hover:underline min-h-[44px] inline-flex items-center"
               >
-                Log in here
+                Log in
               </Link>
-            </div>
-          </div>
-
-          {/* Micro trust features */}
-          <div className="mt-6 grid grid-cols-2 gap-3 text-center text-xs text-slate-500">
-            <div className="flex items-center justify-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Instant OTP Access</span>
-            </div>
-            <div className="flex items-center justify-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Zero App Download Needed</span>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Footer minimal */}
-      <footer className="py-4 text-center text-xs text-slate-400">
-        &copy; {new Date().getFullYear()} TinyRide by Dodail Solutions Private Limited. All rights reserved.
+      {/* 3. MINIMAL LEGAL FOOTER */}
+      <footer className="py-5 text-center text-xs text-slate-400 flex items-center justify-center gap-4">
+        <Link href="/privacy" className="hover:text-slate-600 transition-colors">
+          Privacy
+        </Link>
+        <span>•</span>
+        <Link href="/terms" className="hover:text-slate-600 transition-colors">
+          Terms
+        </Link>
+        <span>•</span>
+        <span>&copy; {new Date().getFullYear()} TinyRide</span>
       </footer>
     </div>
   );

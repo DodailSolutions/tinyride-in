@@ -133,7 +133,10 @@ export function getPendingAuth(): { name?: string; phone: string; email?: string
 /**
  * Complete onboarding and mark user profile complete
  */
-export function completeOnboarding(childData: Omit<ParentChild, 'id' | 'safeKey' | 'vehicleNumber' | 'vehicleModel' | 'driverName' | 'driverPhone'>): ParentSession | null {
+export function completeOnboarding(
+  childData: Omit<ParentChild, 'id' | 'safeKey' | 'vehicleNumber' | 'vehicleModel' | 'driverName' | 'driverPhone'>,
+  parentData?: { name?: string; email?: string }
+): ParentSession | null {
   const current = getParentSession();
   if (!current) return null;
 
@@ -159,6 +162,8 @@ export function completeOnboarding(childData: Omit<ParentChild, 'id' | 'safeKey'
     ...current,
     user: {
       ...current.user,
+      name: parentData?.name || current.user.name,
+      email: parentData?.email || current.user.email,
       onboardingStatus: 'complete',
     },
     children: [newChild, ...(current.children || [])],
