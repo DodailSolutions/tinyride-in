@@ -170,6 +170,50 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  apps/driver-mobile:
+    dependencies:
+      '@tinyride/design-system':
+        specifier: workspace:*
+        version: link:../../packages/design-system
+      '@tinyride/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@tinyride/shared-validation':
+        specifier: workspace:*
+        version: link:../../packages/shared-validation
+      react:
+        specifier: ^19.0.0
+        version: 19.3.0
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.3.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  apps/parent-mobile:
+    dependencies:
+      '@tinyride/design-system':
+        specifier: workspace:*
+        version: link:../../packages/design-system
+      '@tinyride/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@tinyride/shared-validation':
+        specifier: workspace:*
+        version: link:../../packages/shared-validation
+      react:
+        specifier: ^19.0.0
+        version: 19.3.0
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.3.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   apps/school-web:
     dependencies:
       '@tinyride/design-system':
