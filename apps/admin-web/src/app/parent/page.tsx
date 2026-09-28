@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { clearParentSession } from '@/lib/parentAuth';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import PWAInstallBanner from '@/components/PWAInstallBanner';
 
 // Dynamically import Leaflet Map to ensure SSR compatibility
 const RealTrackingMap = dynamic(() => import('@/components/parent/RealTrackingMap'), {
@@ -148,6 +150,9 @@ export default function ParentDashboardPage() {
   const [isSubmittingAbsent, setIsSubmittingAbsent] = useState(false);
   const [absentSuccess, setAbsentSuccess] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
+
+  // PWA install prompt
+  const { canInstall, showBanner: showInstallBanner, install: handleInstallPWA, dismiss: handleDismissPWA } = usePWAInstall();
 
   // EventSource ref for SSE cleanup
   const sseRef = useRef<EventSource | null>(null);
@@ -1021,6 +1026,11 @@ export default function ParentDashboardPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* PWA Install Prompt */}
+      {showInstallBanner && canInstall && (
+        <PWAInstallBanner onInstall={handleInstallPWA} onDismiss={handleDismissPWA} />
       )}
     </div>
   );

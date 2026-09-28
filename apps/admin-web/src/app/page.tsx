@@ -6,6 +6,8 @@ import { TinyRideIPhone } from '@/components/TinyRideIPhone';
 import { TinyRideMobileTrackingApp } from '@/components/TinyRideMobileTrackingApp';
 import { isAuthenticatedParent } from '@/lib/parentAuth';
 import { DEMO_DATA } from '@/lib/demoData';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import PWAInstallBanner from '@/components/PWAInstallBanner';
 
 // Lightweight, performant Scroll-Reveal Component using native IntersectionObserver
 function ScrollReveal({
@@ -63,8 +65,7 @@ export default function TinyRideLandingPage() {
 
   // PWA & Connectivity state
   const [isOnline, setIsOnline] = useState(true);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const { canInstall, showBanner: showInstallBanner, install: handleInstallPWA, dismiss: handleDismissPWA } = usePWAInstall();
 
   // Parent Auth State
   const [isParentAuth, setIsParentAuth] = useState(false);
@@ -98,57 +99,20 @@ export default function TinyRideLandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Connectivity, PWA install prompt listeners, and Parent Auth detection
+  // Connectivity + Parent Auth detection
   useEffect(() => {
     if (typeof window === 'undefined') return;
     setIsOnline(navigator.onLine);
     setIsParentAuth(isAuthenticatedParent());
-    const handleOnline = () => setIsOnline(true);
+    const handleOnline  = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
+    window.addEventListener('online',  handleOnline);
     window.addEventListener('offline', handleOffline);
-
-    const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      try {
-        const isDismissed = localStorage.getItem('tinyride_pwa_dismissed');
-        if (!isDismissed) {
-          setShowInstallBanner(true);
-        }
-      } catch {
-        setShowInstallBanner(true);
-      }
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-
     return () => {
-      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('online',  handleOnline);
       window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
     };
   }, []);
-
-  const handleInstallPWA = async () => {
-    if (!deferredPrompt) return;
-    try {
-      deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if (choice?.outcome === 'accepted') {
-        setShowInstallBanner(false);
-      }
-    } catch {
-      // fallback
-    }
-    setDeferredPrompt(null);
-  };
-
-  const handleDismissPWA = () => {
-    setShowInstallBanner(false);
-    try {
-      localStorage.setItem('tinyride_pwa_dismissed', 'true');
-    } catch {}
-  };
 
   // Close modal on Escape and prevent body scrolling when modal is open
   useEffect(() => {
@@ -1758,42 +1722,8 @@ export default function TinyRideLandingPage() {
       </nav>
 
       {/* PWA INSTALL BANNER */}
-      {showInstallBanner && deferredPrompt && (
-        <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-40 bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl backdrop-blur-md border border-slate-700/60 animate-in slide-in-from-bottom-4 duration-300">
-          <div className="flex items-start gap-3">
-            <img src="/icons/icon-192x192.png" alt="TinyRide" className="w-10 h-10 rounded-xl shadow-xs shrink-0" />
-            <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-bold text-white">Install TinyRide App</h4>
-              <p className="text-xs text-slate-300 mt-0.5">Add to home screen for instant school ride tracking and offline updates.</p>
-              <div className="flex items-center gap-2 mt-3">
-                <button
-                  type="button"
-                  onClick={handleInstallPWA}
-                  className="px-3.5 py-1.5 bg-[#006B2F] hover:bg-[#005525] text-white rounded-lg text-xs font-semibold shadow-xs transition-all active:scale-95 min-h-[36px]"
-                >
-                  Install Now
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDismissPWA}
-                  className="px-3 py-1.5 text-slate-400 hover:text-white text-xs font-medium transition-colors min-h-[36px]"
-                >
-                  Not now
-                </button>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleDismissPWA}
-              className="text-slate-400 hover:text-white p-1"
-              aria-label="Dismiss install banner"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
+      {showInstallBanner && canInstall && (
+        <PWAInstallBanner onInstall={handleInstallPWA} onDismiss={handleDismissPWA} />
       )}
 
       {/* 15. INTERACTIVE "GET STARTED" MODAL */}
