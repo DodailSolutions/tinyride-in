@@ -84,6 +84,13 @@ export async function POST(request: Request) {
       state: 'at_school',
       occurredAt: nowIso,
     });
+    realtimeBus.emit('admin:events', {
+      type: 'school_arrival',
+      tripId,
+      schoolName,
+      state: 'at_school',
+      occurredAt: nowIso,
+    });
 
     return NextResponse.json({
       success: true,

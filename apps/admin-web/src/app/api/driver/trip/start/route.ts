@@ -74,6 +74,12 @@ export async function POST(request: Request) {
       state: 'in_progress',
       occurredAt: nowIso,
     });
+    realtimeBus.emit('admin:events', {
+      type: 'trip_status',
+      tripId,
+      state: 'in_progress',
+      occurredAt: nowIso,
+    });
 
     return NextResponse.json({
       success: true,

@@ -82,6 +82,7 @@ export async function POST(request: Request) {
     };
 
     realtimeBus.emit(`trip:${tripId}`, telemetryPayload);
+    realtimeBus.emit('admin:telemetry', telemetryPayload);
 
     return NextResponse.json({
       success: true,

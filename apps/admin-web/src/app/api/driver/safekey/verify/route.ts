@@ -117,6 +117,14 @@ export async function POST(request: Request) {
       state: 'picked_up',
       occurredAt: nowIso,
     });
+    realtimeBus.emit('admin:events', {
+      type: 'child_boarded',
+      tripId: tripChild.trip_id,
+      tripChildId,
+      childName,
+      state: 'picked_up',
+      occurredAt: nowIso,
+    });
 
     return NextResponse.json({
       success: true,
