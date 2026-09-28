@@ -23,6 +23,20 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
 
   const [atStopHighlight, setAtStopHighlight] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // SVG route path coordinates (viewBox 0 0 315 210)
   const ROUTE_PATH = "M 25,45 C 65,45 90,42 120,55 C 138,62 145,85 150,105 C 154,124 158,142 168,145 C 185,148 206,132 222,110 C 238,88 252,65 288,65";
@@ -227,10 +241,25 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
           </div>
           <p className="text-[11px] text-slate-500 mt-0.5">Grade 3A • Route 04 (Oakridge)</p>
         </div>
-        <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200/80">
-          ● {trackingState.statusBadge}
-        </span>
+        {isOnline ? (
+          <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200/80">
+            ● {trackingState.statusBadge}
+          </span>
+        ) : (
+          <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-900 font-bold text-xs border border-amber-300 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+            OFFLINE
+          </span>
+        )}
       </div>
+
+      {/* OFFLINE NOTICE */}
+      {!isOnline && (
+        <div className="px-3.5 py-1.5 bg-amber-500/10 border-b border-amber-200 text-amber-950 text-[11px] font-medium flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0"></span>
+          <span>Connection lost • Offline mode. Showing cached route. Live telemetry paused.</span>
+        </div>
+      )}
 
       {/* 2. ETA & TELEMETRY PANEL */}
       <div className="px-4 py-3.5 bg-gradient-to-b from-emerald-50/50 to-white border-b border-slate-100">

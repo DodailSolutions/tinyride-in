@@ -59,6 +59,11 @@ export default function TinyRideLandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
 
+  // PWA & Connectivity state
+  const [isOnline, setIsOnline] = useState(true);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
   // Journey Stepper state + auto-advance demonstration loop
   const [activeJourneyStep, setActiveJourneyStep] = useState(2); // 0-indexed: 2 = Child boards
   const [userInteractedJourney, setUserInteractedJourney] = useState(false);
@@ -82,6 +87,57 @@ export default function TinyRideLandingPage() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Connectivity and PWA install prompt listeners
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      try {
+        const isDismissed = localStorage.getItem('tinyride_pwa_dismissed');
+        if (!isDismissed) {
+          setShowInstallBanner(true);
+        }
+      } catch {
+        setShowInstallBanner(true);
+      }
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return;
+    try {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice?.outcome === 'accepted') {
+        setShowInstallBanner(false);
+      }
+    } catch {
+      // fallback
+    }
+    setDeferredPrompt(null);
+  };
+
+  const handleDismissPWA = () => {
+    setShowInstallBanner(false);
+    try {
+      localStorage.setItem('tinyride_pwa_dismissed', 'true');
+    } catch {}
+  };
 
   // Close modal on Escape and prevent body scrolling when modal is open
   useEffect(() => {
@@ -167,14 +223,14 @@ export default function TinyRideLandingPage() {
   const currentStep = journeySteps[activeJourneyStep] ?? journeySteps[0]!;
 
   return (
-    <div id="top" className="min-h-screen bg-[#FAFAF9] text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden pb-20 md:pb-0">
+    <div id="top" className="min-h-screen bg-[#FAFAF9] text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden pb-[calc(84px+env(safe-area-inset-bottom,0px))] xl:pb-0">
       
-      {/* 1. STICKY MODERN NAVIGATION (DESKTOP + TABLET + MOBILE) */}
+      {/* 1. FIXED MODERN NAVIGATION (ALL DEVICES: DESKTOP + TABLET + MOBILE) */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 animate-staged-1 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? 'bg-white/95 backdrop-blur-md shadow-xs py-2.5 sm:py-3 border-b border-slate-200/80'
-            : 'bg-white/85 backdrop-blur-xs py-3 sm:py-3.5 lg:py-4 border-b border-slate-200/40'
+            : 'bg-white/90 backdrop-blur-md py-3 sm:py-3.5 lg:py-4 border-b border-slate-200/50'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 flex items-center justify-between">
@@ -303,7 +359,7 @@ export default function TinyRideLandingPage() {
 
         {/* DROPDOWN DRAWER (Mobile + Tablet Portrait, < 1024px, lg:hidden) */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-b border-slate-200 px-5 pt-3 pb-6 space-y-2 shadow-lg animate-in slide-in-from-top-2 duration-200">
+          <div className="lg:hidden bg-white border-b border-slate-200 px-5 pt-3 pb-6 space-y-2 shadow-lg animate-in slide-in-from-top-2 duration-200 max-h-[calc(100vh-60px)] overflow-y-auto">
             <a
               href="#tracking"
               onClick={() => setMobileMenuOpen(false)}
@@ -361,13 +417,30 @@ export default function TinyRideLandingPage() {
               >
                 Operations Portal
               </Link>
+              <div className="flex items-center justify-center gap-3 pt-2 text-[11px] text-slate-500">
+                <a href="#" className="hover:text-emerald-800">Privacy</a>
+                <span>•</span>
+                <a href="#" className="hover:text-emerald-800">Terms</a>
+                <span>•</span>
+                <a href="mailto:support@tinyride.in" className="hover:text-emerald-800">support@tinyride.in</a>
+              </div>
             </div>
           </div>
         )}
       </header>
 
+      {/* OFFLINE STATUS BANNER */}
+      {!isOnline && (
+        <div className="fixed top-[52px] sm:top-[60px] left-0 right-0 z-40 bg-amber-500 text-slate-950 px-4 py-2 text-center text-xs font-semibold shadow-md flex items-center justify-center gap-2 animate-in slide-in-from-top-2 duration-200">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 4.243a9 9 0 01-12.728 0m0 0l2.829-2.829m-2.829 2.829L3 21m2.828-5.657a5 5 0 010-7.072m0 0l2.829 2.829" />
+          </svg>
+          <span>Connection lost • Operating in offline mode. Live vehicle telemetry is paused.</span>
+        </div>
+      )}
+
       {/* 2. HERO SECTION — DUAL VIEWPORT STRATEGY */}
-      <section className="relative pt-6 pb-12 sm:pt-10 sm:pb-16 lg:pt-20 lg:pb-36 overflow-hidden bg-gradient-to-b from-white via-[#FAFAF9] to-[#FAFAF9]">
+      <section className="relative pt-20 pb-12 sm:pt-24 sm:pb-16 lg:pt-32 lg:pb-36 overflow-hidden bg-gradient-to-b from-white via-[#FAFAF9] to-[#FAFAF9]">
         {/* Subtle, ambient background road curvature */}
         <div className="absolute inset-0 pointer-events-none opacity-25">
           <svg className="w-full h-full" viewBox="0 0 1440 900" fill="none">
@@ -1558,8 +1631,8 @@ export default function TinyRideLandingPage() {
         </div>
       </section>
 
-      {/* 13. FOOTER */}
-      <footer className="border-t border-slate-200 bg-white py-12 text-slate-600 text-xs">
+      {/* 13. FOOTER (DESKTOP ONLY: >= 1200px, hidden on mobile/tablet) */}
+      <footer className="hidden xl:block border-t border-slate-200 bg-white py-12 text-slate-600 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             {/* Brand column */}
@@ -1620,14 +1693,26 @@ export default function TinyRideLandingPage() {
         </div>
       </footer>
 
-      {/* 14. MOBILE STICKY BOTTOM NAVIGATION BAR (< 768px, md:hidden) */}
+      {/* 13B. COMPACT LEGAL STRIP (MOBILE & TABLET ONLY: xl:hidden) */}
+      <div className="xl:hidden border-t border-slate-200 bg-white/70 py-6 px-4 text-center text-xs text-slate-500 space-y-2">
+        <p>© {new Date().getFullYear()} TinyRide by Dodail Solutions Private Limited. All rights reserved.</p>
+        <div className="flex items-center justify-center gap-4 text-[11px] text-slate-600 font-medium">
+          <a href="#" className="hover:text-emerald-800 transition-colors">Privacy Policy</a>
+          <span>•</span>
+          <a href="#" className="hover:text-emerald-800 transition-colors">Terms of Service</a>
+          <span>•</span>
+          <a href="mailto:support@tinyride.in" className="hover:text-emerald-800 transition-colors">support@tinyride.in</a>
+        </div>
+      </div>
+
+      {/* 14. FIXED BOTTOM NAVIGATION BAR (MOBILE & TABLET: xl:hidden) */}
       <nav
-        aria-label="Mobile Bottom Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-4 py-2 flex items-center justify-between shadow-lg"
+        aria-label="Mobile and Tablet Bottom Navigation"
+        className="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-3 sm:px-8 py-2 pb-[calc(10px+env(safe-area-inset-bottom,0px))] flex items-center justify-around sm:justify-center sm:gap-10 shadow-lg"
       >
         <a
           href="#top"
-          className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-600 hover:text-emerald-800"
+          className="flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-emerald-800 min-h-[44px] justify-center px-2 py-1 active:scale-95 transition-transform"
         >
           <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -1637,7 +1722,7 @@ export default function TinyRideLandingPage() {
 
         <a
           href="#tracking"
-          className="flex flex-col items-center gap-1 text-[10px] font-semibold text-emerald-800"
+          className="flex flex-col items-center gap-1 text-[11px] font-semibold text-emerald-800 min-h-[44px] justify-center px-2 py-1 active:scale-95 transition-transform"
         >
           <span className="relative">
             <svg className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1651,7 +1736,7 @@ export default function TinyRideLandingPage() {
 
         <a
           href="#how-it-works"
-          className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-600 hover:text-emerald-800"
+          className="flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-emerald-800 min-h-[44px] justify-center px-2 py-1 active:scale-95 transition-transform"
         >
           <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1659,25 +1744,64 @@ export default function TinyRideLandingPage() {
           <span>Journey</span>
         </a>
 
-        <Link
-          href="/ops"
-          className="flex flex-col items-center gap-1 text-[10px] font-semibold text-slate-600 hover:text-emerald-800"
+        <a
+          href="#for-parents"
+          className="flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-emerald-800 min-h-[44px] justify-center px-2 py-1 active:scale-95 transition-transform"
         >
           <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
-          <span>Ops</span>
-        </Link>
+          <span>Parents</span>
+        </a>
 
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="cursor-pointer ml-1 px-3.5 py-1.5 bg-[#006B2F] active:bg-[#00441d] text-white rounded-lg text-xs font-bold shadow-xs btn-micro flex items-center gap-1"
+          className="cursor-pointer ml-1 px-4 py-2 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white rounded-lg text-xs font-bold shadow-xs min-h-[44px] flex items-center gap-1.5 select-none transition-all"
         >
           <span>Join</span>
           <span>→</span>
         </button>
       </nav>
+
+      {/* PWA INSTALL BANNER */}
+      {showInstallBanner && deferredPrompt && (
+        <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-40 bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl backdrop-blur-md border border-slate-700/60 animate-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-start gap-3">
+            <img src="/icons/icon-192x192.png" alt="TinyRide" className="w-10 h-10 rounded-xl shadow-xs shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-bold text-white">Install TinyRide App</h4>
+              <p className="text-xs text-slate-300 mt-0.5">Add to home screen for instant school ride tracking and offline updates.</p>
+              <div className="flex items-center gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={handleInstallPWA}
+                  className="px-3.5 py-1.5 bg-[#006B2F] hover:bg-[#005525] text-white rounded-lg text-xs font-semibold shadow-xs transition-all active:scale-95 min-h-[36px]"
+                >
+                  Install Now
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDismissPWA}
+                  className="px-3 py-1.5 text-slate-400 hover:text-white text-xs font-medium transition-colors min-h-[36px]"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleDismissPWA}
+              className="text-slate-400 hover:text-white p-1"
+              aria-label="Dismiss install banner"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 15. INTERACTIVE "GET STARTED" MODAL */}
       {isModalOpen && (
