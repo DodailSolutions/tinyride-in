@@ -167,28 +167,28 @@ export default function TinyRideLandingPage() {
   const currentStep = journeySteps[activeJourneyStep] ?? journeySteps[0]!;
 
   return (
-    <div id="top" className="min-h-screen bg-[#FAFAF9] text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden pb-24 lg:pb-0">
+    <div id="top" className="min-h-screen bg-[#FAFAF9] text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden pb-20 md:pb-0">
       
-      {/* 1. STICKY MODERN NAVIGATION (DESKTOP + MOBILE APP BAR) */}
+      {/* 1. STICKY MODERN NAVIGATION (DESKTOP + TABLET + MOBILE) */}
       <header
         className={`sticky top-0 z-50 transition-all duration-300 animate-staged-1 ${
           scrolled
             ? 'bg-white/95 backdrop-blur-md shadow-xs py-2.5 sm:py-3 border-b border-slate-200/80'
-            : 'bg-white/85 backdrop-blur-xs py-3.5 sm:py-4 border-b border-slate-200/40'
+            : 'bg-white/85 backdrop-blur-xs py-3 sm:py-3.5 lg:py-4 border-b border-slate-200/40'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
             <img
               src="/brand/logo-horizontal.png"
               alt="TinyRide — School transportation and live ride tracking"
-              className="h-8 sm:h-9 md:h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+              className="h-8 sm:h-9 md:h-9 lg:h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
             />
           </Link>
 
-          {/* Desktop Nav Links (>= 1024px) */}
-          <nav className="hidden lg:flex items-center gap-7 text-[13.5px] font-medium text-slate-600">
+          {/* DESKTOP NAV LINKS (>= 1200px, xl:) */}
+          <nav className="hidden xl:flex items-center gap-7 text-[13.5px] font-medium text-slate-600">
             <a href="#how-it-works" className="hover:text-emerald-800 transition-colors duration-150">
               How It Works
             </a>
@@ -209,35 +209,85 @@ export default function TinyRideLandingPage() {
             </a>
           </nav>
 
-          {/* Desktop Action CTAs (>= 1024px) */}
-          <div className="hidden lg:flex items-center gap-3">
+          {/* TABLET LANDSCAPE NAV LINKS (1024px – 1199px, lg:flex xl:hidden) */}
+          <nav className="hidden lg:flex xl:hidden items-center gap-4 lg:gap-5 text-[13px] font-medium text-slate-600 whitespace-nowrap">
+            <a href="#how-it-works" className="hover:text-emerald-800 transition-colors duration-150">
+              How It Works
+            </a>
+            <a href="#for-parents" className="hover:text-emerald-800 transition-colors duration-150">
+              For Parents
+            </a>
+            <a href="#for-schools" className="hover:text-emerald-800 transition-colors duration-150">
+              For Schools
+            </a>
+            <a href="#for-drivers" className="hover:text-emerald-800 transition-colors duration-150">
+              For Drivers
+            </a>
+            <a href="#trust" className="hover:text-emerald-800 transition-colors duration-150">
+              Safety
+            </a>
+          </nav>
+
+          {/* TABLET PORTRAIT CENTER/MENU (768px – 1023px, md:flex lg:hidden) */}
+          <div className="hidden md:flex lg:hidden items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100/80 hover:bg-slate-200/80 rounded-lg transition-colors min-h-[44px]"
+              aria-label="Toggle navigation menu"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                {mobileMenuOpen ? (
+                  <path d="M18 6L6 18M6 6l12 12" />
+                ) : (
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+              <span>Menu</span>
+            </button>
+          </div>
+
+          {/* ACTIONS: TABLET LANDSCAPE & DESKTOP (>= 1024px) */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
             <Link
               href="/ops"
-              className="cursor-pointer text-xs font-semibold px-3.5 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors btn-micro"
+              className="cursor-pointer text-xs font-semibold px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors min-h-[44px] flex items-center"
             >
-              Operations Portal
+              Ops Portal
             </Link>
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="cursor-pointer text-xs sm:text-sm font-semibold px-5 py-2.5 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white rounded-lg shadow-xs hover:shadow-md transition-all duration-150 btn-micro select-none inline-flex items-center justify-center"
+              className="cursor-pointer text-xs sm:text-sm font-semibold px-5 py-2.5 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white rounded-lg shadow-xs hover:shadow-md transition-all duration-150 min-h-[44px] inline-flex items-center justify-center select-none"
             >
               Get Started
             </button>
           </div>
 
-          {/* Mobile Quick Action Buttons (< 1024px) */}
-          <div className="flex items-center gap-2 lg:hidden">
+          {/* TABLET PORTRAIT RIGHT ACTION (768px – 1023px, md:flex lg:hidden) */}
+          <div className="hidden md:flex lg:hidden items-center gap-2">
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="cursor-pointer text-xs font-semibold px-3.5 py-1.5 bg-[#006B2F] text-white rounded-lg shadow-xs active:scale-95 transition-all btn-micro"
+              className="cursor-pointer text-xs font-semibold px-4 py-2.5 bg-[#006B2F] hover:bg-[#005525] active:scale-95 text-white rounded-lg shadow-xs min-h-[44px] inline-flex items-center"
+            >
+              Get Started
+            </button>
+          </div>
+
+          {/* MOBILE CONTROLS (< 768px, md:hidden) */}
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="cursor-pointer text-xs font-semibold px-3.5 py-1.5 bg-[#006B2F] text-white rounded-lg shadow-xs active:scale-95 transition-all min-h-[44px] flex items-center"
             >
               Get Started
             </button>
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-2 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Toggle navigation menu"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -251,55 +301,55 @@ export default function TinyRideLandingPage() {
           </div>
         </div>
 
-        {/* Mobile Dropdown Drawer (< 1024px) */}
+        {/* DROPDOWN DRAWER (Mobile + Tablet Portrait, < 1024px, lg:hidden) */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-b border-slate-200 px-5 pt-3 pb-6 space-y-3.5 shadow-lg animate-in slide-in-from-top-2 duration-200">
+          <div className="lg:hidden bg-white border-b border-slate-200 px-5 pt-3 pb-6 space-y-2 shadow-lg animate-in slide-in-from-top-2 duration-200">
             <a
               href="#tracking"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-semibold text-emerald-800"
+              className="block py-2.5 text-sm font-semibold text-emerald-800 min-h-[44px] flex items-center"
             >
               ● Live Tracking
             </a>
             <a
               href="#how-it-works"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-800"
+              className="block py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-800 min-h-[44px] flex items-center"
             >
               How It Works
             </a>
             <a
               href="#for-parents"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-800"
+              className="block py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-800 min-h-[44px] flex items-center"
             >
               For Parents
             </a>
             <a
               href="#for-schools"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-800"
+              className="block py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-800 min-h-[44px] flex items-center"
             >
               For Schools
             </a>
             <a
               href="#for-drivers"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-800"
+              className="block py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-800 min-h-[44px] flex items-center"
             >
               For Drivers
             </a>
             <a
               href="#trust"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-800"
+              className="block py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-800 min-h-[44px] flex items-center"
             >
               Trust & Safety
             </a>
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-800"
+              className="block py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-800 min-h-[44px] flex items-center"
             >
               FAQ
             </a>
@@ -307,7 +357,7 @@ export default function TinyRideLandingPage() {
               <Link
                 href="/ops"
                 onClick={() => setMobileMenuOpen(false)}
-                className="cursor-pointer w-full text-center py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg btn-micro"
+                className="cursor-pointer w-full text-center py-3 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg min-h-[44px] flex items-center justify-center"
               >
                 Operations Portal
               </Link>
@@ -335,10 +385,10 @@ export default function TinyRideLandingPage() {
           </svg>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 relative">
           
-          {/* MOBILE APP-LIKE HERO & REAL-TIME TRACKING (< 1024px) */}
-          <div className="block lg:hidden space-y-5">
+          {/* MOBILE APP-LIKE HERO & REAL-TIME TRACKING (< 768px, md:hidden) */}
+          <div className="block md:hidden space-y-5">
             <div className="space-y-3 text-center sm:text-left">
               {/* Eyebrow */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wider uppercase">
@@ -360,6 +410,7 @@ export default function TinyRideLandingPage() {
               {/* Mobile CTA */}
               <div className="pt-1 flex flex-col sm:flex-row gap-3">
                 <button
+                  type="button"
                   onClick={() => setIsModalOpen(true)}
                   className="cursor-pointer h-12 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] text-white font-bold text-sm rounded-xl shadow-xs btn-micro"
                 >
@@ -386,32 +437,33 @@ export default function TinyRideLandingPage() {
             </div>
           </div>
 
-          {/* DESKTOP EDITORIAL PRODUCT LAUNCH (>= 1024px) */}
-          <div className="hidden lg:grid grid-cols-12 gap-8 items-center">
-            {/* Left Column: Editorial Headline & Copy */}
-            <div className="col-span-6 space-y-6 text-left">
+          {/* TABLET & DESKTOP BALANCED HERO (>= 768px, md:grid) */}
+          <div className="hidden md:grid md:grid-cols-12 md:gap-6 lg:gap-10 xl:gap-12 items-center">
+            {/* Left Column: Editorial Headline & Copy (~45% on tablet) */}
+            <div className="md:col-span-6 lg:col-span-5 xl:col-span-6 space-y-5 md:space-y-6 text-left">
               {/* Eyebrow */}
               <div className="animate-staged-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wider uppercase">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
                 School Transportation, Reimagined
               </div>
 
-              {/* Main Headline */}
-              <h1 className="animate-staged-3 text-4xl sm:text-5xl lg:text-[3.6rem] font-bold tracking-tight text-slate-900 leading-[1.08]">
+              {/* Main Headline (48–64px range on tablet/desktop) */}
+              <h1 className="animate-staged-3 text-3xl sm:text-4xl md:text-[2.6rem] lg:text-[3.25rem] xl:text-[3.6rem] font-bold tracking-tight text-slate-900 leading-[1.12]">
                 School rides, <br />
                 <span className="text-[#006B2F]">without the worry.</span>
               </h1>
 
-              {/* Supporting Copy */}
-              <p className="animate-staged-4 text-base sm:text-lg text-slate-600 max-w-xl font-normal leading-relaxed">
+              {/* Supporting Copy (16–18px on tablet) */}
+              <p className="animate-staged-4 text-base md:text-base lg:text-lg text-slate-600 max-w-xl font-normal leading-relaxed">
                 See the ride. Know the driver. Know when your child arrives. One connected, calm experience for parents, schools and drivers.
               </p>
 
-              {/* CTAs */}
-              <div className="animate-staged-5 pt-2 flex items-center gap-3.5">
+              {/* CTAs (48px touch targets) */}
+              <div className="animate-staged-5 pt-1 md:pt-2 flex flex-wrap items-center gap-3.5">
                 <button
+                  type="button"
                   onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-[#006B2F] hover:bg-[#005525] text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow-md btn-micro group cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 px-6 md:px-7 h-12 min-h-[48px] bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow-md btn-micro group cursor-pointer"
                 >
                   <span>Get Started</span>
                   <svg
@@ -425,14 +477,14 @@ export default function TinyRideLandingPage() {
                 </button>
                 <a
                   href="#how-it-works"
-                  className="inline-flex items-center justify-center px-6 py-3.5 text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 text-sm font-semibold rounded-lg btn-micro"
+                  className="inline-flex items-center justify-center px-5 md:px-6 h-12 min-h-[48px] text-slate-700 bg-white hover:bg-slate-50 active:scale-95 border border-slate-200 text-sm font-semibold rounded-xl btn-micro"
                 >
                   See how it works
                 </a>
               </div>
 
-              {/* Factual, quiet reassurance */}
-              <div className="animate-staged-7 pt-4 flex items-center gap-4 text-xs text-slate-500 font-medium">
+              {/* Factual Reassurance Pills */}
+              <div className="animate-staged-7 pt-2 md:pt-4 flex flex-wrap items-center gap-3 md:gap-4 text-xs text-slate-500 font-medium">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   Verified driver
@@ -450,8 +502,8 @@ export default function TinyRideLandingPage() {
               </div>
             </div>
 
-            {/* Right Column: Authentic iPhone Frame with 60fps Path Traversal */}
-            <div className="col-span-6 flex justify-end animate-staged-iphone">
+            {/* Right Column: Authentic iPhone Frame (~55% on tablet) */}
+            <div className="md:col-span-6 lg:col-span-7 xl:col-span-6 flex justify-center md:justify-end animate-staged-iphone">
               <div className="relative">
                 <TinyRideIPhone mode="parent_tracking" />
               </div>
@@ -593,8 +645,8 @@ export default function TinyRideLandingPage() {
             </div>
           </ScrollReveal>
 
-          {/* DESKTOP SHOWCASE (>= 1024px) */}
-          <div className="hidden lg:grid grid-cols-12 gap-10 items-center">
+          {/* DESKTOP SHOWCASE (>= 1200px, xl:grid) */}
+          <div className="hidden xl:grid grid-cols-12 gap-10 items-center">
             {/* Left 2 Callouts */}
             <div className="col-span-3 space-y-10">
               <ScrollReveal delay={50}>
@@ -656,8 +708,67 @@ export default function TinyRideLandingPage() {
             </div>
           </div>
 
-          {/* MOBILE SHOWCASE CARDS (< 1024px) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:hidden">
+          {/* TABLET PRODUCT SHOWCASE (768px – 1199px, md:grid xl:hidden): TWO-COLUMN BALANCED LAYOUT */}
+          <div className="hidden md:grid xl:hidden grid-cols-12 gap-8 items-center">
+            {/* Left Column: Product Explanation & 3 Clear Benefits */}
+            <div className="col-span-6 space-y-6 text-left">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3.5 group">
+                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-xs shrink-0 mt-0.5">
+                    1
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Live vehicle location</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed mt-1">
+                      Watch the vehicle move in real time along its verified route with actual traffic-adjusted ETA.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5 group">
+                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-xs shrink-0 mt-0.5">
+                    2
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">SafeKey boarding handshake</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed mt-1">
+                      Instant notification the moment your child steps onto the vehicle and SafeKey boarding is confirmed.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5 group">
+                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-xs shrink-0 mt-0.5">
+                    3
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Campus gate arrival</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed mt-1">
+                      Know the exact minute the vehicle passes the campus gates and enters the safe school drop-off bay.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tablet Reassurance Card */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-left">
+                <p className="text-xs font-semibold text-slate-800">
+                  “I no longer have to worry during my morning meetings.”
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Real-time status updates right on your tablet and phone lock screen.
+                </p>
+              </div>
+            </div>
+
+            {/* Right Column: Large Authentic iPhone visual */}
+            <div className="col-span-6 flex justify-center">
+              <TinyRideIPhone mode="parent_tracking" />
+            </div>
+          </div>
+
+          {/* MOBILE SHOWCASE CARDS (< 768px, md:hidden) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:hidden">
             <div className="bg-[#FAFAF9] p-5 rounded-2xl border border-slate-200 space-y-2">
               <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center">
                 1
@@ -708,8 +819,8 @@ export default function TinyRideLandingPage() {
             </div>
           </ScrollReveal>
 
-          {/* DESKTOP STEPPER WITH HORIZONTAL LINE (>= 1024px) */}
-          <div className="hidden lg:block relative mb-10">
+          {/* DESKTOP STEPPER WITH HORIZONTAL LINE (>= 1200px, xl:block) */}
+          <div className="hidden xl:block relative mb-10">
             <div className="absolute top-1/2 left-8 right-8 -translate-y-1/2 h-1 bg-slate-200 -z-0">
               <div
                 style={{
@@ -723,6 +834,7 @@ export default function TinyRideLandingPage() {
             <div className="grid grid-cols-5 gap-3 relative z-10">
               {journeySteps.map((step, idx) => (
                 <button
+                  type="button"
                   key={step.num}
                   onClick={() => {
                     setUserInteractedJourney(true);
@@ -750,8 +862,65 @@ export default function TinyRideLandingPage() {
             </div>
           </div>
 
-          {/* MOBILE COMPACT VERTICAL TIMELINE (< 1024px) */}
-          <div className="block lg:hidden mb-6 space-y-2.5">
+          {/* TABLET HORIZONTAL JOURNEY TIMELINE (768px – 1199px, md:block xl:hidden) */}
+          <div className="hidden md:block xl:hidden mb-8">
+            <div className="overflow-x-auto scrollbar-none pb-2">
+              <div className="flex items-center gap-2 min-w-[700px]">
+                {journeySteps.map((step, idx) => {
+                  const isActive = activeJourneyStep === idx;
+                  const isCompleted = activeJourneyStep > idx;
+                  return (
+                    <React.Fragment key={step.num}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserInteractedJourney(true);
+                          setActiveJourneyStep(idx);
+                        }}
+                        className={`flex-1 text-left p-3.5 rounded-xl border transition-all cursor-pointer min-h-[52px] select-none ${
+                          isActive
+                            ? 'bg-white border-emerald-600 shadow-xs ring-2 ring-emerald-500/20'
+                            : isCompleted
+                            ? 'bg-white/90 border-emerald-200 text-slate-800'
+                            : 'bg-white/60 border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span
+                            className={`font-mono text-xs font-bold ${
+                              isActive ? 'text-emerald-800' : isCompleted ? 'text-emerald-600' : 'text-slate-400'
+                            }`}
+                          >
+                            {step.num}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono font-medium">{step.time}</span>
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-900 truncate">{step.title}</h4>
+                        <div className="mt-1 flex items-center gap-1">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isActive ? 'bg-emerald-600 animate-pulse' : isCompleted ? 'bg-emerald-500' : 'bg-slate-300'
+                            }`}
+                          ></span>
+                          <span className="text-[10px] text-slate-500 truncate">{step.badge}</span>
+                        </div>
+                      </button>
+                      {idx < journeySteps.length - 1 && (
+                        <div className="shrink-0 text-slate-300">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* MOBILE COMPACT VERTICAL TIMELINE (< 768px, md:hidden) */}
+          <div className="block md:hidden mb-6 space-y-2.5">
             {journeySteps.map((step, idx) => (
               <div
                 key={step.num}
@@ -788,8 +957,8 @@ export default function TinyRideLandingPage() {
 
           {/* ACTIVE MILESTONE DEEP-DIVE & NOTIFICATION PREVIEW */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-8 shadow-xs transition-all duration-300">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
-              <div className="lg:col-span-7 space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center">
+              <div className="md:col-span-7 space-y-3 sm:space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold">
                   <span className="font-mono">{currentStep.num}</span>
                   <span>•</span>
@@ -808,7 +977,7 @@ export default function TinyRideLandingPage() {
                 </div>
               </div>
 
-              <div className="lg:col-span-5 bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-200/80 space-y-2.5">
+              <div className="md:col-span-5 bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-200/80 space-y-2.5">
                 <div className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
                   Notification Preview
                 </div>
@@ -834,12 +1003,12 @@ export default function TinyRideLandingPage() {
         </div>
       </section>
 
-      {/* 7. PARENT EXPERIENCE — PEACE OF MIND */}
+      {/* 7. PARENT EXPERIENCE — PEACE OF MIND (BALANCED TWO-COLUMN ON TABLET) */}
       <section id="for-parents" className="py-16 sm:py-24 lg:py-32 bg-white border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Content */}
-            <div className="lg:col-span-6 space-y-5 sm:space-y-6">
+            <div className="md:col-span-6 space-y-5 sm:space-y-6">
               <ScrollReveal>
                 <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest">
                   Parent Simplicity
@@ -874,8 +1043,9 @@ export default function TinyRideLandingPage() {
 
               <div className="pt-2">
                 <button
+                  type="button"
                   onClick={() => setIsModalOpen(true)}
-                  className="cursor-pointer h-12 w-full sm:w-auto px-6 bg-[#006B2F] hover:bg-[#005525] text-white text-sm font-semibold rounded-xl shadow-xs btn-micro"
+                  className="cursor-pointer h-12 min-h-[48px] w-full sm:w-auto px-6 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white text-sm font-semibold rounded-xl shadow-xs btn-micro flex items-center justify-center"
                 >
                   Join as a Parent
                 </button>
@@ -883,34 +1053,37 @@ export default function TinyRideLandingPage() {
             </div>
 
             {/* Right: Parent App Feature Tabs Mock */}
-            <div className="lg:col-span-6 bg-slate-50 rounded-2xl p-5 sm:p-8 border border-slate-200">
-              {/* Tab Selector */}
-              <div className="flex border-b border-slate-200 mb-5 gap-4 text-xs font-semibold relative overflow-x-auto">
+            <div className="md:col-span-6 bg-slate-50 rounded-2xl p-5 sm:p-7 md:p-8 border border-slate-200">
+              {/* Tab Selector (touch targets >= 44px) */}
+              <div className="flex border-b border-slate-200 mb-5 gap-3 md:gap-4 text-xs font-semibold relative overflow-x-auto scrollbar-none">
                 <button
+                  type="button"
                   onClick={() => setActiveParentTab('status')}
-                  className={`pb-3 transition-colors shrink-0 cursor-pointer ${
+                  className={`pb-3 pt-1 px-1 transition-colors shrink-0 cursor-pointer min-h-[44px] flex items-center ${
                     activeParentTab === 'status'
-                      ? 'border-b-2 border-emerald-700 text-emerald-900'
+                      ? 'border-b-2 border-emerald-700 text-emerald-900 font-bold'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   Live Status
                 </button>
                 <button
+                  type="button"
                   onClick={() => setActiveParentTab('driver')}
-                  className={`pb-3 transition-colors shrink-0 cursor-pointer ${
+                  className={`pb-3 pt-1 px-1 transition-colors shrink-0 cursor-pointer min-h-[44px] flex items-center ${
                     activeParentTab === 'driver'
-                      ? 'border-b-2 border-emerald-700 text-emerald-900'
+                      ? 'border-b-2 border-emerald-700 text-emerald-900 font-bold'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   Verified Driver
                 </button>
                 <button
+                  type="button"
                   onClick={() => setActiveParentTab('absence')}
-                  className={`pb-3 transition-colors shrink-0 cursor-pointer ${
+                  className={`pb-3 pt-1 px-1 transition-colors shrink-0 cursor-pointer min-h-[44px] flex items-center ${
                     activeParentTab === 'absence'
-                      ? 'border-b-2 border-emerald-700 text-emerald-900'
+                      ? 'border-b-2 border-emerald-700 text-emerald-900 font-bold'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
@@ -1005,13 +1178,13 @@ export default function TinyRideLandingPage() {
         </div>
       </section>
 
-      {/* 8. SCHOOL EXPERIENCE — OPERATIONAL CONTROL */}
+      {/* 8. SCHOOL EXPERIENCE — OPERATIONAL CONTROL (ALTERNATING DIRECTION ON TABLET) */}
       <section id="for-schools" className="py-16 sm:py-24 lg:py-32 bg-[#FAFAF9]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center">
             
-            {/* Operational UI Mock */}
-            <div className="lg:col-span-7 bg-white rounded-2xl p-5 sm:p-8 border border-slate-200 shadow-sm space-y-5 sm:space-y-6 order-2 lg:order-1">
+            {/* Operational UI Mock (Left on Tablet & Desktop) */}
+            <div className="md:col-span-7 bg-white rounded-2xl p-5 sm:p-7 md:p-8 border border-slate-200 shadow-sm space-y-5 sm:space-y-6 order-2 md:order-1">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -1019,7 +1192,7 @@ export default function TinyRideLandingPage() {
                   </span>
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base">Oakridge International Campus Bay</h3>
                 </div>
-                <span className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 text-[11px] sm:text-xs font-bold flex items-center gap-1.5">
+                <span className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 shrink-0">
                   <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
                   14 / 14 ACTIVE ROUTES
                 </span>
@@ -1041,9 +1214,9 @@ export default function TinyRideLandingPage() {
                 </div>
               </div>
 
-              {/* Bus Bay Status Table / Mobile Route Cards */}
-              <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
-                <div className="bg-slate-50 px-3.5 py-2 font-bold text-slate-700 border-b border-slate-200 flex justify-between">
+              {/* Bus Bay Status Table (Touch-friendly 48px rows) */}
+              <div className="border border-slate-200 rounded-xl overflow-x-auto scrollbar-none text-xs">
+                <div className="bg-slate-50 px-3.5 sm:px-4 py-2.5 font-bold text-slate-700 border-b border-slate-200 flex justify-between min-w-[340px]">
                   <span>Route & Vehicle</span>
                   <span>Status</span>
                   <span>ETA</span>
@@ -1055,23 +1228,23 @@ export default function TinyRideLandingPage() {
                 ].map((row, i) => (
                   <div
                     key={i}
-                    className="px-3.5 py-3 border-b border-slate-100 last:border-0 flex justify-between items-center hover:bg-slate-50/80 transition-colors"
+                    className="px-3.5 sm:px-4 py-3.5 border-b border-slate-100 last:border-0 flex justify-between items-center hover:bg-slate-50/80 active:bg-slate-100 transition-colors min-h-[48px] min-w-[340px]"
                   >
                     <div>
                       <div className="font-semibold text-slate-900 text-xs sm:text-sm">{row.route}</div>
                       <div className="text-[10px] text-slate-400 font-mono">{row.veh} • {row.driver}</div>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.statusColor}`}>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 mx-2 ${row.statusColor}`}>
                       {row.status}
                     </span>
-                    <div className="font-mono text-slate-700 font-semibold text-xs">{row.eta}</div>
+                    <div className="font-mono text-slate-700 font-semibold text-xs shrink-0">{row.eta}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Right Editorial Copy */}
-            <div className="lg:col-span-5 space-y-4 sm:space-y-6 order-1 lg:order-2">
+            <div className="md:col-span-5 space-y-4 sm:space-y-6 order-1 md:order-2">
               <ScrollReveal>
                 <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest">
                   School Transport Oversight
@@ -1086,23 +1259,24 @@ export default function TinyRideLandingPage() {
 
               <div className="space-y-2.5 pt-1 text-xs sm:text-sm text-slate-700">
                 <div className="flex items-start gap-2.5">
-                  <span className="text-emerald-700 font-bold">✓</span>
+                  <span className="text-emerald-700 font-bold shrink-0 mt-0.5">✓</span>
                   <span><strong>Complete transport visibility:</strong> Monitor all routes simultaneously from a single central map.</span>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <span className="text-emerald-700 font-bold">✓</span>
+                  <span className="text-emerald-700 font-bold shrink-0 mt-0.5">✓</span>
                   <span><strong>Gate & bay coordination:</strong> Eliminate morning bottleneck delays with scheduled arrival pacing.</span>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <span className="text-emerald-700 font-bold">✓</span>
+                  <span className="text-emerald-700 font-bold shrink-0 mt-0.5">✓</span>
                   <span><strong>Fewer front-desk inquiries:</strong> When parents have real-time tracking, repetitive phone calls drop.</span>
                 </div>
               </div>
 
               <div className="pt-2">
                 <button
+                  type="button"
                   onClick={() => setIsModalOpen(true)}
-                  className="cursor-pointer h-12 w-full sm:w-auto px-6 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl shadow-xs btn-micro"
+                  className="cursor-pointer h-12 min-h-[48px] w-full sm:w-auto px-6 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-xs btn-micro flex items-center justify-center"
                 >
                   Explore TinyRide for Schools
                 </button>
@@ -1112,12 +1286,12 @@ export default function TinyRideLandingPage() {
         </div>
       </section>
 
-      {/* 9. DRIVER EXPERIENCE — DUAL PRESENTATION */}
+      {/* 9. DRIVER EXPERIENCE — TABLET & DESKTOP PRESENTATION */}
       <section id="for-drivers" className="py-16 sm:py-24 lg:py-32 bg-white border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Copy */}
-            <div className="lg:col-span-6 space-y-4 sm:space-y-6">
+            <div className="md:col-span-6 space-y-4 sm:space-y-6">
               <ScrollReveal>
                 <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest">
                   Driver Focused
@@ -1150,17 +1324,17 @@ export default function TinyRideLandingPage() {
               </div>
             </div>
 
-            {/* Right: Driver Viewport (Desktop iPhone vs Mobile In-Cab Card) */}
-            <div className="lg:col-span-6 flex justify-center">
-              {/* Desktop iPhone Mode (>= 1024px) */}
-              <div className="hidden lg:block">
+            {/* Right: Driver Viewport (Tablet & Desktop iPhone vs Mobile In-Cab Card) */}
+            <div className="md:col-span-6 flex justify-center">
+              {/* Tablet & Desktop iPhone Mode (>= 768px, md:block) */}
+              <div className="hidden md:block">
                 <ScrollReveal delay={80}>
                   <TinyRideIPhone mode="driver" />
                 </ScrollReveal>
               </div>
 
-              {/* Mobile Native Driver Mode Card (< 1024px) */}
-              <div className="block lg:hidden w-full max-w-sm bg-slate-950 text-white rounded-2xl p-5 border border-slate-800 shadow-md">
+              {/* Mobile Native Driver Mode Card (< 768px, md:hidden) */}
+              <div className="block md:hidden w-full max-w-sm bg-slate-950 text-white rounded-2xl p-5 border border-slate-800 shadow-md">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[10px] uppercase font-bold text-slate-400">Driver In-Cab Mode</span>
                   <span className="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded font-mono text-[10px] font-bold">
@@ -1199,7 +1373,7 @@ export default function TinyRideLandingPage() {
 
       {/* 10. TRUST & TRANSPARENCY SECTION — CALM EDITORIAL SEQUENCE */}
       <section id="trust" className="py-16 sm:py-24 lg:py-32 bg-[#FAFAF9]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 space-y-3">
               <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest">
@@ -1275,7 +1449,7 @@ export default function TinyRideLandingPage() {
 
       {/* 11. FREQUENTLY ASKED QUESTIONS — ACCESSIBLE & SEO-READY */}
       <section id="faq" className="py-16 sm:py-24 lg:py-32 bg-white border-t border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
           <ScrollReveal>
             <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16 space-y-3">
               <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest">
@@ -1319,13 +1493,13 @@ export default function TinyRideLandingPage() {
             ].map((faq, idx) => (
               <ScrollReveal key={idx} delay={idx * 40}>
                 <details className="group bg-[#FAFAF9] rounded-2xl border border-slate-200/90 shadow-2xs open:bg-white open:shadow-xs transition-all duration-200 overflow-hidden">
-                  <summary className="cursor-pointer p-4 sm:p-6 flex items-center justify-between text-sm sm:text-base font-bold text-slate-900 list-none select-none hover:text-emerald-800 transition-colors">
+                  <summary className="cursor-pointer p-4 sm:p-5 md:p-6 min-h-[48px] flex items-center justify-between text-sm sm:text-base font-bold text-slate-900 list-none select-none hover:text-emerald-800 transition-colors">
                     <span>{faq.q}</span>
                     <span className="ml-4 w-6 h-6 rounded-full bg-slate-200/70 group-open:bg-emerald-50 text-slate-600 group-open:text-emerald-700 flex items-center justify-center text-xs font-bold transition-transform duration-200 group-open:rotate-180 shrink-0">
                       ▼
                     </span>
                   </summary>
-                  <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 mt-1">
+                  <div className="px-4 sm:px-5 md:px-6 pb-5 sm:pb-6 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 mt-1">
                     {faq.a}
                   </div>
                 </details>
@@ -1337,7 +1511,7 @@ export default function TinyRideLandingPage() {
 
       {/* 12. FINAL CONVERSION CTA — PREMIUM DARK SECTION */}
       <section id="get-started" className="py-16 sm:py-24 lg:py-28 bg-[#FAFAF9]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
           <ScrollReveal yOffset={20}>
             <div className="bg-slate-950 text-white rounded-3xl p-7 sm:p-14 lg:p-20 text-center relative overflow-hidden shadow-2xl">
               {/* Subtle background route glow line */}
@@ -1365,14 +1539,15 @@ export default function TinyRideLandingPage() {
 
                 <div className="pt-2 sm:pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                   <button
+                    type="button"
                     onClick={() => setIsModalOpen(true)}
-                    className="cursor-pointer h-12 w-full sm:w-auto px-8 bg-[#006B2F] hover:bg-[#005525] text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow-md btn-micro"
+                    className="cursor-pointer h-12 min-h-[48px] w-full sm:w-auto px-8 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow-md btn-micro flex items-center justify-center"
                   >
                     Get Started
                   </button>
                   <a
                     href="#for-schools"
-                    className="h-12 w-full sm:w-auto px-7 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-sm rounded-xl btn-micro flex items-center justify-center"
+                    className="h-12 min-h-[48px] w-full sm:w-auto px-7 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 active:scale-95 text-slate-200 border border-slate-700 font-semibold text-sm rounded-xl btn-micro flex items-center justify-center"
                   >
                     Talk to Your School
                   </a>
@@ -1385,10 +1560,10 @@ export default function TinyRideLandingPage() {
 
       {/* 13. FOOTER */}
       <footer className="border-t border-slate-200 bg-white py-12 text-slate-600 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             {/* Brand column */}
-            <div className="space-y-3">
+            <div className="space-y-3 col-span-2 sm:col-span-1">
               <img
                 src="/brand/logo-horizontal.png"
                 alt="TinyRide — School transportation and live ride tracking"
@@ -1445,10 +1620,10 @@ export default function TinyRideLandingPage() {
         </div>
       </footer>
 
-      {/* 14. MOBILE STICKY BOTTOM NAVIGATION BAR (< 1024px) */}
+      {/* 14. MOBILE STICKY BOTTOM NAVIGATION BAR (< 768px, md:hidden) */}
       <nav
         aria-label="Mobile Bottom Navigation"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-4 py-2 flex items-center justify-between shadow-lg"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-4 py-2 flex items-center justify-between shadow-lg"
       >
         <a
           href="#top"
