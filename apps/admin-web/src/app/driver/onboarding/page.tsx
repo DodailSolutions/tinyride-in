@@ -27,9 +27,11 @@ function DriverOnboardingStatusContent() {
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#006B2F] flex items-center justify-center font-black text-white text-xs">
-            TR
-          </div>
+          <img
+            src="/brand/logo-stacked.png"
+            alt="TinyRide"
+            className="w-8 h-8 object-contain"
+          />
           <div>
             <h1 className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">TinyRide Driver</h1>
             <p className="text-sm font-bold text-white tracking-tight mt-0.5">Verification &amp; Onboarding</p>

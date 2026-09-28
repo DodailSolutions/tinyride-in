@@ -288,33 +288,34 @@ export function AdminShell({ children }: AdminShellProps) {
         } hidden md:flex`}
       >
         {/* Brand Header */}
-        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/80">
+        <div className="h-20 px-3.5 flex items-center justify-between border-b border-slate-800/80">
           {!isCollapsed && (
-            <Link href="/admin" className="flex items-center gap-2 overflow-hidden">
-              <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm flex-shrink-0">
-                TR
-              </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-sm tracking-tight text-white leading-none">TinyRide</span>
-                <span className="text-[10px] font-semibold tracking-wider text-emerald-400 uppercase mt-0.5">
-                  Command Center
-                </span>
-              </div>
+            <Link href="/admin" className="flex flex-col items-start gap-1 py-1 group overflow-hidden">
+              <img
+                src="/brand/logo-horizontal.png"
+                alt="TinyRide"
+                className="w-[122px] h-auto object-contain transition-opacity group-hover:opacity-90"
+              />
+              <span className="text-[9px] font-extrabold tracking-widest text-emerald-400 uppercase pl-1">
+                OPERATIONS
+              </span>
             </Link>
           )}
 
           {isCollapsed && (
-            <Link href="/admin" className="mx-auto">
-              <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm">
-                TR
-              </div>
+            <Link href="/admin" className="mx-auto py-1" title="TinyRide Operations">
+              <img
+                src="/brand/logo-stacked.png"
+                alt="TinyRide"
+                className="w-9 h-9 object-contain hover:scale-105 transition-transform"
+              />
             </Link>
           )}
 
           <button
             onClick={toggleSidebar}
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-md transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-md transition-colors flex-shrink-0"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -432,7 +433,19 @@ export function AdminShell({ children }: AdminShellProps) {
               <span className="material-symbols-outlined text-[22px]">menu</span>
             </button>
 
-            <div>
+            {/* Mobile Official TinyRide Logo */}
+            <Link href="/admin" className="md:hidden flex items-center gap-2">
+              <img
+                src="/brand/logo-horizontal.png"
+                alt="TinyRide"
+                className="w-[105px] h-auto object-contain"
+              />
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider bg-slate-800 text-emerald-400 border border-slate-700/60 uppercase">
+                OPS
+              </span>
+            </Link>
+
+            <div className="hidden md:block">
               <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-2">
                 Operations Command Center
               </h1>
@@ -788,7 +801,16 @@ export function AdminShell({ children }: AdminShellProps) {
         <div className="fixed inset-0 z-50 md:hidden bg-slate-950/80 backdrop-blur-sm flex">
           <div className="w-64 bg-slate-950 h-full p-4 border-r border-slate-800 flex flex-col space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <span className="font-extrabold text-sm text-white">TinyRide Admin</span>
+              <div className="flex flex-col items-start gap-0.5">
+                <img
+                  src="/brand/logo-horizontal.png"
+                  alt="TinyRide"
+                  className="w-[115px] h-auto object-contain"
+                />
+                <span className="text-[9px] font-extrabold tracking-wider text-emerald-400 uppercase pl-0.5">
+                  OPERATIONS
+                </span>
+              </div>
               <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-slate-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
