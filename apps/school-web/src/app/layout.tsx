@@ -2,7 +2,7 @@ import './globals.css';
 import { SchoolShell } from '@/components/SchoolShell';
 
 export const metadata = {
-  title: 'Oakridge International — TinyRide School Gate Portal',
+  title: 'Olive Mount — TinyRide School Gate Portal',
   description: 'School transport intake, morning arrivals, afternoon releases & student roster',
 };
 

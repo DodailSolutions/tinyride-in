@@ -99,7 +99,7 @@ describe('OpsService', () => {
               maybeSingle: jest.fn().mockResolvedValue({
                 data: {
                   id: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d',
-                  routes: { id: 'r1', name: 'Madhapur Express', schools: { name: 'Oakridge International' } },
+                  routes: { id: 'r1', name: 'Madhapur Express', schools: { name: 'Olive Mount' } },
                 },
               }),
             }),

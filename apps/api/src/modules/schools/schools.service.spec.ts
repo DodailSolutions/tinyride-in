@@ -16,7 +16,7 @@ describe('SchoolsService', () => {
                 maybeSingle: jest.fn().mockResolvedValue({
                   data: {
                     id: 'staff-user-uuid-1',
-                    school_id: 'school-uuid-oakridge',
+                    school_id: 'school-uuid-olive-mount',
                     staff_role: 'school_admin',
                     revoked_at: null,
                   },
@@ -33,8 +33,8 @@ describe('SchoolsService', () => {
             eq: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: {
-                  id: 'school-uuid-oakridge',
-                  name: 'Oakridge International School',
+                  id: 'school-uuid-olive-mount',
+                  name: 'Olive Mount',
                   address: 'Khajaguda, Hyderabad',
                   contact_phone_e164: '+914023456789',
                   am_arrive_by: '08:15:00',
@@ -52,7 +52,7 @@ describe('SchoolsService', () => {
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
-                data: { id: 'child-1', school_id: 'school-uuid-oakridge' },
+                data: { id: 'child-1', school_id: 'school-uuid-olive-mount' },
                 error: null,
               }),
               then: (resolve: any) =>
@@ -98,7 +98,7 @@ describe('SchoolsService', () => {
                     route_schedule_id: 'sched-1',
                     route_schedules: {
                       routes: {
-                        school_id: 'school-uuid-oakridge',
+                        school_id: 'school-uuid-olive-mount',
                       },
                     },
                   },
@@ -177,12 +177,12 @@ describe('SchoolsService', () => {
   it('should resolve authenticated school staff member school details', async () => {
     const school = await service.getMySchool('staff-user-uuid-1');
     expect(school).toBeDefined();
-    expect(school.name).toBe('Oakridge International School');
+    expect(school.name).toBe('Olive Mount');
     expect(school.amArriveBy).toBe('08:15:00');
   });
 
   it('should return student transport roster for school', async () => {
-    const roster = await service.getRoster('school-uuid-oakridge');
+    const roster = await service.getRoster('school-uuid-olive-mount');
     expect(roster).toHaveLength(1);
     expect(roster[0].fullName).toBe('Aarav Sharma');
     expect(roster[0].grade).toBe('Grade 3A');
@@ -191,7 +191,7 @@ describe('SchoolsService', () => {
 
   it('should confirm school receipt and advance child status to at_school', async () => {
     const result = await service.confirmArrival(
-      'school-uuid-oakridge',
+      'school-uuid-olive-mount',
       'staff-user-uuid-1',
       {
         tripChildId: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d',
@@ -217,7 +217,7 @@ describe('SchoolsService', () => {
   it('should reject gate release if driver or vehicle is not verified', async () => {
     await expect(
       service.confirmRelease(
-        'school-uuid-oakridge',
+        'school-uuid-olive-mount',
         'staff-user-uuid-1',
         {
           tripChildId: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d',
@@ -230,7 +230,7 @@ describe('SchoolsService', () => {
 
   it('should record school gate exception for missing child', async () => {
     const exc = await service.reportException(
-      'school-uuid-oakridge',
+      'school-uuid-olive-mount',
       'staff-user-uuid-1',
       {
         childId: 'child-1',

@@ -101,7 +101,7 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
           etaMinutes: 0,
           etaLabel: '8:35 AM',
           statusBadge: 'AT GATE',
-          subText: 'Tanvik boarding TR-102',
+          subText: 'Aarav boarding TR-102',
           remainingDistance: 'Gate 2',
           locationSubtext: 'Rainbow Vistas Gate 2',
           speed: 0,
@@ -134,7 +134,7 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
           etaMinutes: 0,
           etaLabel: 'Arrived',
           statusBadge: 'ARRIVED',
-          subText: 'Arrived at Oakridge School',
+          subText: 'Arrived at Olive Mount School',
           remainingDistance: 'Bay 3',
           locationSubtext: 'Drop-off Complete • Bay 3',
           speed: 0,
@@ -261,9 +261,9 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span className="font-bold text-slate-900 text-xs">Tanvik Mathurthi</span>
+                    <span className="font-bold text-slate-900 text-xs">Aarav Sharma</span>
                   </div>
-                  <p className="text-[10px] text-slate-500">Grade 3A • Route 04 (Oakridge)</p>
+                  <p className="text-[10px] text-slate-500">Grade 3A • Route 04 (Olive Mount)</p>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200/60">
                   {trackingState.statusBadge}
@@ -392,14 +392,14 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
                     </text>
                   </g>
 
-                  {/* Destination: Oakridge Campus Bay */}
+                  {/* Destination: Olive Mount Campus Bay */}
                   <g transform="translate(288, 65)">
                     <circle cx="0" cy="0" r="6.5" fill="#0F172A" stroke="#FFFFFF" strokeWidth="1.5" />
                     <text x="0" y="3.5" textAnchor="middle" fontSize="7.5" fill="white">
                       🏫
                     </text>
                     <text x="0" y="-10" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0F172A">
-                      Oakridge
+                      Olive Mount
                     </text>
                   </g>
 
@@ -493,10 +493,10 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
                 <div className="bg-slate-900 rounded-xl p-3 border border-slate-800 space-y-2">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-full bg-emerald-900/60 border border-emerald-700 flex items-center justify-center font-bold text-emerald-300 text-xs">
-                      TM
+                      AS
                     </div>
                     <div>
-                      <h4 className="font-bold text-xs text-white">Tanvik Mathurthi</h4>
+                      <h4 className="font-bold text-xs text-white">Aarav Sharma</h4>
                       <p className="text-[10.5px] text-slate-400">Grade 3A • Seat 4A</p>
                     </div>
                   </div>
@@ -526,7 +526,7 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
                   onClick={() => setDriverStep((prev) => (prev === 2 ? 3 : 2))}
                   className="w-full py-3.5 bg-[#006B2F] hover:bg-[#005525] text-white font-bold text-xs rounded-xl shadow-md transition-colors text-center"
                 >
-                  {driverStep === 2 ? '✓ Confirm Tanvik Boarded' : '✓ Boarding Verified (Proceed)'}
+                  {driverStep === 2 ? '✓ Confirm Aarav Boarded' : '✓ Boarding Verified (Proceed)'}
                 </button>
                 <p className="text-[9.5px] text-center text-slate-500">
                   Large touch target designed for zero driving distraction

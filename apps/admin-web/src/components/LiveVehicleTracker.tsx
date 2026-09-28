@@ -105,7 +105,7 @@ export function LiveVehicleTracker() {
         setTrackingState({
           stage: 'at_stop',
           etaLabel: 'At your gate',
-          statusText: 'Tanvik boarding TR-102',
+          statusText: 'Aarav boarding TR-102',
           locationSubtext: 'Rainbow Vistas Gate 2',
           speed: 0,
           progressPercent: 46,
@@ -137,7 +137,7 @@ export function LiveVehicleTracker() {
         setTrackingState({
           stage: 'arrived',
           etaLabel: 'Arrived',
-          statusText: 'Arrived at Oakridge School',
+          statusText: 'Arrived at Olive Mount School',
           locationSubtext: 'Drop-off Complete • Bay 3',
           speed: 0,
           progressPercent: 100,
@@ -195,7 +195,7 @@ export function LiveVehicleTracker() {
             ...prev,
             stage: 'to_school',
             etaLabel: '12 min to school',
-            statusText: 'En route to Oakridge',
+            statusText: 'En route to Olive Mount',
             locationSubtext: 'Expressway Flyover • 36 km/h',
             speed: 36,
             progressPercent: Math.round(currentProgress * 100),
@@ -374,7 +374,7 @@ export function LiveVehicleTracker() {
               🏫
             </text>
             <text x="0" y="-10" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0F172A">
-              Oakridge
+              Olive Mount
             </text>
             <text x="0" y="16" textAnchor="middle" fontSize="6.5" fontWeight="500" fill="#64748B">
               Bay 3

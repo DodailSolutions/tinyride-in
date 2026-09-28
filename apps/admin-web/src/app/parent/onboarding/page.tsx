@@ -21,7 +21,7 @@ import {
 } from '@/lib/parentAuth';
 
 const SCHOOLS_DATABASE = [
-  { id: 'sch-1', name: 'Oakridge International School', campus: 'Gachibowli, Hyderabad', routes: '14 Active Routes' },
+  { id: 'sch-1', name: 'Olive Mount', campus: 'Gachibowli, Hyderabad', routes: '14 Active Routes' },
   { id: 'sch-2', name: 'Delhi Public School (DPS)', campus: 'Khajaguda, Hyderabad', routes: '22 Active Routes' },
   { id: 'sch-3', name: 'CHIREC International School', campus: 'Kondapur, Hyderabad', routes: '18 Active Routes' },
   { id: 'sch-4', name: 'Silver Oaks International School', campus: 'Miyapur, Hyderabad', routes: '16 Active Routes' },
@@ -54,7 +54,7 @@ export default function ParentOnboardingPage() {
 
   // STEP 5: Transportation (Live assigned or school coordinated)
   const [assignedRoute] = useState({
-    routeName: 'Route 14A • Hitec City Express',
+    routeName: 'Route 04 (Olive Mount)',
     vehicleNumber: 'TS09-TR-102',
     vehicleModel: 'Force Traveller 18-Seater',
     driverName: 'Ravi Kumar',
@@ -155,19 +155,19 @@ export default function ParentOnboardingPage() {
 
   const handleCompleteOnboarding = () => {
     setIsSubmitting(true);
-    const primaryChild = childrenList[0] || { name: 'Tanvik Mathurthi', grade: 'Grade 3-A' };
+    const primaryChild = childrenList[0] || { name: 'Aarav Sharma', grade: '3A' };
     const randomKey = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}`;
     setGeneratedSafeKey(randomKey);
 
     const childData: Omit<ParentChild, 'id' | 'safeKey' | 'vehicleNumber' | 'vehicleModel' | 'driverName' | 'driverPhone'> = {
-      name: primaryChild.name.trim(),
-      grade: primaryChild.grade.trim(),
+      name: primaryChild.name.trim() || 'Aarav Sharma',
+      grade: primaryChild.grade.trim() || '3A',
       age: 8,
       schoolName: selectedSchool.name,
       schoolBranch: selectedSchool.campus,
       pickupLocation: pickupAddress.trim(),
-      pickupTime: '07:35 AM',
-      dropTime: '02:45 PM',
+      pickupTime: '8:35 AM',
+      dropTime: '3:30 PM',
       medicalNotes: primaryChild.notes?.trim() || undefined,
     };
 
@@ -361,7 +361,7 @@ export default function ParentOnboardingPage() {
                       type="text"
                       autoFocus
                       required
-                      placeholder="e.g. Tanvik Mathurthi"
+                      placeholder="e.g. Aarav Sharma"
                       value={childrenList[activeChildIndex]?.name || ''}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -387,7 +387,7 @@ export default function ParentOnboardingPage() {
                     <input
                       id="child-grade"
                       type="text"
-                      placeholder="e.g. Grade 3-A"
+                      placeholder="e.g. 3A"
                       value={childrenList[activeChildIndex]?.grade || ''}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -787,7 +787,7 @@ export default function ParentOnboardingPage() {
                         Child
                       </span>
                       <div className="text-xs font-bold text-slate-900 mt-0.5">
-                        {childrenList[0]?.name || 'Student'} • {childrenList[0]?.grade || 'Grade 3-A'}
+                        {childrenList[0]?.name || 'Aarav Sharma'} • {childrenList[0]?.grade || '3A'}
                       </div>
                     </div>
                     <button

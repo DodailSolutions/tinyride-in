@@ -79,7 +79,7 @@ export default function TinyRideLandingPage() {
   const [formData, setFormData] = useState({
     parentName: '',
     phone: '',
-    schoolName: 'Oakridge International School',
+    schoolName: 'Olive Mount',
     area: 'Gachibowli',
   });
 
@@ -181,7 +181,7 @@ export default function TinyRideLandingPage() {
       setFormData({
         parentName: '',
         phone: '',
-        schoolName: 'Oakridge International School',
+        schoolName: 'Olive Mount',
         area: 'Gachibowli',
       });
     }, 2200);
@@ -1071,9 +1071,9 @@ export default function TinyRideLandingPage() {
                   <p className="text-xs font-semibold text-slate-800 transition-opacity duration-200">
                     {activeJourneyStep === 0 && 'Driver Ravi has started the morning route TR-102.'}
                     {activeJourneyStep === 1 && 'TR-102 is 500m away. Please proceed to the pickup gate.'}
-                    {activeJourneyStep === 2 && 'Tanvik has safely boarded TR-102. SafeKey token confirmed.'}
+                    {activeJourneyStep === 2 && 'Aarav has safely boarded TR-102. SafeKey token confirmed.'}
                     {activeJourneyStep === 3 && 'TR-102 is on Jubilee Hills Road No. 36. Speed: 34 km/h.'}
-                    {activeJourneyStep === 4 && 'TR-102 has arrived at Oakridge International School Bay 3.'}
+                    {activeJourneyStep === 4 && 'TR-102 has arrived at Olive Mount Bay 3.'}
                   </p>
                 </div>
               </div>
@@ -1177,7 +1177,7 @@ export default function TinyRideLandingPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-xs text-slate-500">Child Commute</p>
-                        <h4 className="font-bold text-slate-900 text-sm">Tanvik — Morning School Trip</h4>
+                        <h4 className="font-bold text-slate-900 text-sm">Aarav — Morning School Trip</h4>
                       </div>
                       <span className="px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-bold flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
@@ -1229,7 +1229,7 @@ export default function TinyRideLandingPage() {
                       </div>
                       <div className="flex justify-between text-slate-600">
                         <span>School Route:</span>
-                        <strong className="text-slate-900">Route 04 (Oakridge International)</strong>
+                        <strong className="text-slate-900">Route 04 (Olive Mount)</strong>
                       </div>
                     </div>
                   </div>
@@ -1244,7 +1244,7 @@ export default function TinyRideLandingPage() {
                       </p>
                     </div>
                     <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-lg flex items-center justify-between text-xs text-amber-900 font-medium">
-                      <span>Mark Tanvik as absent for today?</span>
+                      <span>Mark Aarav as absent for today?</span>
                       <button className="cursor-pointer px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded font-bold text-[11px] btn-micro">
                         Notify Driver
                       </button>
@@ -1269,7 +1269,7 @@ export default function TinyRideLandingPage() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     School Transport Dashboard
                   </span>
-                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">Oakridge International Campus Bay</h3>
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">Olive Mount Campus Bay</h3>
                 </div>
                 <span className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 shrink-0">
                   <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
@@ -1424,7 +1424,7 @@ export default function TinyRideLandingPage() {
                 <div className="mt-4 bg-slate-900 rounded-xl p-4 border border-slate-800 space-y-2">
                   <span className="text-[10px] uppercase font-bold text-slate-400">Next Scheduled Stop</span>
                   <h4 className="font-bold text-base text-white">Rainbow Vistas Gate 2</h4>
-                  <p className="text-xs text-slate-400">Student: Tanvik Mathurthi (Grade 3A)</p>
+                  <p className="text-xs text-slate-400">Student: Aarav Sharma (Grade 3A)</p>
                   <div className="pt-1 flex items-center justify-between text-xs">
                     <span className="text-slate-400">SafeKey Token:</span>
                     <strong className="font-mono text-emerald-400 font-bold bg-slate-800 px-2 py-0.5 rounded">
@@ -1884,7 +1884,7 @@ export default function TinyRideLandingPage() {
                       onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
                       className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent text-xs bg-white"
                     >
-                      <option value="Oakridge International School">Oakridge International School, Gachibowli</option>
+                      <option value="Olive Mount">Olive Mount, Gachibowli</option>
                       <option value="Delhi Public School">Delhi Public School (DPS), Khajaguda</option>
                       <option value="Chirec International School">Chirec International School, Kondapur</option>
                       <option value="Silver Oaks International">Silver Oaks International School, Bachupally</option>

@@ -36,7 +36,7 @@ describe('School Portal Pipeline (e2e)', () => {
           }
           req.schoolContext = {
             schoolUserId: 'staff-uuid-1',
-            schoolId: 'school-uuid-oakridge',
+            schoolId: 'school-uuid-olive-mount',
             staffRole: 'school_admin',
           };
           return true;
@@ -96,14 +96,14 @@ describe('School Portal Pipeline (e2e)', () => {
       jest.spyOn(authService, 'validateToken').mockResolvedValueOnce({
         userId: 'staff-user-1',
         phoneE164: '+919876543210',
-        email: 'staff@oakridge.edu',
+        email: 'staff@olivemount.edu',
         roles: ['school_staff'],
         isPrivileged: false,
       });
 
       jest.spyOn(schoolsService, 'getMySchool').mockResolvedValueOnce({
-        id: 'school-uuid-oakridge',
-        name: 'Oakridge International School',
+        id: 'school-uuid-olive-mount',
+        name: 'Olive Mount',
         address: 'Khajaguda, Hyderabad',
         contactPhone: '+914023456789',
         amArriveBy: '08:15:00',
@@ -117,7 +117,7 @@ describe('School Portal Pipeline (e2e)', () => {
         .set('Authorization', 'Bearer mock-staff-token');
 
       expect(res.status).toBe(200);
-      expect(res.body.name).toBe('Oakridge International School');
+      expect(res.body.name).toBe('Olive Mount');
       expect(res.body.staffRole).toBe('school_admin');
     });
   });
@@ -127,7 +127,7 @@ describe('School Portal Pipeline (e2e)', () => {
       jest.spyOn(authService, 'validateToken').mockResolvedValueOnce({
         userId: 'staff-user-1',
         phoneE164: '+919876543210',
-        email: 'staff@oakridge.edu',
+        email: 'staff@olivemount.edu',
         roles: ['school_staff'],
         isPrivileged: false,
       });
@@ -157,7 +157,7 @@ describe('School Portal Pipeline (e2e)', () => {
       jest.spyOn(authService, 'validateToken').mockResolvedValueOnce({
         userId: 'staff-user-1',
         phoneE164: '+919876543210',
-        email: 'staff@oakridge.edu',
+        email: 'staff@olivemount.edu',
         roles: ['school_staff'],
         isPrivileged: false,
       });
@@ -178,7 +178,7 @@ describe('School Portal Pipeline (e2e)', () => {
       jest.spyOn(authService, 'validateToken').mockResolvedValueOnce({
         userId: 'staff-user-1',
         phoneE164: '+919876543210',
-        email: 'staff@oakridge.edu',
+        email: 'staff@olivemount.edu',
         roles: ['school_staff'],
         isPrivileged: false,
       });

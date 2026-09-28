@@ -36,7 +36,7 @@ export default function OverviewDashboardPage() {
     {
       tripId: 'TRIP-HYD-101',
       routeCode: 'M-01',
-      schoolName: 'Oakridge International',
+      schoolName: 'Olive Mount',
       driverName: 'Suresh Kumar',
       driverPhone: '+919876543201',
       vehicleNumber: 'TS09-TR-101',
@@ -64,7 +64,7 @@ export default function OverviewDashboardPage() {
     {
       tripId: 'TRIP-HYD-103',
       routeCode: 'M-02',
-      schoolName: 'Oakridge International',
+      schoolName: 'Olive Mount',
       driverName: 'Venkatesh Rao',
       driverPhone: '+919876543203',
       vehicleNumber: 'TS09-TR-105',

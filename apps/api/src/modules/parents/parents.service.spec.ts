@@ -91,7 +91,7 @@ describe('ParentsService', () => {
             select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
             maybeSingle: jest.fn().mockResolvedValue({
-              data: { id: 'school-1', name: 'Oakridge International' },
+              data: { id: 'school-1', name: 'Olive Mount' },
             }),
           };
         }

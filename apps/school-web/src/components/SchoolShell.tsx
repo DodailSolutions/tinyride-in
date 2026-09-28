@@ -81,8 +81,8 @@ export function SchoolShell({ children }: SchoolShellProps) {
               <span className="material-symbols-outlined text-base">person</span>
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-bold font-headline text-primary-text truncate">Oakridge Staff Officer</p>
-              <p className="text-[11px] text-secondary-text truncate">Oakridge Gachibowli</p>
+              <p className="text-xs font-bold font-headline text-primary-text truncate">Olive Mount Staff Officer</p>
+              <p className="text-[11px] text-secondary-text truncate">Olive Mount Gachibowli</p>
             </div>
           </div>
         </div>
@@ -97,7 +97,7 @@ export function SchoolShell({ children }: SchoolShellProps) {
               <span className="material-symbols-outlined text-lg">school</span>
             </div>
             <span className="text-base lg:text-lg font-bold font-headline text-primary-text">
-              Oakridge International School Portal
+              Olive Mount School Portal
             </span>
             <span className="bg-sun-gold/15 text-amber-800 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-sun-gold/30">
               Campus Gate 2

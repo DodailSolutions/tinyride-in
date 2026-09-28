@@ -544,11 +544,11 @@ export default function ParentsLandingPage() {
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#006B2F] font-bold text-sm flex items-center justify-center">
-                      TM
+                      AS
                     </div>
                     <div>
-                      <div className="text-xs sm:text-sm font-bold text-slate-900">Tanvik Mathurthi</div>
-                      <div className="text-[11px] text-slate-500">Grade 3-A • Oakridge International</div>
+                      <div className="text-xs sm:text-sm font-bold text-slate-900">Aarav Sharma</div>
+                      <div className="text-[11px] text-slate-500">Grade 3A • Olive Mount</div>
                     </div>
                   </div>
 
@@ -840,8 +840,8 @@ export default function ParentsLandingPage() {
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">
                   TODAY&apos;S RIDE • {activeTab === 'morning' ? 'MORNING PICKUP' : 'AFTERNOON RETURN'}
                 </span>
-                <div className="text-2xl font-extrabold text-white mt-1">Tanvik Mathurthi</div>
-                <div className="text-xs text-slate-400 mt-0.5">Oakridge International • Route 14A Express</div>
+                <div className="text-2xl font-extrabold text-white mt-1">Aarav Sharma</div>
+                <div className="text-xs text-slate-400 mt-0.5">Olive Mount • Route 04</div>
               </div>
 
               <div className="flex items-center gap-2">

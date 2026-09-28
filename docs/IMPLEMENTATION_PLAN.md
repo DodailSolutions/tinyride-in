@@ -200,7 +200,7 @@ flowchart LR
 
 **Deliverables:**
 1. **School Web Application (`apps/school-web`):**
-   - [x] School staff portal shell with Oakridge International School branding, role switcher (`principal`, `transport_coordinator`, `gate_security`), and live terminal status indicators.
+   - [x] School staff portal shell with Olive Mount branding, role switcher (`principal`, `transport_coordinator`, `gate_security`), and live terminal status indicators.
    - [x] Responsive navigation bar with quick routes to Arrivals, Releases, Roster, and Discrepancies.
 2. **Portal Features & Desks:**
    - [x] **School Overview (`/`):** Summary metrics for inbound transit vans, morning arrival intake count, pending afternoon releases, and gate safety discrepancies.

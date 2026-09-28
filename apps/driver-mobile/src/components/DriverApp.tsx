@@ -53,7 +53,7 @@ export function DriverApp() {
     },
     {
       id: 's-3',
-      name: 'Tanvik Sharma',
+      name: 'Aarav Sharma',
       grade: 'Grade 3A',
       stopName: 'Villa 14, Rainbow Meadows',
       guardianName: 'Priya Sharma',

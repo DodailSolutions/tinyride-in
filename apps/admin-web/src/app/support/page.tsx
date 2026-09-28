@@ -49,7 +49,7 @@ export default function SupportDeskPage() {
     {
       id: 'tkt-3',
       reference: 'TKT-20260922-9K2L1M',
-      requesterName: 'Meera Rao (Oakridge)',
+      requesterName: 'Meera Rao (Olive Mount)',
       requesterPhone: '+91 91234 56789',
       requesterRole: 'School Marshal',
       category: 'Gate Intake Inquiry',

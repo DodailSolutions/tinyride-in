@@ -96,7 +96,7 @@ export default function SchoolOverviewPage() {
   const [studentRoster] = useState<StudentAttendance[]>([
     {
       id: 'st-1',
-      name: 'Tanvik Sharma',
+      name: 'Aarav Sharma',
       grade: 'Grade 3A',
       vehicleNumber: 'TS09-TR-102',
       routeCode: 'M-04',
@@ -185,7 +185,7 @@ export default function SchoolOverviewPage() {
               School Gate Console • Gate 2 West Bay
             </div>
             <h1 className="text-xl font-bold text-slate-900 mt-1">
-              Oakridge International School, Khajaguda
+              Olive Mount, Gachibowli
             </h1>
             <p className="text-xs text-slate-600 mt-0.5">
               Live intake monitoring, SafeKey student handover verification, and loading bay control.

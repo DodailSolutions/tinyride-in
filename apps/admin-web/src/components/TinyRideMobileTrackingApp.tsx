@@ -107,7 +107,7 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
           etaMinutes: 0,
           etaLabel: '8:35 AM',
           statusBadge: 'AT GATE',
-          subText: 'Tanvik boarding TR-102',
+          subText: 'Aarav boarding TR-102',
           remainingDistance: 'Gate 2',
           locationSubtext: 'Rainbow Vistas Gate 2',
           speed: 0,
@@ -140,7 +140,7 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
           etaMinutes: 0,
           etaLabel: 'Arrived',
           statusBadge: 'ARRIVED',
-          subText: 'Arrived at Oakridge School',
+          subText: 'Arrived at Olive Mount School',
           remainingDistance: 'Bay 3',
           locationSubtext: 'Drop-off Complete • Bay 3',
           speed: 0,
@@ -220,8 +220,8 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: "Tanvik's School Ride Live Status",
-        text: 'Tracking Tanvik on TinyRide Route 04 (Oakridge International). SafeKey: 482-910.',
+        title: "Aarav's School Ride Live Status",
+        text: 'Tracking Aarav on TinyRide Route 04 (Olive Mount). SafeKey: 482-910.',
         url: window.location.href,
       }).catch(() => {});
     } else {
@@ -237,9 +237,9 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <h3 className="font-bold text-slate-900 text-sm">Tanvik Mathurthi</h3>
+            <h3 className="font-bold text-slate-900 text-sm">Aarav Sharma</h3>
           </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Grade 3A • Route 04 (Oakridge)</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">Grade 3A • Route 04 (Olive Mount)</p>
         </div>
         {isOnline ? (
           <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200/80">
@@ -389,7 +389,7 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
               🏫
             </text>
             <text x="0" y="-10" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0F172A">
-              Oakridge
+              Olive Mount
             </text>
           </g>
 

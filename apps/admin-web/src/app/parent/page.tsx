@@ -504,7 +504,7 @@ export default function ParentDashboardPage() {
 
                 <div className="absolute right-[4%] top-[62%] -translate-y-1/2 bg-rose-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-md flex items-center gap-1">
                   <Bus className="w-3 h-3" />
-                  <span>Oakridge Campus</span>
+                  <span>Olive Mount Campus</span>
                 </div>
 
                 {/* Moving Vehicle Avatar Pin with Calm Pulsing Ring */}
@@ -537,7 +537,7 @@ export default function ParentDashboardPage() {
                   </div>
                   <span className="text-slate-300">|</span>
                   <div className="text-slate-600 font-medium">
-                    Heading: <strong className="text-slate-900">East to Oakridge</strong>
+                    Heading: <strong className="text-slate-900">East to Olive Mount</strong>
                   </div>
                 </div>
 

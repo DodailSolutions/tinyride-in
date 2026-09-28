@@ -112,7 +112,7 @@ export default function GateExceptionsPage() {
             Gate Discrepancy Desk
           </h1>
           <p className="text-secondary-text text-sm mt-1">
-            Oakridge International School • Real-time incident logging, driver plate mismatches, and instant Central Ops dispatch escalation.
+            Olive Mount • Real-time incident logging, driver plate mismatches, and instant Central Ops dispatch escalation.
           </p>
         </div>
 

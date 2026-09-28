@@ -5,7 +5,7 @@ import { RADIUS_TOKENS, SHADOW_TOKENS } from '@tinyride/design-system';
 export interface TripCardProps {
   childName: string;
   tripType: 'pickup' | 'dropoff';
-  statusHeading: string; // e.g. "Pickup in 12 min", "Tanvik has boarded"
+  statusHeading: string; // e.g. "Pickup in 12 min", "Aarav has boarded"
   statusSubtext: string;  // e.g. "ETA: 8:35 AM • Vehicle TR-102"
   stateKey: SafetyStateKey;
   vehicleNumber: string;

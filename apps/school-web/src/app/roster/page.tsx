@@ -155,13 +155,13 @@ export default function StudentRosterPage() {
             Enrolled Student Transport Roster
           </h1>
           <p className="text-secondary-text text-sm mt-1">
-            Oakridge International School • Complete commuter profiles, guardian contacts, allergies, and bus route assignments.
+            Olive Mount • Complete commuter profiles, guardian contacts, allergies, and bus route assignments.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => alert('Exporting verified transport roster as CSV for Oakridge Gate Records...')}
+            onClick={() => alert('Exporting verified transport roster as CSV for Olive Mount Gate Records...')}
             className="flex items-center gap-2 bg-surface-container-lowest border border-surface-container-high/60 hover:bg-surface-container-low text-primary-text px-4 py-2.5 rounded-xl text-xs font-bold font-headline shadow-xs transition-all"
           >
             <span className="material-symbols-outlined text-emerald-600 text-base">download</span>
