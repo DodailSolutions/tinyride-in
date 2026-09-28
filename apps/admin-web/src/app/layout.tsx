@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { AdminShell } from '@/components/AdminShell';
 
 export const viewport: Viewport = {
   themeColor: '#006B2F',
@@ -236,7 +235,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface font-body text-on-surface antialiased">
-        <AdminShell>{children}</AdminShell>
+        {children}
       </body>
     </html>
   );

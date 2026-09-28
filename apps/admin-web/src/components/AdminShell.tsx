@@ -14,21 +14,11 @@ export function AdminShell({ children }: AdminShellProps) {
     'admin',
   );
 
-  // If on public consumer landing page or parent portal flow, bypass admin sidebar
-  if (
-    pathname === '/' ||
-    pathname === '/landing' ||
-    pathname === '/parents' ||
-    pathname?.startsWith('/parent')
-  ) {
-    return <>{children}</>;
-  }
-
   const navItems = [
     { label: 'Overview', href: '/ops', icon: 'dashboard' },
     { label: 'Driver Verification', href: '/kyc', icon: 'verified_user' },
     { label: 'Live Fleet Monitor', href: '/trips', icon: 'map' },
-    { label: 'Safety Exceptions', href: '/safety', icon: 'warning' },
+    { label: 'Safety Exceptions', href: '/ops/safety', icon: 'warning' },
     { label: 'Finance & Payouts', href: '/finance', icon: 'payments' },
     { label: 'Support Desk', href: '/support', icon: 'support_agent' },
   ];
