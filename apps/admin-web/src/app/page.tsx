@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { LiveVehicleTracker } from '@/components/LiveVehicleTracker';
+import { TinyRideIPhone } from '@/components/TinyRideIPhone';
 
 // Lightweight, performant Scroll-Reveal Component using native IntersectionObserver
 function ScrollReveal({
@@ -29,7 +29,7 @@ function ScrollReveal({
           observer.disconnect();
         }
       },
-      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.08, rootMargin: '0px 0px -30px 0px' }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -39,7 +39,7 @@ function ScrollReveal({
     <div
       ref={ref}
       style={{
-        transitionDuration: '600ms',
+        transitionDuration: '700ms',
         transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
         transitionDelay: `${delay}ms`,
         transform: isVisible ? 'translateY(0) scale(1)' : `translateY(${yOffset}px) scale(0.99)`,
@@ -58,18 +58,12 @@ export default function TinyRideLandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
 
-  // Hero subtle telemetry alternation (simulates live GPS update without layout jump)
-  const [heroEta, setHeroEta] = useState<'7 min' | '6 min'>('7 min');
-
   // Journey Stepper state + auto-advance demonstration loop
   const [activeJourneyStep, setActiveJourneyStep] = useState(2); // 0-indexed: 2 = Child boards
   const [userInteractedJourney, setUserInteractedJourney] = useState(false);
 
   // Parent tab state
   const [activeParentTab, setActiveParentTab] = useState<'status' | 'driver' | 'absence'>('status');
-
-  // Driver in-cab demo workflow
-  const [activeDriverWorkflow, setActiveDriverWorkflow] = useState<number>(2); // 0: Start, 1: Navigate, 2: Pickup, 3: Boarded, 4: Complete
 
   // Early access form
   const [formData, setFormData] = useState({
@@ -86,14 +80,6 @@ export default function TinyRideLandingPage() {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Subtle telemetry loop for hero (swaps ETA calmly every 9 seconds)
-  useEffect(() => {
-    const telemetryInterval = setInterval(() => {
-      setHeroEta((prev) => (prev === '7 min' ? '6 min' : '7 min'));
-    }, 9000);
-    return () => clearInterval(telemetryInterval);
   }, []);
 
   // Journey auto-advance demonstration loop (pauses if user clicked)
@@ -130,28 +116,28 @@ export default function TinyRideLandingPage() {
     },
     {
       num: '02',
-      title: 'Vehicle approaches pickup',
+      title: 'Approaching your stop',
       time: '07:32 AM',
       description: 'Parents receive an automated alert when the vehicle is 500 meters away — no rushing, no waiting.',
       badge: '5 min away',
     },
     {
       num: '03',
-      title: 'Child boards',
+      title: 'Child boards safely',
       time: '07:36 AM',
-      description: 'The driver verifies boarding at the stop. Parents get an instant boarding confirmation on their phone.',
+      description: 'The driver verifies boarding at the stop with SafeKey token 482-910. Instant confirmation on your phone.',
       badge: 'SafeKey Confirmed',
     },
     {
       num: '04',
-      title: 'Child is on the way',
+      title: 'En route to school',
       time: '07:37 – 08:02 AM',
       description: 'Real-time GPS follows the vehicle along its designated path to school with live ETA updates.',
       badge: 'In Transit',
     },
     {
       num: '05',
-      title: 'Arrives at school',
+      title: 'Arrives at campus',
       time: '08:04 AM',
       description: 'Vehicle reaches the campus drop-off bay. Parents and school transport staff receive arrival confirmation.',
       badge: 'School Gate Verified',
@@ -160,19 +146,11 @@ export default function TinyRideLandingPage() {
 
   const currentStep = journeySteps[activeJourneyStep] ?? journeySteps[0]!;
 
-  const driverStages = [
-    { id: 0, label: 'Start Route', status: 'Depot 07:15 AM', note: 'Pre-trip checklist verified' },
-    { id: 1, label: 'Navigate', status: 'En route to Stop 4', note: 'Turn-by-turn school route guidance' },
-    { id: 2, label: 'Stop Arrival', status: 'Rainbow Vistas Gate 2', note: 'Approaching student pickup' },
-    { id: 3, label: 'Mark Boarded', status: 'SafeKey: 482-910', note: 'One-tap boarding confirmation' },
-    { id: 4, label: 'School Drop-off', status: 'Oakridge Bay 3', note: 'Campus arrival verified' },
-  ];
-
   return (
     <div className="min-h-screen bg-[#FAFAF9] text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
-      {/* 1. STICKY MODERN NAVIGATION WITH SMOOTH BLUR TRANSITION */}
+      {/* 1. STICKY MODERN NAVIGATION */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 animate-staged-1 ${
+        className={`sticky top-0 z-50 transition-all duration-300 ${
           scrolled
             ? 'bg-white/95 backdrop-blur-md shadow-xs py-3 border-b border-slate-200/80'
             : 'bg-white/80 backdrop-blur-xs py-4 border-b border-slate-200/40'
@@ -189,7 +167,7 @@ export default function TinyRideLandingPage() {
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-slate-600">
+          <nav className="hidden md:flex items-center gap-8 text-[13.5px] font-medium text-slate-600">
             <a href="#how-it-works" className="hover:text-emerald-800 transition-colors duration-150">
               How It Works
             </a>
@@ -202,8 +180,8 @@ export default function TinyRideLandingPage() {
             <a href="#for-drivers" className="hover:text-emerald-800 transition-colors duration-150">
               For Drivers
             </a>
-            <a href="#safety" className="hover:text-emerald-800 transition-colors duration-150">
-              Safety
+            <a href="#trust" className="hover:text-emerald-800 transition-colors duration-150">
+              Trust & Safety
             </a>
           </nav>
 
@@ -271,11 +249,11 @@ export default function TinyRideLandingPage() {
               For Drivers
             </a>
             <a
-              href="#safety"
+              href="#trust"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-800"
             >
-              Safety
+              Trust & Safety
             </a>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
               <Link
@@ -299,20 +277,19 @@ export default function TinyRideLandingPage() {
         )}
       </header>
 
-      {/* 2. HERO SECTION — STAGED PAGE ENTRY & PURPOSEFUL MOTION */}
-      <section className="relative pt-12 pb-20 sm:pt-16 sm:pb-28 lg:pt-20 lg:pb-32 overflow-hidden bg-gradient-to-b from-white via-[#FAFAF9] to-[#FAFAF9]">
-        {/* Subtle decorative background road geometry with slow drift */}
-        <div className="absolute inset-0 pointer-events-none opacity-30">
-          <svg className="w-full h-full" viewBox="0 0 1440 800" fill="none">
+      {/* 2. HERO SECTION — APPLE-STYLE PRODUCT LAUNCH WITH AUTHENTIC IPHONE */}
+      <section className="relative pt-12 pb-24 sm:pt-16 sm:pb-32 lg:pt-20 lg:pb-36 overflow-hidden bg-gradient-to-b from-white via-[#FAFAF9] to-[#FAFAF9]">
+        {/* Subtle, ambient background road curvature */}
+        <div className="absolute inset-0 pointer-events-none opacity-25">
+          <svg className="w-full h-full" viewBox="0 0 1440 900" fill="none">
             <path
-              d="M-100 200 C300 200, 450 600, 850 550 C1250 500, 1400 300, 1600 350"
+              d="M -100 250 C 300 250, 480 650, 900 600 C 1300 550, 1420 300, 1600 350"
               stroke="#E2E8F0"
               strokeWidth="2.5"
               strokeDasharray="6 8"
-              className="animate-ambient-dash"
             />
             <path
-              d="M100 100 C500 120, 700 450, 1100 400 C1300 380, 1500 200, 1650 220"
+              d="M 100 120 C 500 140, 720 500, 1150 440 C 1350 410, 1520 220, 1680 240"
               stroke="#CBD5E1"
               strokeWidth="1.5"
             />
@@ -321,30 +298,30 @@ export default function TinyRideLandingPage() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-            {/* Left: Editorial Content with Staged Entrances */}
+            {/* Left: Editorial Content with Apple-style Clarity & Restraint */}
             <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
-              {/* Eyebrow: Stage 2 */}
-              <div className="animate-staged-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wider uppercase">
+              {/* Eyebrow */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wider uppercase">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
                 School Transportation, Reimagined
               </div>
 
-              {/* Large Headline: Stage 3 */}
-              <h1 className="animate-staged-3 text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-slate-900 leading-[1.08]">
+              {/* Main Headline */}
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.6rem] font-bold tracking-tight text-slate-900 leading-[1.08]">
                 School rides, <br />
                 <span className="text-[#006B2F]">without the worry.</span>
               </h1>
 
-              {/* Supporting Copy: Stage 4 */}
-              <p className="animate-staged-4 text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
-                One simple experience for parents, schools and drivers — from morning pickup to safe arrival at the campus gate.
+              {/* Supporting Copy */}
+              <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                See the ride. Know the driver. Know when your child arrives. One connected, calm experience for parents, schools and drivers.
               </p>
 
-              {/* CTAs: Stage 5 */}
-              <div className="animate-staged-5 pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
+              {/* CTAs */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#006B2F] hover:bg-[#005525] text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow-md btn-micro group"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-[#006B2F] hover:bg-[#005525] text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow-md btn-micro group"
                 >
                   <span>Get Started</span>
                   <svg
@@ -358,85 +335,36 @@ export default function TinyRideLandingPage() {
                 </button>
                 <a
                   href="#how-it-works"
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3.5 text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 text-sm font-semibold rounded-lg btn-micro"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 text-sm font-semibold rounded-lg btn-micro"
                 >
-                  See How TinyRide Works
+                  See how it works
                 </a>
               </div>
 
-              {/* Understated Trust Note: Stage 6 */}
-              <div className="animate-staged-6 pt-3 flex items-center justify-center lg:justify-start gap-4 text-xs text-slate-500 font-medium">
+              {/* Factual, quiet reassurance */}
+              <div className="pt-4 flex items-center justify-center lg:justify-start gap-4 text-xs text-slate-500 font-medium">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Track the ride
+                  Verified driver
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Know the status
+                  SafeKey boarding
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Stay informed
+                  Live GPS updates
                 </span>
               </div>
             </div>
 
-            {/* Right: Premium Living Smartphone Composition: Stage 7 */}
-            <div className="lg:col-span-6 relative flex justify-center lg:justify-end animate-staged-7">
-              {/* Contextual Status Card behind/beside phone with subtle hover response */}
-              <div className="hidden sm:block absolute -top-4 -left-6 z-20 bg-white/95 border border-slate-200/90 rounded-xl p-3.5 shadow-md shadow-slate-200/60 max-w-[210px] transition-transform duration-300 hover:-translate-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-600 animate-ping"></div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                    Live Route 04
-                  </span>
-                </div>
-                <p className="mt-1 text-xs font-semibold text-slate-800">Madhapur to Oakridge</p>
-                <p className="text-[11px] text-slate-500">Stop 4 of 6 • On schedule</p>
-              </div>
-
-              {/* The Smartphone Mockup Frame */}
-              <div className="relative w-[310px] sm:w-[330px] rounded-[44px] bg-slate-900 p-3 shadow-2xl shadow-slate-900/15 ring-1 ring-slate-800/10 transition-transform duration-500 hover:scale-[1.01]">
-                {/* Speaker slit & Dynamic Island */}
-                <div className="absolute top-5 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-950 rounded-full z-30 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-800"></div>
-                </div>
-
-                {/* Inner Screen */}
-                <div className="relative rounded-[36px] bg-white overflow-hidden text-slate-800 text-xs">
-                  {/* Status Bar */}
-                  <div className="pt-3 px-6 pb-2 flex justify-between items-center text-[10px] font-semibold text-slate-600 bg-slate-50 border-b border-slate-100">
-                    <span>8:28 AM</span>
-                    <div className="flex items-center gap-1.5 text-slate-500">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z" />
-                      </svg>
-                      <span>5G</span>
-                      <div className="w-4 h-2 border border-slate-500 rounded-xs p-0.5 flex items-center">
-                        <div className="w-2.5 h-1 bg-slate-600 rounded-2xs"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* App Header */}
-                  <div className="px-4 py-2.5 bg-white border-b border-slate-100 flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span className="font-bold text-slate-900 text-xs">Tanvik’s Morning Ride</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500">Grade 3A • Route 04 (Oakridge)</p>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-semibold text-[10px] border border-emerald-200/50">
-                      LIVE TRACKING
-                    </span>
-                  </div>
-
-                  {/* REAL-TIME VEHICLE TRACKING ENGINE */}
-                  <LiveVehicleTracker />
-                </div>
+            {/* Right: Authentic iPhone Showcase with Real-Time Smooth Traversal */}
+            <div className="lg:col-span-6 flex justify-center lg:justify-end">
+              <div className="relative">
+                {/* Authentic Modern iPhone Product Component */}
+                <TinyRideIPhone mode="parent_tracking" />
               </div>
             </div>
           </div>
@@ -444,7 +372,7 @@ export default function TinyRideLandingPage() {
       </section>
 
       {/* 3. REFINED TRUST & ECOSYSTEM STRIP */}
-      <section className="border-y border-slate-200 bg-white py-6">
+      <section className="border-y border-slate-200 bg-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-100">
             {/* Parents */}
@@ -455,7 +383,7 @@ export default function TinyRideLandingPage() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">For Parents</h4>
-                  <p className="text-xs text-slate-500">Real-time visibility & boarding peace of mind</p>
+                  <p className="text-xs text-slate-500">Live visibility, verified driver, and boarding peace of mind</p>
                 </div>
               </div>
             </ScrollReveal>
@@ -468,7 +396,7 @@ export default function TinyRideLandingPage() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">For Schools</h4>
-                  <p className="text-xs text-slate-500">Transport coordination & bus bay oversight</p>
+                  <p className="text-xs text-slate-500">Complete fleet oversight, gate pacing & bus bay allocation</p>
                 </div>
               </div>
             </ScrollReveal>
@@ -481,7 +409,7 @@ export default function TinyRideLandingPage() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">For Drivers</h4>
-                  <p className="text-xs text-slate-500">Simple daily workflow & zero behind-the-wheel calls</p>
+                  <p className="text-xs text-slate-500">Clear stop sequence & zero behind-the-wheel phone calls</p>
                 </div>
               </div>
             </ScrollReveal>
@@ -490,7 +418,7 @@ export default function TinyRideLandingPage() {
       </section>
 
       {/* 4. EMOTIONAL PROBLEM SECTION — EDITORIAL STORYTELLING */}
-      <section className="py-20 lg:py-28 bg-[#FAFAF9]">
+      <section className="py-24 lg:py-32 bg-[#FAFAF9]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-10">
           <ScrollReveal>
             <div className="space-y-4">
@@ -501,45 +429,45 @@ export default function TinyRideLandingPage() {
                 You shouldn’t have to wonder where the school ride is.
               </h2>
               <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                Every morning and afternoon, parents experience the same familiar stress. Standing at the gate in the sun, calling uncontactable drivers, and waiting for updates that never come.
+                Every morning and afternoon, parents experience the same familiar stress. Standing at the gate in the heat, calling uncontactable drivers, and waiting for updates that never come.
               </p>
             </div>
           </ScrollReveal>
 
           {/* 3 Relatable Questions with Staggered Scroll Reveal */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-4">
             <ScrollReveal delay={0}>
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 text-left shadow-2xs hover:shadow-sm transition-all duration-200 hover:-translate-y-0.5">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 text-left shadow-2xs hover:shadow-sm transition-all duration-200 hover:-translate-y-0.5 h-full">
                 <div className="text-emerald-700 text-xl font-bold mb-2">01</div>
                 <p className="text-base font-semibold text-slate-900 mb-1">
                   “Is the vehicle on the way?”
                 </p>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Wondering whether the bus is stuck in traffic or running early.
+                  Wondering whether the bus is stuck in traffic, running early, or delayed at an earlier stop.
                 </p>
               </div>
             </ScrollReveal>
 
             <ScrollReveal delay={70}>
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 text-left shadow-2xs hover:shadow-sm transition-all duration-200 hover:-translate-y-0.5">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 text-left shadow-2xs hover:shadow-sm transition-all duration-200 hover:-translate-y-0.5 h-full">
                 <div className="text-emerald-700 text-xl font-bold mb-2">02</div>
                 <p className="text-base font-semibold text-slate-900 mb-1">
                   “Has my child boarded?”
                 </p>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  No confirmation whether they safely got into the vehicle or were missed.
+                  No direct confirmation whether they safely stepped onto the bus or were accidentally missed.
                 </p>
               </div>
             </ScrollReveal>
 
             <ScrollReveal delay={140}>
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 text-left shadow-2xs hover:shadow-sm transition-all duration-200 hover:-translate-y-0.5">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 text-left shadow-2xs hover:shadow-sm transition-all duration-200 hover:-translate-y-0.5 h-full">
                 <div className="text-emerald-700 text-xl font-bold mb-2">03</div>
                 <p className="text-base font-semibold text-slate-900 mb-1">
                   “Did they reach school?”
                 </p>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Waiting until evening to know if morning drop-off went smoothly.
+                  Waiting until the evening to know if morning drop-off went smoothly at the campus gate.
                 </p>
               </div>
             </ScrollReveal>
@@ -549,7 +477,7 @@ export default function TinyRideLandingPage() {
           <ScrollReveal delay={180}>
             <div className="pt-6 border-t border-slate-200 max-w-xl mx-auto">
               <p className="text-lg font-semibold text-slate-900">
-                TinyRide keeps you in the loop.
+                TinyRide keeps you quietly in the loop.
               </p>
               <p className="mt-1 text-sm text-slate-600">
                 Clear, real-time transportation intelligence that replaces guessing with calm confidence.
@@ -560,7 +488,7 @@ export default function TinyRideLandingPage() {
       </section>
 
       {/* 5. PRODUCT SHOWCASE — THE HERO PRODUCT MOMENT */}
-      <section className="py-20 lg:py-28 bg-white border-y border-slate-200 overflow-hidden">
+      <section className="py-24 lg:py-32 bg-white border-y border-slate-200 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
@@ -571,7 +499,7 @@ export default function TinyRideLandingPage() {
                 Everything you need to know. At a glance.
               </h2>
               <p className="text-base text-slate-600 max-w-xl mx-auto">
-                No complicated menus or cluttered settings. Open the app and instantly see your child’s ride status, verified driver, and precise arrival time.
+                Open the app and see exactly what matters. No guesswork, no phone calls, and no confusing menus.
               </p>
             </div>
           </ScrollReveal>
@@ -579,10 +507,10 @@ export default function TinyRideLandingPage() {
           {/* Central Product Showcase with 3 Concise Callouts */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             {/* Left 2 Callouts */}
-            <div className="lg:col-span-3 space-y-8 order-2 lg:order-1">
+            <div className="lg:col-span-3 space-y-10 order-2 lg:order-1">
               <ScrollReveal delay={50}>
                 <div className="space-y-2 text-center lg:text-left group">
-                  <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-sm transition-transform duration-200 group-hover:scale-105">
+                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-xs transition-transform duration-200 group-hover:scale-105">
                     1
                   </div>
                   <h3 className="text-lg font-bold text-slate-900">Live location</h3>
@@ -594,143 +522,40 @@ export default function TinyRideLandingPage() {
 
               <ScrollReveal delay={120}>
                 <div className="space-y-2 text-center lg:text-left group">
-                  <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-sm transition-transform duration-200 group-hover:scale-105">
+                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-xs transition-transform duration-200 group-hover:scale-105">
                     2
                   </div>
                   <h3 className="text-lg font-bold text-slate-900">Child status</h3>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Instant notification the moment your child steps onto the vehicle and boarding is confirmed.
+                    Instant notification the moment your child steps onto the vehicle and SafeKey boarding is confirmed.
                   </p>
                 </div>
               </ScrollReveal>
             </div>
 
-            {/* Middle: Prominent Living Mobile App UI */}
+            {/* Middle: Authentic iPhone Display */}
             <div className="lg:col-span-6 flex justify-center order-1 lg:order-2">
               <ScrollReveal delay={80} yOffset={24}>
-                <div className="w-[320px] sm:w-[350px] rounded-[48px] bg-slate-900 p-3.5 shadow-2xl shadow-slate-900/20 ring-1 ring-slate-800 transition-transform duration-500 hover:scale-[1.01]">
-                  {/* Dynamic island */}
-                  <div className="w-24 h-4 bg-slate-950 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-slate-800"></div>
-                  </div>
-
-                  <div className="bg-[#F8FAFC] rounded-[38px] overflow-hidden text-slate-800 text-xs">
-                    {/* Top Bar */}
-                    <div className="px-5 py-3 bg-white border-b border-slate-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-emerald-800 tracking-wider">
-                          Live Tracking
-                        </span>
-                        <div className="font-bold text-sm text-slate-900">Tanvik Mathurthi</div>
-                      </div>
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                        BOARDED
-                      </span>
-                    </div>
-
-                    {/* Interactive Living Map UI */}
-                    <div className="relative h-60 bg-slate-100">
-                      <svg className="w-full h-full object-cover" viewBox="0 0 320 220" fill="none">
-                        <rect width="320" height="220" fill="#F1F5F9" />
-                        <path d="M0 60 L320 60" stroke="#E2E8F0" strokeWidth="8" />
-                        <path d="M160 0 L160 220" stroke="#E2E8F0" strokeWidth="8" />
-                        <path d="M40 180 C120 160 140 100 240 90 L300 70" stroke="#CBD5E1" strokeWidth="6" />
-                        
-                        {/* Active Route with Progressive Draw */}
-                        <path
-                          d="M 50 180 L 160 180 L 160 90 L 260 90"
-                          stroke="#006B2F"
-                          strokeWidth="4"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="animate-route-draw-delayed"
-                        />
-
-                        {/* Pickup Point - Completed */}
-                        <circle cx="50" cy="180" r="5" fill="#006B2F" />
-                        <text x="50" y="200" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#006B2F">
-                          Home • Boarded 7:36 AM
-                        </text>
-
-                        {/* Gliding Vehicle Marker */}
-                        <g className="animate-vehicle-showcase">
-                          <circle cx="0" cy="0" r="14" stroke="#006B2F" strokeWidth="1.5" strokeDasharray="3 3" className="animate-marker-pulse" />
-                          <circle cx="0" cy="0" r="9" fill="#006B2F" />
-                          <text x="0" y="3" textAnchor="middle" fontSize="8" fill="white">🚐</text>
-                        </g>
-
-                        {/* Destination School */}
-                        <g transform="translate(260, 90)">
-                          <circle cx="0" cy="0" r="8" fill="#0F172A" />
-                          <text x="0" y="3" textAnchor="middle" fontSize="8" fill="white">🏫</text>
-                          <text x="0" y="-12" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0F172A">
-                            School Bay 3
-                          </text>
-                        </g>
-                      </svg>
-
-                      {/* Floating Status Banner */}
-                      <div className="absolute top-3 left-3 right-3 bg-white/95 backdrop-blur-xs rounded-xl p-2.5 border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                          <div>
-                            <p className="text-[11px] font-bold text-slate-900">En Route to School</p>
-                            <p className="text-[9px] text-slate-500">12 min remaining • 4.2 km</p>
-                          </div>
-                        </div>
-                        <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">
-                          ETA 8:04 AM
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Trip Details Card */}
-                    <div className="p-4 bg-white space-y-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">Driver</span>
-                        <span className="font-semibold text-slate-900">Ravi Kumar (TS09-TR-102)</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">Vehicle</span>
-                        <span className="font-semibold text-slate-900">Force Traveller 18-Seater</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">SafeKey Token</span>
-                        <span className="font-mono font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
-                          482-910
-                        </span>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-100 flex gap-2">
-                        <button className="flex-1 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] text-center transition-colors btn-micro">
-                          Call Driver
-                        </button>
-                        <button className="flex-1 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-[11px] text-center transition-colors btn-micro">
-                          Share Status
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <TinyRideIPhone mode="parent_tracking" />
               </ScrollReveal>
             </div>
 
             {/* Right 1 Callout + Reassurance */}
-            <div className="lg:col-span-3 space-y-8 order-3">
+            <div className="lg:col-span-3 space-y-10 order-3">
               <ScrollReveal delay={160}>
                 <div className="space-y-2 text-center lg:text-left group">
-                  <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-sm transition-transform duration-200 group-hover:scale-105">
+                  <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-xs transition-transform duration-200 group-hover:scale-105">
                     3
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900">Arrival updates</h3>
+                  <h3 className="text-lg font-bold text-slate-900">Arrival</h3>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Know the exact minute the vehicle passes the school gates and enters the safe drop-off zone.
+                    Know the exact minute the vehicle passes the campus gates and enters the safe school drop-off bay.
                   </p>
                 </div>
               </ScrollReveal>
 
               <ScrollReveal delay={200}>
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-left transition-all duration-200 hover:-translate-y-0.5">
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 text-left transition-all duration-200 hover:-translate-y-0.5">
                   <p className="text-xs font-semibold text-slate-800 mb-1">
                     “I no longer have to worry during my morning meetings.”
                   </p>
@@ -745,7 +570,7 @@ export default function TinyRideLandingPage() {
       </section>
 
       {/* 6. JOURNEY EXPERIENCE — TRANSPORTATION TIMELINE WITH PROGRESS LINE */}
-      <section id="how-it-works" className="py-20 lg:py-28 bg-[#FAFAF9]">
+      <section id="how-it-works" className="py-24 lg:py-32 bg-[#FAFAF9]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
@@ -842,7 +667,7 @@ export default function TinyRideLandingPage() {
                     {activeJourneyStep === 0 && 'Driver Ravi has started the morning route TR-102.'}
                     {activeJourneyStep === 1 && 'TR-102 is 500m away. Please proceed to the pickup gate.'}
                     {activeJourneyStep === 2 && 'Tanvik has safely boarded TR-102. SafeKey token confirmed.'}
-                    {activeJourneyStep === 3 && 'TR-102 is on Jubilee Hills Road No. 36. Speed: 32 km/h.'}
+                    {activeJourneyStep === 3 && 'TR-102 is on Jubilee Hills Road No. 36. Speed: 34 km/h.'}
                     {activeJourneyStep === 4 && 'TR-102 has arrived at Oakridge International School Bay 3.'}
                   </p>
                 </div>
@@ -853,7 +678,7 @@ export default function TinyRideLandingPage() {
       </section>
 
       {/* 7. PARENT EXPERIENCE — PEACE OF MIND */}
-      <section id="for-parents" className="py-20 lg:py-28 bg-white border-y border-slate-200">
+      <section id="for-parents" className="py-24 lg:py-32 bg-white border-y border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Content */}
@@ -863,21 +688,21 @@ export default function TinyRideLandingPage() {
                   Parent Simplicity
                 </span>
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight mt-2">
-                  For parents, it’s peace of mind in one simple view.
+                  For parents, peace of mind in one simple view.
                 </h2>
                 <p className="text-base text-slate-600 leading-relaxed mt-4">
-                  Everything you need to know about your child’s commute is presented cleanly. No clutter, no confusing options, and zero unnecessary calls.
+                  From morning pickup to afternoon drop-off, TinyRide keeps you quietly informed. No clutter, no confusing options, and zero unnecessary calls.
                 </p>
               </ScrollReveal>
 
-              {/* 5 Bullet Points */}
+              {/* 5 Clean Editorial Points */}
               <ul className="space-y-3.5 pt-2">
                 {[
-                  'Know when the ride is coming with exact, traffic-adjusted arrival times.',
-                  'Know who is driving — full driver photo, verified identity, and vehicle number.',
-                  'See trip progress along the assigned school route in real time.',
-                  'Get important updates directly to your phone without checking WhatsApp groups.',
-                  'Know the exact minute your child arrives safely at the campus drop-off gate.',
+                  'Know when the ride is approaching your home with exact arrival times.',
+                  'Know who is driving and verify their credentials, photo, and vehicle plate.',
+                  'Watch the vehicle move along the approved school route in real time.',
+                  'Receive instant confirmation the minute your child boards safely.',
+                  'Get notified the moment the vehicle arrives at the campus drop-off gate.',
                 ].map((item, idx) => (
                   <ScrollReveal key={idx} delay={idx * 50}>
                     <li className="flex items-start gap-3 text-sm text-slate-700">
@@ -900,9 +725,9 @@ export default function TinyRideLandingPage() {
               </div>
             </div>
 
-            {/* Right: Parent App Feature Tabs Mock with Animated Switcher */}
+            {/* Right: Parent App Feature Tabs Mock */}
             <div className="lg:col-span-6 bg-slate-50 rounded-2xl p-6 sm:p-8 border border-slate-200">
-              {/* Tab Selector with Smooth Underline Transition */}
+              {/* Tab Selector */}
               <div className="flex border-b border-slate-200 mb-6 gap-4 text-xs font-semibold relative">
                 <button
                   onClick={() => setActiveParentTab('status')}
@@ -1023,8 +848,8 @@ export default function TinyRideLandingPage() {
         </div>
       </section>
 
-      {/* 8. SCHOOL EXPERIENCE — OPERATIONAL CONTROL WITH SUBTLE LIVE PULSE */}
-      <section id="for-schools" className="py-20 lg:py-28 bg-[#FAFAF9]">
+      {/* 8. SCHOOL EXPERIENCE — OPERATIONAL CONTROL */}
+      <section id="for-schools" className="py-24 lg:py-32 bg-[#FAFAF9]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Operational UI Mock */}
@@ -1058,7 +883,7 @@ export default function TinyRideLandingPage() {
                 </div>
               </div>
 
-              {/* Bus Bay Status Table with Clean Hover Rows */}
+              {/* Bus Bay Status Table */}
               <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
                 <div className="bg-slate-50 px-4 py-2.5 font-bold text-slate-700 border-b border-slate-200 flex justify-between">
                   <span>Route & Vehicle</span>
@@ -1131,8 +956,8 @@ export default function TinyRideLandingPage() {
         </div>
       </section>
 
-      {/* 9. DRIVER EXPERIENCE — DISTRACTION-FREE SIMPLICITY */}
-      <section id="for-drivers" className="py-20 lg:py-28 bg-white border-y border-slate-200">
+      {/* 9. DRIVER EXPERIENCE — AUTHENTIC DRIVER IPHONE DISPLAY */}
+      <section id="for-drivers" className="py-24 lg:py-32 bg-white border-y border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Copy */}
@@ -1145,44 +970,22 @@ export default function TinyRideLandingPage() {
                   For drivers, the job stays simple.
                 </h2>
                 <p className="text-base text-slate-600 leading-relaxed mt-4">
-                  Drivers need to focus on the road, not fight with complicated software. TinyRide provides large buttons, clear sequential stops, and zero distractions while driving.
+                  No complex menus. No phone calls while driving. Just clear stops and one-tap boarding. TinyRide is engineered for safety and distraction-free operation.
                 </p>
               </ScrollReveal>
 
-              {/* 5-Step Workflow Selector Demonstrating Simplicity */}
-              <div className="pt-2">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Interactive In-Cab Workflow:
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {driverStages.map((stage) => (
-                    <button
-                      key={stage.id}
-                      onClick={() => setActiveDriverWorkflow(stage.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all btn-micro ${
-                        activeDriverWorkflow === stage.id
-                          ? 'bg-emerald-800 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                      }`}
-                    >
-                      {stage.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-colors">
-                  <h4 className="font-bold text-sm text-slate-900">Fewer Taps</h4>
-                  <p className="text-xs text-slate-500 mt-1">One tap to confirm boarding at each gate stop.</p>
+                  <h4 className="font-bold text-sm text-slate-900">One-Tap Boarding</h4>
+                  <p className="text-xs text-slate-500 mt-1">Confirm boarding instantly with a single large tap.</p>
                 </div>
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-colors">
                   <h4 className="font-bold text-sm text-slate-900">Clear Route Sequence</h4>
-                  <p className="text-xs text-slate-500 mt-1">Next student address and photo shown in order.</p>
+                  <p className="text-xs text-slate-500 mt-1">Sequential stops with student names and gate locations.</p>
                 </div>
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-colors">
-                  <h4 className="font-bold text-sm text-slate-900">No In-Cab Clutter</h4>
-                  <p className="text-xs text-slate-500 mt-1">Zero chats or pop-up alerts while moving.</p>
+                  <h4 className="font-bold text-sm text-slate-900">Zero In-Cab Clutter</h4>
+                  <p className="text-xs text-slate-500 mt-1">High-contrast night & daylight readability.</p>
                 </div>
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-colors">
                   <h4 className="font-bold text-sm text-slate-900">Automated Parent Alerts</h4>
@@ -1191,233 +994,18 @@ export default function TinyRideLandingPage() {
               </div>
             </div>
 
-            {/* Right: Driver Interface Mockup dynamically responding to Workflow */}
+            {/* Right: Driver Interface on Authentic iPhone */}
             <div className="lg:col-span-6 flex justify-center">
               <ScrollReveal delay={80}>
-                <div className="w-[300px] sm:w-[320px] rounded-3xl bg-slate-950 p-4 shadow-xl border-4 border-slate-800 text-white transition-transform duration-300 hover:scale-[1.01]">
-                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center justify-between">
-                    <span>Driver In-Cab Mode</span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  </div>
-                  <div className="mt-1 flex justify-between items-baseline">
-                    <h4 className="font-bold text-base text-white">
-                      Stage {activeDriverWorkflow + 1} of 5
-                    </h4>
-                    <span className="text-xs font-mono font-bold text-emerald-400">
-                      {driverStages[activeDriverWorkflow]?.status}
-                    </span>
-                  </div>
-
-                  {/* Dynamic Workflow In-Cab Card */}
-                  <div className="mt-4 bg-slate-900 rounded-xl p-4 border border-slate-800 space-y-3 transition-all duration-300">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center justify-center font-bold text-sm">
-                        TM
-                      </div>
-                      <div>
-                        <div className="font-bold text-sm text-white">Tanvik Mathurthi</div>
-                        <p className="text-xs text-slate-400">Gate 2 • Rainbow Vistas</p>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 flex justify-between items-center text-xs">
-                      <span className="text-slate-400">Workflow Note:</span>
-                      <span className="text-[11px] text-emerald-300 font-medium">
-                        {driverStages[activeDriverWorkflow]?.note}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Large High-Contrast Touch Target for In-Cab Simplicity */}
-                  <div className="mt-4 space-y-2">
-                    <button
-                      onClick={() => setActiveDriverWorkflow((prev) => (prev + 1) % 5)}
-                      className="w-full py-3.5 bg-[#006B2F] hover:bg-[#005525] text-white font-bold text-sm rounded-xl text-center shadow-sm btn-micro"
-                    >
-                      {activeDriverWorkflow === 3 ? '✓ SafeKey Verified' : 'Next Workflow Step →'}
-                    </button>
-                    <p className="text-[10px] text-center text-slate-500">
-                      Tap to preview the seamless driver steps
-                    </p>
-                  </div>
-                </div>
+                <TinyRideIPhone mode="driver" />
               </ScrollReveal>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 10. LARGE MAP SECTION — RICH VISUALIZATION WITH LIVE GLIDE */}
-      <section className="py-20 lg:py-28 bg-[#FAFAF9]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <ScrollReveal>
-            <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
-              <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest">
-                Live Fleet Routing
-              </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900">
-                Clear routes. Verified at every turn.
-              </h2>
-              <p className="text-base text-slate-600 max-w-xl mx-auto">
-                Real-time route geometry connecting home, neighborhood pickup stops, and the school campus.
-              </p>
-            </div>
-          </ScrollReveal>
-
-          {/* Interactive Map Visual with Floating HUD Panel */}
-          <ScrollReveal delay={60}>
-            <div className="relative rounded-3xl overflow-hidden border border-slate-200/90 shadow-lg bg-slate-900 h-[380px] sm:h-[460px]">
-              {/* Vector Map Canvas */}
-              <svg className="w-full h-full object-cover" viewBox="0 0 1000 500" fill="none">
-                <rect width="1000" height="500" fill="#0B1329" />
-                
-                {/* Secondary roads */}
-                <line x1="0" y1="120" x2="1000" y2="120" stroke="#1E293B" strokeWidth="2" />
-                <line x1="0" y1="260" x2="1000" y2="260" stroke="#1E293B" strokeWidth="2" />
-                <line x1="0" y1="380" x2="1000" y2="380" stroke="#1E293B" strokeWidth="2" />
-                <line x1="250" y1="0" x2="250" y2="500" stroke="#1E293B" strokeWidth="2" />
-                <line x1="500" y1="0" x2="500" y2="500" stroke="#1E293B" strokeWidth="2" />
-                <line x1="750" y1="0" x2="750" y2="500" stroke="#1E293B" strokeWidth="2" />
-
-                {/* Major Highway Artery */}
-                <path
-                  d="M 50 450 C 200 400, 300 200, 500 260 C 700 320, 800 100, 950 80"
-                  stroke="#1E293B"
-                  strokeWidth="16"
-                  strokeLinecap="round"
-                />
-
-                {/* Active TinyRide School Route Path with Progressive Stroke Drawing */}
-                <path
-                  d="M 120 400 L 280 400 L 380 260 L 620 260 L 720 140 L 880 140"
-                  stroke="#006B2F"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="animate-route-draw"
-                />
-
-                {/* Stop 1 (Depot) */}
-                <circle cx="120" cy="400" r="8" fill="#006B2F" />
-                <text x="120" y="425" textAnchor="middle" fontSize="11" fill="#94A3B8" fontWeight="bold">
-                  Depot (07:15)
-                </text>
-
-                {/* Stop 2 (Pickup A) */}
-                <circle cx="280" cy="400" r="7" fill="#006B2F" />
-                <text x="280" y="425" textAnchor="middle" fontSize="11" fill="#94A3B8">
-                  Stop 1
-                </text>
-
-                {/* Stop 3 (Pickup B — Tanvik) with Location Pulse */}
-                <g transform="translate(380, 260)">
-                  <circle cx="0" cy="0" r="18" stroke="#34D399" strokeWidth="2" className="animate-marker-pulse" />
-                  <circle cx="0" cy="0" r="9" fill="#006B2F" />
-                  <text x="0" y="35" textAnchor="middle" fontSize="12" fill="#34D399" fontWeight="bold">
-                    Home (Stop 4)
-                  </text>
-                </g>
-
-                {/* Gliding Vehicle Pin */}
-                <g className="animate-vehicle-map">
-                  <circle cx="0" cy="0" r="22" stroke="#34D399" strokeWidth="2" strokeDasharray="4 4" className="animate-marker-pulse" />
-                  <circle cx="0" cy="0" r="14" fill="#006B2F" />
-                  <text x="0" y="5" textAnchor="middle" fontSize="12" fill="white">🚐</text>
-                </g>
-
-                {/* Stop 5 (Pickup C) */}
-                <circle cx="720" cy="140" r="7" fill="#006B2F" />
-                <text x="720" y="120" textAnchor="middle" fontSize="11" fill="#94A3B8">
-                  Stop 5
-                </text>
-
-                {/* Final Destination (School Campus) */}
-                <g transform="translate(880, 140)">
-                  <circle cx="0" cy="0" r="12" fill="#FFFFFF" />
-                  <text x="0" y="4" textAnchor="middle" fontSize="12">🏫</text>
-                  <text x="0" y="-18" textAnchor="middle" fontSize="13" fill="#FFFFFF" fontWeight="bold">
-                    Oakridge Campus Bay
-                  </text>
-                </g>
-              </svg>
-
-              {/* Floating Information Panel on Map */}
-              <div className="absolute bottom-6 left-6 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-5 border border-slate-200/90 shadow-xl max-w-xs text-slate-800 transition-transform duration-300 hover:-translate-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                    Live Telemetry
-                  </span>
-                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                    ON SCHEDULE
-                  </span>
-                </div>
-                <h4 className="mt-1 font-bold text-base text-slate-900">Tanvik’s Ride • Route 04</h4>
-                <div className="mt-3 space-y-1.5 text-xs text-slate-600">
-                  <div className="flex justify-between">
-                    <span>Current ETA:</span>
-                    <strong className="text-slate-900">{heroEta} away (8:35 AM)</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Driver:</span>
-                    <strong className="text-slate-900">Ravi Kumar (TS09-TR-102)</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Next Stop:</span>
-                    <strong className="text-slate-900">Rainbow Colony Gate 2</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* 11. ECOSYSTEM SECTION — CONNECTED TRANSPORTATION WITH ANIMATED HUB */}
-      <section className="py-20 lg:py-28 bg-white border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <ScrollReveal>
-            <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-              <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest">
-                The Connected Ecosystem
-              </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900">
-                One connected transportation experience.
-              </h2>
-              <p className="text-base text-slate-600 max-w-xl mx-auto">
-                TinyRide bridges parents, children, drivers, and schools into one coordinated loop — eliminating miscommunication.
-              </p>
-            </div>
-          </ScrollReveal>
-
-          {/* Central Hub with Connected Radiating Nodes */}
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { emoji: '👨‍👩‍👧', title: 'Parents', desc: 'Live location, boarding alerts, and verified driver details in one calm view.' },
-                { emoji: '🎒', title: 'Children', desc: 'SafeKey token verification at pickup and designated gate drop-off at school.' },
-                { emoji: '🚐', title: 'Drivers', desc: 'Clear stop sequence, one-tap check-in, and zero behind-the-wheel phone calls.' },
-                { emoji: '🏫', title: 'Schools', desc: 'Live fleet oversight, bus bay arrival pacing, and fewer front-desk queries.' },
-              ].map((node, i) => (
-                <ScrollReveal key={node.title} delay={i * 60}>
-                  <div className="bg-[#FAFAF9] p-6 rounded-2xl border border-slate-200/90 text-center space-y-3 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xs group">
-                    <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-800 font-bold text-lg mx-auto flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
-                      {node.emoji}
-                    </div>
-                    <h3 className="font-bold text-base text-slate-900">{node.title}</h3>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {node.desc}
-                    </p>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 12. SAFETY / TRUST SECTION — GROUNDED & FACTUAL */}
-      <section id="safety" className="py-20 lg:py-28 bg-[#FAFAF9]">
+      {/* 10. TRUST & TRANSPARENCY SECTION — CALM EDITORIAL SEQUENCE */}
+      <section id="trust" className="py-24 lg:py-32 bg-[#FAFAF9]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
@@ -1428,27 +1016,63 @@ export default function TinyRideLandingPage() {
                 Built around the journey that matters.
               </h2>
               <p className="text-base text-slate-600 max-w-xl mx-auto">
-                Real reassurance comes from verified facts, not inflated promises. Here is exactly what parents and schools can see at every step.
+                Real reassurance comes from verified facts, not inflated promises. A calm, transparent sequence from door to campus.
               </p>
             </div>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {/* Calm Linear Editorial Sequence: Driver -> Vehicle -> Route -> Child boards -> School */}
+          <div className="max-w-4xl mx-auto space-y-4">
             {[
-              { num: '01', title: 'Know Who Is Driving', desc: 'Assigned driver profile, photo, driving record, and direct phone link available inside the app.', badge: 'Verified Driver Identity' },
-              { num: '02', title: 'Specific Vehicle Number', desc: 'Exact registration plate, vehicle model, and seating capacity confirmed before pickup begins.', badge: 'Assigned Vehicle Details' },
-              { num: '03', title: 'Designated School Path', desc: 'The vehicle follows pre-approved school transport paths, with deviation awareness.', badge: 'Route Geometry' },
-              { num: '04', title: 'SafeKey Token Verification', desc: 'A verified digital handshake confirms the student is physically in the vehicle before departure.', badge: 'Boarding Confirmation' },
-              { num: '05', title: 'Campus Entry Timestamp', desc: 'Recorded entry into the designated school bay gives instant confirmation that morning arrival is complete.', badge: 'Campus Gate Drop-Off' },
-              { num: '06', title: 'One-Tap Absence Alerts', desc: 'Instantly notify the driver if your child is sick so the bus does not idle outside your home.', badge: 'Absence Coordination' },
-            ].map((card, i) => (
-              <ScrollReveal key={card.num} delay={i * 50}>
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 hover:border-slate-300 transition-all duration-200 hover:-translate-y-0.5">
-                  <div className="text-emerald-700 font-bold text-xs uppercase tracking-wider">{card.num}. {card.badge}</div>
-                  <h4 className="font-bold text-base text-slate-900">{card.title}</h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {card.desc}
-                  </p>
+              {
+                step: '01',
+                title: 'Verified Driver Identity',
+                desc: 'Every driver undergoes strict background checks, commercial license validation, and photo verification. Parents see their driver details in advance.',
+                badge: 'Screened & Approved',
+              },
+              {
+                step: '02',
+                title: 'Assigned Vehicle Details',
+                desc: 'Clear registration plate, vehicle model, fitness certification, and capacity details are assigned to each route before departure.',
+                badge: 'Fleet Verified',
+              },
+              {
+                step: '03',
+                title: 'Approved Route Geometry',
+                desc: 'Vehicles travel exclusively on pre-mapped school transport corridors. Any unexpected deviations are immediately flagged to operations.',
+                badge: 'Geo-Monitored',
+              },
+              {
+                step: '04',
+                title: 'SafeKey Boarding Confirmation',
+                desc: 'A physical student check-in with digital SafeKey validation ensures no child is left behind or boards the wrong vehicle.',
+                badge: 'SafeKey Handshake',
+              },
+              {
+                step: '05',
+                title: 'Campus Gate Drop-off',
+                desc: 'Arrival at the school bus bay is recorded and timestamped. Both parents and school staff receive immediate arrival notifications.',
+                badge: 'Campus Bay Verified',
+              },
+            ].map((item, idx) => (
+              <ScrollReveal key={item.step} delay={idx * 60}>
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200 hover:border-slate-300 hover:shadow-xs">
+                  <div className="flex items-start gap-4">
+                    <span className="font-mono text-emerald-800 font-bold text-base shrink-0 mt-0.5">
+                      {item.step}
+                    </span>
+                    <div>
+                      <h4 className="font-bold text-base text-slate-900">{item.title}</h4>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed max-w-2xl">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 self-start sm:self-center">
+                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+                      {item.badge}
+                    </span>
+                  </div>
                 </div>
               </ScrollReveal>
             ))}
@@ -1456,12 +1080,12 @@ export default function TinyRideLandingPage() {
         </div>
       </section>
 
-      {/* 13. FINAL CONVERSION CTA — PREMIUM DARK SECTION WITH AMBIENT DASH DRIFT */}
-      <section className="py-16 sm:py-24 bg-white">
+      {/* 11. FINAL CONVERSION CTA — PREMIUM DARK SECTION */}
+      <section className="py-20 sm:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal yOffset={20}>
-            <div className="bg-slate-950 text-white rounded-3xl p-10 sm:p-14 lg:p-18 text-center relative overflow-hidden shadow-2xl">
-              {/* Subtle background route glow line with slow ambient drift */}
+            <div className="bg-slate-950 text-white rounded-3xl p-10 sm:p-14 lg:p-20 text-center relative overflow-hidden shadow-2xl">
+              {/* Subtle background route glow line */}
               <div className="absolute inset-0 opacity-15 pointer-events-none">
                 <svg className="w-full h-full" viewBox="0 0 1000 400" fill="none">
                   <path
@@ -1469,7 +1093,6 @@ export default function TinyRideLandingPage() {
                     stroke="#34D399"
                     strokeWidth="4"
                     strokeDasharray="8 8"
-                    className="animate-ambient-dash"
                   />
                 </svg>
               </div>
@@ -1482,7 +1105,7 @@ export default function TinyRideLandingPage() {
                   A simpler school ride starts here.
                 </h2>
                 <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
-                  Less guessing. Better visibility. A smoother everyday journey for parents, drivers, and schools.
+                  One connected experience for parents, schools and drivers. Less guessing, better visibility, and complete peace of mind.
                 </p>
 
                 <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -1505,7 +1128,7 @@ export default function TinyRideLandingPage() {
         </div>
       </section>
 
-      {/* 14. FOOTER */}
+      {/* 12. FOOTER */}
       <footer className="border-t border-slate-200 bg-white py-12 text-slate-600 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
@@ -1533,7 +1156,7 @@ export default function TinyRideLandingPage() {
                 <li><a href="#for-parents" className="hover:text-emerald-800 transition-colors">For Parents</a></li>
                 <li><a href="#for-schools" className="hover:text-emerald-800 transition-colors">For Schools</a></li>
                 <li><a href="#for-drivers" className="hover:text-emerald-800 transition-colors">For Drivers</a></li>
-                <li><a href="#safety" className="hover:text-emerald-800 transition-colors">Safety</a></li>
+                <li><a href="#trust" className="hover:text-emerald-800 transition-colors">Trust & Safety</a></li>
               </ul>
             </div>
 
@@ -1566,7 +1189,7 @@ export default function TinyRideLandingPage() {
         </div>
       </footer>
 
-      {/* 15. INTERACTIVE "GET STARTED" MODAL */}
+      {/* 13. INTERACTIVE "GET STARTED" MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-8 animate-in zoom-in-95 duration-200">
