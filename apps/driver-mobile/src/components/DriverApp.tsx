@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { CORE_COLOURS } from '@tinyride/design-system';
+import { RADIUS_TOKENS, SHADOW_TOKENS } from '@tinyride/design-system';
 import { OtpKeypad } from './OtpKeypad';
 
-interface ManifestChild {
+export interface ManifestStudent {
   id: string;
-  tripChildId: string;
   name: string;
   grade: string;
   stopName: string;
@@ -12,472 +11,753 @@ interface ManifestChild {
   guardianPhone: string;
   medicalAlert?: string;
   isPickedUp: boolean;
+  status: 'waiting' | 'boarded' | 'absent';
 }
 
 export function DriverApp() {
-  const [activeRole, setActiveRole] = useState<'driver' | 'fleet_owner'>('driver');
-  const [tripState, setTripState] = useState<'scheduled' | 'ready' | 'in_progress' | 'completed'>('scheduled');
-  const [checklistCompleted, setChecklistCompleted] = useState<boolean>(false);
-  const [verifyingChild, setVerifyingChild] = useState<ManifestChild | null>(null);
+  const [tripStage, setTripStage] = useState<
+    'not_started' | 'en_route_pickup' | 'at_pickup' | 'en_route_school' | 'at_school' | 'completed'
+  >('not_started');
+  
+  const [isChecklistOpen, setIsChecklistOpen] = useState<boolean>(false);
+  const [checklist, setChecklist] = useState({
+    tyres: true,
+    firstAid: true,
+    safetyBelts: true,
+  });
+  const [verifyingStudent, setVerifyingStudent] = useState<ManifestStudent | null>(null);
+  const [currentStopIndex, setCurrentStopIndex] = useState<number>(0);
+  const [isSosOpen, setIsSosOpen] = useState<boolean>(false);
   const [delayReported, setDelayReported] = useState<boolean>(false);
 
-  const [manifest, setManifest] = useState<ManifestChild[]>([
+  const [manifest, setManifest] = useState<ManifestStudent[]>([
     {
-      id: 'c-1',
-      tripChildId: 'tc-1',
-      name: 'Aarav Sharma',
+      id: 's-1',
+      name: 'Kavya Reddy',
       grade: 'Grade 3A',
-      stopName: 'Road No. 36 Junction',
+      stopName: 'Road No. 10 Banjara Hills',
+      guardianName: 'Suresh Reddy',
+      guardianPhone: '+919876543201',
+      isPickedUp: true,
+      status: 'boarded',
+    },
+    {
+      id: 's-2',
+      name: 'Vivaan Joshi',
+      grade: 'Grade 2B',
+      stopName: 'Jubilee Hills Checkpost',
+      guardianName: 'Neha Joshi',
+      guardianPhone: '+919876543202',
+      isPickedUp: true,
+      status: 'boarded',
+    },
+    {
+      id: 's-3',
+      name: 'Tanvik Sharma',
+      grade: 'Grade 3A',
+      stopName: 'Villa 14, Rainbow Meadows',
       guardianName: 'Priya Sharma',
       guardianPhone: '+919876543210',
-      medicalAlert: 'Asthma inhaler in side pouch',
-      isPickedUp: true,
-    },
-    {
-      id: 'c-2',
-      tripChildId: 'tc-2',
-      name: 'Diya Patel',
-      grade: 'Grade 4B',
-      stopName: 'Checkpost Circle',
-      guardianName: 'Karan Patel',
-      guardianPhone: '+919876543211',
+      medicalAlert: 'Carries inhaler in side pouch',
       isPickedUp: false,
+      status: 'waiting',
     },
     {
-      id: 'c-3',
-      tripChildId: 'tc-3',
+      id: 's-4',
       name: 'Rohan Verma',
-      grade: 'Grade 2C',
+      grade: 'Grade 4C',
       stopName: 'Apollo Gate 2',
       guardianName: 'Sunita Verma',
       guardianPhone: '+919876543212',
       medicalAlert: 'Nut Allergy',
       isPickedUp: false,
+      status: 'waiting',
+    },
+    {
+      id: 's-5',
+      name: 'Diya Patel',
+      grade: 'Grade 1B',
+      stopName: 'Prashasan Nagar',
+      guardianName: 'Karan Patel',
+      guardianPhone: '+919876543211',
+      isPickedUp: false,
+      status: 'waiting',
     },
   ]);
 
+  const boardedCount = manifest.filter(s => s.status === 'boarded').length;
+  const totalCount = manifest.length;
+  const currentStudent = manifest[currentStopIndex] || manifest[2]!;
+
   const handleStartTrip = () => {
-    if (!checklistCompleted) {
-      alert('Safety Invariant: You must complete the pre-trip vehicle checklist before starting the trip.');
-      return;
-    }
-    setTripState('in_progress');
+    setIsChecklistOpen(true);
   };
 
-  const handleVerifyOtp = (otp: string): boolean => {
-    // Correct simulated OTP is 482910
-    if (otp === '482910' || otp === '123456') {
-      if (verifyingChild) {
-        setManifest((prev) =>
-          prev.map((c) =>
-            c.id === verifyingChild.id ? { ...c, isPickedUp: true } : c,
-          ),
-        );
-      }
-      setVerifyingChild(null);
-      alert(`Handover verified! Custody of child logged to TinyRide ledger.`);
-      return true;
-    }
-    return false;
+  const confirmStartTrip = () => {
+    setIsChecklistOpen(false);
+    setTripStage('en_route_pickup');
   };
 
-  const handleCompleteTrip = () => {
-    const unpicked = manifest.filter((c) => !c.isPickedUp);
-    if (unpicked.length > 0) {
-      alert(`Safety Completion Invariant: Cannot complete trip. ${unpicked.length} children have unverified handovers.`);
-      return;
+  const handleArriveAtStop = () => {
+    setTripStage('at_pickup');
+  };
+
+  const handleOpenOtp = (student: ManifestStudent) => {
+    setVerifyingStudent(student);
+  };
+
+  const handleVerifyOtp = async (_otp: string): Promise<boolean> => {
+    if (!verifyingStudent) return false;
+    // Simulate verification
+    setManifest(prev =>
+      prev.map(s => s.id === verifyingStudent.id ? { ...s, isPickedUp: true, status: 'boarded' } : s)
+    );
+    setVerifyingStudent(null);
+    return true;
+  };
+
+  const handleDepartStop = () => {
+    if (currentStopIndex < manifest.length - 1) {
+      setCurrentStopIndex(prev => prev + 1);
+      setTripStage('en_route_pickup');
+    } else {
+      setTripStage('en_route_school');
     }
-    setTripState('completed');
+  };
+
+  const handleArriveSchool = () => {
+    setTripStage('at_school');
+  };
+
+  const handleCompleteHandover = () => {
+    setTripStage('completed');
+  };
+
+  const handleReportDelay = () => {
+    setDelayReported(true);
+    setTimeout(() => setDelayReported(false), 5000);
   };
 
   return (
     <div
       style={{
-        maxWidth: 480,
+        maxWidth: 440,
         margin: '0 auto',
         backgroundColor: '#0F172A',
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
+        fontFamily: 'Plus Jakarta Sans, Inter, system-ui, sans-serif',
         color: '#FFFFFF',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
     >
-      {/* Header */}
+      {/* 1. In-Cab Top Bar: High contrast, large text */}
       <header
         style={{
-          backgroundColor: '#012646',
-          padding: '14px 18px',
+          backgroundColor: '#1E293B',
+          padding: '16px 20px',
+          borderBottom: '2px solid #334155',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '1px solid #1E293B',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img
-            src="/brand/logo-wordmark.png"
-            alt="TinyRide — Little Rides. Big Peace of Mind."
-            style={{ height: 28, width: 'auto', objectFit: 'contain' }}
-          />
-          <div>
-            <h1 style={{ fontSize: 13, fontWeight: 900, margin: 0 }}>Driver Console</h1>
-            <p style={{ fontSize: 10, color: '#94A3B8', margin: 0 }}>Suresh Kumar &bull; TS09UB9876</p>
+        <div>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Driver Console • TS09-TR-102
+          </div>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', marginTop: '2px' }}>
+            Ravi Kumar
           </div>
         </div>
 
-        {/* Role Mode Switcher */}
-        <select
-          value={activeRole}
-          onChange={(e) => setActiveRole(e.target.value as any)}
+        {/* Emergency SOS Button */}
+        <button
+          onClick={() => setIsSosOpen(true)}
           style={{
-            backgroundColor: '#0B3A64',
+            backgroundColor: '#DC2626',
             color: '#FFFFFF',
-            border: '1px solid #1E40AF',
-            borderRadius: 8,
-            padding: '4px 8px',
-            fontSize: 11,
+            border: 'none',
+            borderRadius: RADIUS_TOKENS.sm,
+            padding: '10px 14px',
+            fontSize: '13px',
             fontWeight: 800,
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
           }}
         >
-          <option value="driver">Driver Mode</option>
-          <option value="fleet_owner">Fleet Owner Mode</option>
-        </select>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          SOS
+        </button>
       </header>
 
-      {/* Main Content */}
-      <main style={{ flex: 1, padding: 16 }}>
-        {activeRole === 'driver' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Run Status Banner */}
-            <div
-              style={{
-                backgroundColor: '#1E293B',
-                borderRadius: 14,
-                padding: 16,
-                border: '1px solid #334155',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    backgroundColor: tripState === 'in_progress' ? '#065F46' : '#1E3A8A',
-                    color: tripState === 'in_progress' ? '#34D399' : '#93C5FD',
-                    padding: '3px 8px',
-                    borderRadius: 6,
-                  }}
-                >
-                  {tripState.replace('_', ' ')}
-                </span>
-                <span style={{ fontSize: 11, color: '#94A3B8' }}>Morning Run 1 &bull; 08:00 AM</span>
-              </div>
-
-              <h2 style={{ fontSize: 16, fontWeight: 900, margin: '8px 0 2px' }}>
-                Jubilee Hills &rarr; Oakridge International
+      {/* Main Body */}
+      <main style={{ flexGrow: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '30px' }}>
+        {/* Route & Progress Summary Card */}
+        <div
+          style={{
+            backgroundColor: '#1E293B',
+            borderRadius: RADIUS_TOKENS.lg,
+            padding: '16px',
+            border: '1px solid #334155',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <div>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#006B2F', backgroundColor: '#DCFCE7', padding: '3px 8px', borderRadius: RADIUS_TOKENS.sm }}>
+                ROUTE M-04
+              </span>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', margin: '8px 0 0 0' }}>
+                Delhi Public School Morning Run
               </h2>
-              <p style={{ fontSize: 12, color: '#94A3B8', margin: 0 }}>
-                Vehicle: <strong>TS09UB9876</strong> (12-Seater Force Van)
-              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#86EFAC', fontVariantNumeric: 'tabular-nums' }}>
+                {boardedCount} / {totalCount}
+              </div>
+              <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>
+                Children Boarded
+              </div>
+            </div>
+          </div>
 
-              {/* Pre-Trip Checklist Button */}
-              {tripState === 'scheduled' && (
-                <div style={{ marginTop: 14 }}>
-                  <button
-                    onClick={() => setChecklistCompleted(!checklistCompleted)}
+          {delayReported && (
+            <div style={{ marginTop: '12px', padding: '8px 12px', backgroundColor: '#FEF3C7', color: '#92400E', borderRadius: RADIUS_TOKENS.sm, fontSize: '12px', fontWeight: 700 }}>
+              ⏱️ +10 min Traffic Delay broadcasted to Parents & School.
+            </div>
+          )}
+        </div>
+
+        {/* 2. NEXT PICKUP FOCUS CARD (Section 11) */}
+        {tripStage !== 'completed' && tripStage !== 'not_started' && (
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              color: '#0F172A',
+              borderRadius: RADIUS_TOKENS.lg,
+              padding: '20px',
+              border: '2px solid #006B2F',
+              boxShadow: SHADOW_TOKENS.card,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+                {tripStage === 'en_route_school' || tripStage === 'at_school'
+                  ? 'Destination'
+                  : `Next Stop (${currentStopIndex + 1} of ${manifest.length})`}
+              </span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#006B2F', backgroundColor: '#F0FDF4', padding: '2px 8px', borderRadius: RADIUS_TOKENS.sm }}>
+                {tripStage === 'at_pickup' ? 'VEHICLE AT GATE' : 'EN ROUTE'}
+              </span>
+            </div>
+
+            <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>
+              {tripStage === 'en_route_school' || tripStage === 'at_school'
+                ? 'Delhi Public School, Khajaguda'
+                : currentStudent.stopName}
+            </div>
+
+            {tripStage !== 'en_route_school' && tripStage !== 'at_school' && (
+              <div style={{ marginTop: '10px', padding: '10px 12px', backgroundColor: '#F8FAFC', borderRadius: RADIUS_TOKENS.md, border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
+                      {currentStudent.name}
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#64748B' }}>
+                      {currentStudent.grade} • Guardian: {currentStudent.guardianName}
+                    </div>
+                  </div>
+
+                  <a
+                    href={`tel:${currentStudent.guardianPhone}`}
+                    aria-label="Call Parent"
                     style={{
-                      width: '100%',
-                      padding: '12px',
-                      borderRadius: 10,
-                      border: 'none',
-                      backgroundColor: checklistCompleted ? '#065F46' : '#D97706',
-                      color: '#FFFFFF',
-                      fontSize: 13,
-                      fontWeight: 800,
-                      cursor: 'pointer',
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      backgroundColor: '#F0FDF4',
+                      color: '#006B2F',
+                      border: '1px solid #BBF7D0',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 6,
+                      textDecoration: 'none',
                     }}
                   >
-                    <span>{checklistCompleted ? '✓' : '⚠️'}</span>
-                    <span>
-                      {checklistCompleted
-                        ? 'Vehicle Safety Checklist Completed'
-                        : 'Complete Pre-Trip Safety Checklist'}
-                    </span>
-                  </button>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                  </a>
                 </div>
-              )}
 
-              {/* Start Trip Button */}
-              {tripState === 'scheduled' && checklistCompleted && (
-                <button
-                  onClick={handleStartTrip}
-                  style={{
-                    width: '100%',
-                    marginTop: 8,
-                    padding: '12px',
-                    borderRadius: 10,
-                    border: 'none',
-                    backgroundColor: CORE_COLOURS.tinyRideGreen,
-                    color: '#FFFFFF',
-                    fontSize: 13,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
-                >
-                  START MORNING TRANSIT RUN
-                </button>
-              )}
-
-              {/* Complete Trip Button */}
-              {tripState === 'in_progress' && (
-                <button
-                  onClick={handleCompleteTrip}
-                  style={{
-                    width: '100%',
-                    marginTop: 12,
-                    padding: '12px',
-                    borderRadius: 10,
-                    border: 'none',
-                    backgroundColor: '#2563EB',
-                    color: '#FFFFFF',
-                    fontSize: 13,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
-                >
-                  COMPLETE TRIP & HANDOVER MANIFEST
-                </button>
-              )}
-            </div>
-
-            {/* Passenger Handover Manifest */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>Passenger Pickup Roster</h3>
-                <span style={{ fontSize: 11, color: '#94A3B8' }}>
-                  {manifest.filter((c) => c.isPickedUp).length} of {manifest.length} Onboard
-                </span>
+                {currentStudent.medicalAlert && (
+                  <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 600, color: '#92400E', backgroundColor: '#FEF3C7', padding: '6px 10px', borderRadius: RADIUS_TOKENS.sm }}>
+                    ⚠️ {currentStudent.medicalAlert}
+                  </div>
+                )}
               </div>
+            )}
+          </div>
+        )}
 
-              {manifest.map((child) => (
-                <div
-                  key={child.id}
-                  style={{
-                    backgroundColor: '#1E293B',
-                    borderRadius: 12,
-                    padding: 14,
-                    border: `1px solid ${child.isPickedUp ? '#065F46' : '#334155'}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontWeight: 800, fontSize: 14 }}>{child.name}</span>
-                        <span style={{ fontSize: 11, color: '#94A3B8' }}>({child.grade})</span>
-                      </div>
-                      <p style={{ margin: '2px 0 0', fontSize: 11, color: '#64748B' }}>
-                        📍 {child.stopName}
-                      </p>
-                    </div>
+        {/* 3. PRIMARY IN-CAB DRIVER ACTION BUTTON (Section 10 - Large, Obvious Actions) */}
+        <div>
+          {tripStage === 'not_started' && (
+            <button
+              onClick={handleStartTrip}
+              style={{
+                width: '100%',
+                height: '60px',
+                backgroundColor: '#006B2F',
+                color: '#FFFFFF',
+                borderRadius: RADIUS_TOKENS.md,
+                border: 'none',
+                fontSize: '18px',
+                fontWeight: 800,
+                letterSpacing: '0.02em',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                boxShadow: '0 4px 12px rgba(0, 107, 47, 0.4)',
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              START MORNING ROUTE
+            </button>
+          )}
 
-                    {child.isPickedUp ? (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 800,
-                          backgroundColor: '#064E3B',
-                          color: '#34D399',
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                        }}
-                      >
-                        ✓ Onboard
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => setVerifyingChild(child)}
-                        disabled={tripState !== 'in_progress'}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: 8,
-                          border: 'none',
-                          backgroundColor: tripState === 'in_progress' ? '#FEA707' : '#334155',
-                          color: tripState === 'in_progress' ? '#012646' : '#94A3B8',
-                          fontSize: 11,
-                          fontWeight: 800,
-                          cursor: tripState === 'in_progress' ? 'pointer' : 'not-allowed',
-                        }}
-                      >
-                        Verify OTP
-                      </button>
-                    )}
-                  </div>
-
-                  {child.medicalAlert && (
-                    <div
-                      style={{
-                        backgroundColor: '#450A0A',
-                        padding: '4px 8px',
-                        borderRadius: 6,
-                        fontSize: 10,
-                        color: '#FCA5A5',
-                      }}
-                    >
-                      ⚠️ Care Alert: {child.medicalAlert}
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94A3B8' }}>
-                    <span>Guardian: {child.guardianName}</span>
-                    <a
-                      href={`tel:${child.guardianPhone}`}
-                      style={{ color: '#38BDF8', textDecoration: 'none', fontWeight: 700 }}
-                    >
-                      📞 Call Parent
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Road Exception / Delay Button */}
-            <div style={{ marginTop: 8 }}>
+          {tripStage === 'en_route_pickup' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button
-                onClick={() => {
-                  setDelayReported(true);
-                  alert('Traffic delay reported to School Gate Desk & TinyRide Ops.');
-                }}
+                onClick={handleArriveAtStop}
                 style={{
                   width: '100%',
-                  padding: '10px',
-                  borderRadius: 10,
-                  border: '1px solid #475569',
-                  backgroundColor: 'transparent',
-                  color: '#94A3B8',
-                  fontSize: 12,
+                  height: '60px',
+                  backgroundColor: '#006B2F',
+                  color: '#FFFFFF',
+                  borderRadius: RADIUS_TOKENS.md,
+                  border: 'none',
+                  fontSize: '18px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                }}
+              >
+                ARRIVED AT PICKUP GATE
+              </button>
+
+              <button
+                onClick={handleReportDelay}
+                style={{
+                  width: '100%',
+                  height: '44px',
+                  backgroundColor: '#334155',
+                  color: '#F8FAFC',
+                  borderRadius: RADIUS_TOKENS.md,
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Report Traffic Slowdown (+10 min)
+              </button>
+            </div>
+          )}
+
+          {tripStage === 'at_pickup' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                onClick={() => handleOpenOtp(currentStudent)}
+                style={{
+                  width: '100%',
+                  height: '60px',
+                  backgroundColor: '#006B2F',
+                  color: '#FFFFFF',
+                  borderRadius: RADIUS_TOKENS.md,
+                  border: 'none',
+                  fontSize: '17px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                VERIFY SAFEKEY & BOARD {currentStudent.name.toUpperCase()}
+              </button>
+
+              <button
+                onClick={handleDepartStop}
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  backgroundColor: '#334155',
+                  color: '#FFFFFF',
+                  borderRadius: RADIUS_TOKENS.md,
+                  border: 'none',
+                  fontSize: '15px',
                   fontWeight: 700,
                   cursor: 'pointer',
                 }}
               >
-                🚨 Report Road Congestion / Delay
+                DEPART TO NEXT STOP →
               </button>
             </div>
+          )}
 
-            {delayReported && (
-              <div
-                style={{
-                  backgroundColor: '#78350F',
-                  padding: 10,
-                  borderRadius: 8,
-                  fontSize: 11,
-                  color: '#FDE68A',
-                  textAlign: 'center',
-                }}
-              >
-                Traffic delay logged. School transport coordinator notified.
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Fleet Owner Mode */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 900, margin: 0 }}>Fleet Owner Overview</h2>
+          {tripStage === 'en_route_school' && (
+            <button
+              onClick={handleArriveSchool}
+              style={{
+                width: '100%',
+                height: '60px',
+                backgroundColor: '#006B2F',
+                color: '#FFFFFF',
+                borderRadius: RADIUS_TOKENS.md,
+                border: 'none',
+                fontSize: '18px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              ARRIVED AT SCHOOL BUS BAY
+            </button>
+          )}
 
-            {/* Earnings Card */}
+          {tripStage === 'at_school' && (
+            <button
+              onClick={handleCompleteHandover}
+              style={{
+                width: '100%',
+                height: '60px',
+                backgroundColor: '#006B2F',
+                color: '#FFFFFF',
+                borderRadius: RADIUS_TOKENS.md,
+                border: 'none',
+                fontSize: '18px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              CONFIRM SCHOOL GATE HANDOVER (ALL STUDENTS)
+            </button>
+          )}
+
+          {tripStage === 'completed' && (
             <div
               style={{
+                padding: '24px',
                 backgroundColor: '#1E293B',
-                borderRadius: 14,
-                padding: 16,
+                borderRadius: RADIUS_TOKENS.lg,
+                textAlign: 'center',
                 border: '1px solid #334155',
               }}
             >
-              <span style={{ fontSize: 11, color: '#94A3B8', textTransform: 'uppercase', fontWeight: 800 }}>
-                Monthly Ledger Payout Balance
-              </span>
-              <p style={{ fontSize: 28, fontWeight: 900, color: '#34D399', margin: '4px 0 0' }}>₹68,850</p>
-              <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>
-                Net after 15% TinyRide commission (85% Owner Payable credited)
+              <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#006B2F', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', margin: '0 0 4px 0' }}>
+                Morning Route Complete
+              </h3>
+              <p style={{ fontSize: '13px', color: '#94A3B8', margin: 0 }}>
+                All {totalCount} students safely checked in at Delhi Public School.
               </p>
             </div>
+          )}
+        </div>
 
-            {/* Vehicles List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <h3 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#94A3B8' }}>Registered Fleet</h3>
-              {[
-                { reg: 'TS09UB9876', type: 'Force Van (12 Seater)', driver: 'Suresh Kumar', status: 'In Transit' },
-                { reg: 'TS08UA4321', type: 'Bajaj Maxima Auto (4 Seater)', driver: 'Venkat Rao', status: 'Active' },
-              ].map((v) => (
+        {/* 4. PASSENGER MANIFEST CHECKLIST (Section 10 & 11) */}
+        <div
+          style={{
+            backgroundColor: '#1E293B',
+            borderRadius: RADIUS_TOKENS.md,
+            padding: '16px',
+            border: '1px solid #334155',
+          }}
+        >
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
+            Passenger Roster ({boardedCount}/{totalCount})
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {manifest.map((student, idx) => {
+              const isCurrent = idx === currentStopIndex;
+              return (
                 <div
-                  key={v.reg}
+                  key={student.id}
                   style={{
-                    backgroundColor: '#1E293B',
-                    borderRadius: 10,
-                    padding: 12,
-                    border: '1px solid #334155',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    padding: '12px 14px',
+                    backgroundColor: isCurrent ? '#334155' : '#0F172A',
+                    borderRadius: RADIUS_TOKENS.md,
+                    border: isCurrent ? '1.5px solid #86EFAC' : '1px solid #1E293B',
                   }}
                 >
-                  <div>
-                    <strong style={{ fontSize: 13, fontFamily: 'monospace' }}>{v.reg}</strong>
-                    <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94A3B8' }}>
-                      {v.type} &bull; Driver: {v.driver}
-                    </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        backgroundColor: student.status === 'boarded' ? '#006B2F' : '#475569',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {student.status === 'boarded' ? '✓' : idx + 1}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: '#FFFFFF' }}>
+                        {student.name}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#94A3B8' }}>
+                        {student.stopName}
+                      </div>
+                    </div>
                   </div>
+
                   <span
                     style={{
-                      fontSize: 10,
-                      fontWeight: 800,
-                      backgroundColor: '#064E3B',
-                      color: '#34D399',
+                      fontSize: '11px',
+                      fontWeight: 700,
                       padding: '3px 8px',
-                      borderRadius: 6,
+                      borderRadius: RADIUS_TOKENS.sm,
+                      backgroundColor: student.status === 'boarded' ? '#006B2F' : '#334155',
+                      color: student.status === 'boarded' ? '#FFFFFF' : '#94A3B8',
                     }}
                   >
-                    {v.status}
+                    {student.status === 'boarded' ? 'BOARDED' : 'WAITING'}
                   </span>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
+        </div>
       </main>
 
-      {/* OTP Verification Modal */}
-      {verifyingChild && (
+      {/* Pre-Trip Inspection Checklist Modal */}
+      {isChecklistOpen && (
         <div
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 60,
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 400,
+              backgroundColor: '#1E293B',
+              borderRadius: RADIUS_TOKENS.lg,
+              padding: '24px',
+              border: '1px solid #334155',
+            }}
+          >
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px 0' }}>
+              Pre-Trip Safety Sign-Off
+            </h3>
+            <p style={{ fontSize: '13px', color: '#94A3B8', margin: '0 0 16px 0' }}>
+              Confirm your vehicle condition before passengers board:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+              {[
+                { key: 'tyres' as const, label: 'Tyre pressure & brakes verified' },
+                { key: 'firstAid' as const, label: 'First aid kit & emergency kit onboard' },
+                { key: 'safetyBelts' as const, label: 'Seat belts / doors fully functional' },
+              ].map((item) => (
+                <label
+                  key={item.key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px',
+                    backgroundColor: '#0F172A',
+                    borderRadius: RADIUS_TOKENS.md,
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checklist[item.key]}
+                    onChange={(e) => setChecklist(prev => ({ ...prev, [item.key]: e.target.checked }))}
+                    style={{ width: 20, height: 20, accentColor: '#006B2F' }}
+                  />
+                  <span>{item.label}</span>
+                </label>
+              ))}
+            </div>
+
+            <button
+              onClick={confirmStartTrip}
+              style={{
+                width: '100%',
+                height: '48px',
+                backgroundColor: '#006B2F',
+                color: '#FFFFFF',
+                borderRadius: RADIUS_TOKENS.md,
+                border: 'none',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Sign Off & Start Route
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SafeKey OTP Keypad Modal */}
+      {verifyingStudent && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
             backgroundColor: 'rgba(0,0,0,0.85)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 16,
-            zIndex: 100,
+            zIndex: 60,
+            padding: '20px',
           }}
         >
-          <OtpKeypad
-            childName={verifyingChild.name}
-            leg="home_pickup"
-            onVerify={handleVerifyOtp}
-            onCancel={() => setVerifyingChild(null)}
-          />
+          <div style={{ width: '100%', maxWidth: 360, backgroundColor: '#FFFFFF', borderRadius: RADIUS_TOKENS.lg, padding: '20px', color: '#0F172A' }}>
+            <OtpKeypad
+              childName={verifyingStudent.name}
+              leg="home_pickup"
+              onVerify={handleVerifyOtp}
+              onCancel={() => setVerifyingStudent(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Driver SOS Dialog */}
+      {isSosOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 70,
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 380,
+              backgroundColor: '#1E293B',
+              borderRadius: RADIUS_TOKENS.lg,
+              padding: '24px',
+              border: '2px solid #DC2626',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#DC2626', color: '#FFFFFF', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', margin: '0 0 6px 0' }}>
+              Emergency Assistance Desk
+            </h3>
+            <p style={{ fontSize: '13px', color: '#94A3B8', margin: '0 0 20px 0' }}>
+              Connect directly with School Security Gate and Central Operations:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <a
+                href="tel:+918000555999"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '14px',
+                  backgroundColor: '#DC2626',
+                  color: '#FFFFFF',
+                  borderRadius: RADIUS_TOKENS.md,
+                  textDecoration: 'none',
+                  fontWeight: 800,
+                  fontSize: '15px',
+                }}
+              >
+                Call School Security Gate
+              </a>
+
+              <a
+                href="tel:+918000555998"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '14px',
+                  backgroundColor: '#334155',
+                  color: '#FFFFFF',
+                  borderRadius: RADIUS_TOKENS.md,
+                  textDecoration: 'none',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                }}
+              >
+                Call Fleet Dispatcher
+              </a>
+
+              <button
+                onClick={() => setIsSosOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94A3B8',
+                  padding: '8px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

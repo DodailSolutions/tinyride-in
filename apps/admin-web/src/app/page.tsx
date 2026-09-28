@@ -3,364 +3,435 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 
+interface ActiveTripRow {
+  tripId: string;
+  routeCode: string;
+  schoolName: string;
+  driverName: string;
+  driverPhone: string;
+  vehicleNumber: string;
+  vehicleModel: string;
+  passengersBoarded: number;
+  totalPassengers: number;
+  currentPhase: 'dispatch' | 'pickup_run' | 'school_bay' | 'completed';
+  slaStatus: 'normal' | 'delayed' | 'attention';
+  delayMinutes?: number;
+  eta: string;
+}
+
+interface PendingKycRow {
+  id: string;
+  name: string;
+  type: 'driver' | 'vehicle';
+  documentType: string;
+  submittedAt: string;
+  status: 'pending_review' | 'approved' | 'rejected';
+}
+
 export default function OverviewDashboardPage() {
-  const [metrics] = useState({
-    activeParents: 1420,
-    activeChildren: 2150,
-    approvedDrivers: 142,
-    approvedVehicles: 138,
-    activeTrips: 124,
-    openExceptions: 1,
-    activeIncidents: 0,
-    todayRevenuePaise: 1250000,
+  const [filterSla, setFilterSla] = useState<'all' | 'delayed' | 'normal'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const [activeTrips] = useState<ActiveTripRow[]>([
+    {
+      tripId: 'TRIP-HYD-101',
+      routeCode: 'M-01',
+      schoolName: 'Oakridge International',
+      driverName: 'Suresh Kumar',
+      driverPhone: '+919876543201',
+      vehicleNumber: 'TS09-TR-101',
+      vehicleModel: 'Force Traveller (16-seater)',
+      passengersBoarded: 16,
+      totalPassengers: 16,
+      currentPhase: 'school_bay',
+      slaStatus: 'normal',
+      eta: '07:55 AM (Arrived)',
+    },
+    {
+      tripId: 'TRIP-HYD-102',
+      routeCode: 'M-04',
+      schoolName: 'Delhi Public School, Khajaguda',
+      driverName: 'Ravi Kumar',
+      driverPhone: '+919876543210',
+      vehicleNumber: 'TS09-TR-102',
+      vehicleModel: 'Bajaj RE Electric (6-seater)',
+      passengersBoarded: 4,
+      totalPassengers: 6,
+      currentPhase: 'pickup_run',
+      slaStatus: 'normal',
+      eta: '08:08 AM',
+    },
+    {
+      tripId: 'TRIP-HYD-103',
+      routeCode: 'M-02',
+      schoolName: 'Oakridge International',
+      driverName: 'Venkatesh Rao',
+      driverPhone: '+919876543203',
+      vehicleNumber: 'TS09-TR-105',
+      vehicleModel: 'Tata Winger (12-seater)',
+      passengersBoarded: 9,
+      totalPassengers: 12,
+      currentPhase: 'pickup_run',
+      slaStatus: 'delayed',
+      delayMinutes: 8,
+      eta: '08:14 AM (+8m)',
+    },
+    {
+      tripId: 'TRIP-HYD-104',
+      routeCode: 'M-03',
+      schoolName: 'Chirec International, Kondapur',
+      driverName: 'Mohammed Azhar',
+      driverPhone: '+919876543222',
+      vehicleNumber: 'TS09-TR-108',
+      vehicleModel: 'Force Urbania (12-seater)',
+      passengersBoarded: 12,
+      totalPassengers: 12,
+      currentPhase: 'school_bay',
+      slaStatus: 'normal',
+      eta: '07:48 AM (Arrived)',
+    },
+    {
+      tripId: 'TRIP-HYD-105',
+      routeCode: 'M-07',
+      schoolName: 'Delhi Public School, Nacharam',
+      driverName: 'K. Srinivas',
+      driverPhone: '+919876543233',
+      vehicleNumber: 'TS10-TR-114',
+      vehicleModel: 'Force Traveller (16-seater)',
+      passengersBoarded: 14,
+      totalPassengers: 16,
+      currentPhase: 'pickup_run',
+      slaStatus: 'normal',
+      eta: '08:20 AM',
+    },
+  ]);
+
+  const [pendingKyc, setPendingKyc] = useState<PendingKycRow[]>([
+    {
+      id: 'k-1',
+      name: 'Anand Varma',
+      type: 'driver',
+      documentType: 'Police Verification & Commercial Driving License',
+      submittedAt: 'Today, 06:30 AM',
+      status: 'pending_review',
+    },
+    {
+      id: 'k-2',
+      name: 'TS09-TR-120 (Force Traveller)',
+      type: 'vehicle',
+      documentType: 'Commercial Fitness Certificate & Speed Governor Test',
+      submittedAt: 'Yesterday, 04:15 PM',
+      status: 'pending_review',
+    },
+  ]);
+
+  const filteredTrips = activeTrips.filter((t) => {
+    if (filterSla === 'delayed' && t.slaStatus !== 'delayed') return false;
+    if (filterSla === 'normal' && t.slaStatus !== 'normal') return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        t.tripId.toLowerCase().includes(q) ||
+        t.routeCode.toLowerCase().includes(q) ||
+        t.driverName.toLowerCase().includes(q) ||
+        t.schoolName.toLowerCase().includes(q) ||
+        t.vehicleNumber.toLowerCase().includes(q)
+      );
+    }
+    return true;
   });
 
-  const liveTrips = [
-    {
-      id: 'TRIP-HYD-001',
-      route: 'Gachibowli Loop A -> Oakridge International',
-      driver: 'Ramesh Babu',
-      vehicle: 'TS09UB4521 (Tata Winger)',
-      phase: 'In Transit',
-      phaseColor: 'bg-primary/15 text-primary',
-      handovers: '14 / 16 Picked Up',
-      eta: '08:15 AM',
-      slaStatus: 'Normal (On-time)',
-    },
-    {
-      id: 'TRIP-HYD-002',
-      route: 'Kondapur Express -> Chirec International',
-      driver: 'Suresh Kumar',
-      vehicle: 'TS07UA8910 (Force Traveller)',
-      phase: 'At School Gate',
-      phaseColor: 'bg-secondary-container text-on-secondary-container',
-      handovers: '20 / 20 Arrived',
-      eta: '08:22 AM',
-      slaStatus: 'Gate Verification in Progress',
-    },
-    {
-      id: 'TRIP-HYD-003',
-      route: 'Madhapur West -> Delhi Public School',
-      driver: 'Mohammed Arif',
-      vehicle: 'TS10UC3342 (Mahindra Cruzio)',
-      phase: 'In Transit',
-      phaseColor: 'bg-primary/15 text-primary',
-      handovers: '11 / 14 Picked Up',
-      eta: '08:35 AM',
-      slaStatus: 'Normal (On-time)',
-    },
-    {
-      id: 'TRIP-HYD-004',
-      route: 'Jubilee Hills Link -> Oakridge International',
-      driver: 'Venkatesh Rao',
-      vehicle: 'TS08UE7789 (Tata Winger)',
-      phase: 'Delayed (+8m)',
-      phaseColor: 'bg-sun-gold/20 text-sun-gold',
-      handovers: '9 / 12 Picked Up',
-      eta: '08:42 AM',
-      slaStatus: 'SLA Watch (Minor Traffic)',
-    },
-  ];
+  const handleApproveKyc = (id: string) => {
+    setPendingKyc((prev) =>
+      prev.map((k) => (k.id === id ? { ...k, status: 'approved' } : k))
+    );
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Brand Hero Banner */}
-      <div className="bg-gradient-to-r from-deep-blue via-[#022D53] to-primary rounded-2xl p-6 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
-        <div className="max-w-2xl">
-          <div className="flex items-center gap-2 text-primary-container font-bold text-xs uppercase tracking-wider mb-2">
-            <span className="material-symbols-outlined text-[16px]">speed</span>
-            Central Fleet Telemetry &bull; Hyderabad Zone
+    <div className="space-y-6 font-sans text-slate-900 pb-12">
+      {/* 1. Operational Top Bar (Clean, High Contrast, Calm, No gradients) */}
+      <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block animate-pulse" />
+              Central Operations Command • Hyderabad Zone
+            </div>
+            <h1 className="text-xl font-bold text-slate-900 mt-1">
+              Live Fleet Operations &amp; Safety Pulse
+            </h1>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Real-time monitoring of transit routes, child boarding, vehicle GPS telemetry, and KYC approvals.
+            </p>
           </div>
-          <h1 className="font-headline text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
-            Executive Operations Dashboard
-          </h1>
-          <p className="text-white/80 text-xs sm:text-sm mt-1 leading-relaxed">
-            Real-time status of school transit runs, child safety handovers, driver compliance, and double-entry ledger audits.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="hidden sm:flex w-20 h-20 bg-white rounded-2xl p-1 shadow-md items-center justify-center">
-            <img
-              src="/brand/logo-stacked.png"
-              alt="TinyRide — Little Rides. Big Peace of Mind."
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <div className="text-right text-xs">
+              <span className="text-slate-500 block">Telemetry Sync</span>
+              <span className="font-semibold text-emerald-800">Connected (Supabase Cloud)</span>
+            </div>
             <Link
               href="/trips"
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-white/20 transition-all backdrop-blur-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-md text-xs font-semibold transition-colors"
             >
-              <span className="material-symbols-outlined text-[16px]">map</span>
-              Live GPS Radar
+              Full Transit Dispatch →
             </Link>
-            <Link
-              href="/kyc"
-              className="bg-primary hover:bg-primary-container text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
-            >
-              <span className="material-symbols-outlined text-[16px]">verified_user</span>
-              Review KYC ({metrics.approvedDrivers})
-            </Link>
+          </div>
+        </div>
+
+        {/* 2. "WHAT IS HAPPENING RIGHT NOW?" Operational Metrics Strip (Section 13) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-5 pt-4 border-t border-slate-100 text-xs">
+          <div className="p-3 bg-slate-50 rounded border border-slate-200">
+            <span className="text-slate-500 block">Active Trips</span>
+            <span className="text-lg font-bold text-slate-900">18 Runs</span>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded border border-slate-200">
+            <span className="text-slate-500 block">Children in Transit</span>
+            <span className="text-lg font-bold text-slate-900">84 Students</span>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded border border-slate-200">
+            <span className="text-slate-500 block">Vehicles Active</span>
+            <span className="text-lg font-bold text-slate-900">18 Online</span>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded border border-slate-200">
+            <span className="text-slate-500 block">Drivers Active</span>
+            <span className="text-lg font-bold text-slate-900">18 Verified</span>
+          </div>
+
+          <div className="p-3 bg-amber-50 rounded border border-amber-200">
+            <span className="text-amber-800 font-medium block">Delayed Routes</span>
+            <span className="text-lg font-bold text-amber-800">1 Route (+8m)</span>
+          </div>
+
+          <div className="p-3 bg-emerald-50 rounded border border-emerald-200">
+            <span className="text-emerald-800 font-medium block">Safety Alerts</span>
+            <span className="text-lg font-bold text-emerald-800">0 Critical</span>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded border border-slate-200">
+            <span className="text-slate-500 block">Today's Completed</span>
+            <span className="text-lg font-bold text-slate-900">42 Runs</span>
           </div>
         </div>
       </div>
 
-      {/* Stitch 4-Card Key Metrics Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card 1: Active Parents & Children */}
-        <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-border/60 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <span
-              className="p-3 bg-primary/10 text-primary rounded-xl material-symbols-outlined text-[24px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              family_restroom
-            </span>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-bold">
-              +18% this month
-            </span>
-          </div>
+      {/* 3. Real-Time Active Transit Operations Table (Section 13 & 21) */}
+      <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50">
           <div>
-            <p className="text-secondary-text text-xs font-semibold mb-1">Active Parents &amp; Children</p>
-            <h3 className="font-headline text-2xl text-primary-text font-bold">
-              {metrics.activeParents.toLocaleString()}{' '}
-              <span className="text-sm font-normal text-secondary-text">Parents</span> /{' '}
-              {metrics.activeChildren.toLocaleString()}{' '}
-              <span className="text-sm font-normal text-secondary-text">Kids</span>
-            </h3>
-          </div>
-          <div className="mt-4 pt-3 border-t border-border/40 text-xs text-secondary-text flex justify-between">
-            <span>Verified Guardians</span>
-            <span className="text-primary font-bold">100% Biometric OTP</span>
-          </div>
-        </div>
-
-        {/* Card 2: Approved Drivers & Vehicles */}
-        <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-border/60 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <span
-              className="p-3 bg-secondary-container text-on-secondary-container rounded-xl material-symbols-outlined text-[24px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              directions_car
-            </span>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-bold">
-              98.2% compliance
-            </span>
-          </div>
-          <div>
-            <p className="text-secondary-text text-xs font-semibold mb-1">Approved Drivers &amp; Vehicles</p>
-            <h3 className="font-headline text-2xl text-primary-text font-bold">
-              {metrics.approvedDrivers}{' '}
-              <span className="text-sm font-normal text-secondary-text">Drivers</span> / {metrics.approvedVehicles}{' '}
-              <span className="text-sm font-normal text-secondary-text">Vans</span>
-            </h3>
-          </div>
-          <div className="mt-4 pt-3 border-t border-border/40 text-xs text-secondary-text flex justify-between">
-            <span>Police Cleared</span>
-            <span className="text-secondary font-bold">Zero Violations</span>
-          </div>
-        </div>
-
-        {/* Card 3: Active Trips & GPS Telemetry */}
-        <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-border/60 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <span
-              className="p-3 bg-primary-fixed text-on-primary-fixed-variant rounded-xl material-symbols-outlined text-[24px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              map
-            </span>
-            <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-bold">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span> Live GPS
-            </span>
-          </div>
-          <div>
-            <p className="text-secondary-text text-xs font-semibold mb-1">Active Trips &amp; Routes</p>
-            <h3 className="font-headline text-2xl text-primary-text font-bold">
-              {metrics.activeTrips}{' '}
-              <span className="text-sm font-normal text-secondary-text">Runs Today</span>
-            </h3>
-          </div>
-          <div className="mt-4 pt-3 border-t border-border/40 text-xs text-secondary-text flex justify-between">
-            <span>Morning &amp; Afternoon</span>
-            <span className="text-primary font-bold">On-time 96.8%</span>
-          </div>
-        </div>
-
-        {/* Card 4: Safety Exceptions & Incident Triage */}
-        <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-border/60 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <span
-              className="p-3 bg-sun-gold/15 text-sun-gold rounded-xl material-symbols-outlined text-[24px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              warning
-            </span>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-accent-surface text-sun-gold font-bold">
-              SLA Active
-            </span>
-          </div>
-          <div>
-            <p className="text-secondary-text text-xs font-semibold mb-1">Safety Exceptions &amp; SLA</p>
-            <h3 className="font-headline text-2xl text-primary-text font-bold">
-              {metrics.openExceptions}{' '}
-              <span className="text-sm font-normal text-secondary-text">Pending Triage</span> /{' '}
-              {metrics.activeIncidents}{' '}
-              <span className="text-sm font-normal text-secondary-text">Incidents</span>
-            </h3>
-          </div>
-          <div className="mt-4 pt-3 border-t border-border/40 text-xs text-secondary-text flex justify-between">
-            <span>Critical SLA</span>
-            <span className="text-primary font-bold">&lt; 15 min avg response</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Live Fleet Transit Activity Table */}
-      <section className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-border/60 space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="font-headline text-lg font-bold text-primary-text">Live Fleet Transit Activity</h3>
-            <p className="text-xs text-secondary-text">
-              Real-time telemetry, stop-by-stop SafeKey OTP handover verification, and gate arrivals.
+            <h2 className="text-base font-bold text-slate-900">
+              Live Transit Fleet Operations
+            </h2>
+            <p className="text-xs text-slate-500">
+              Current vehicle telemetry, passenger load, and destination SLA tracking.
             </p>
           </div>
-          <Link
-            href="/trips"
-            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
-          >
-            <span>View All Live Trips</span>
-            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-          </Link>
+
+          {/* Filter & Search Bar */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="Search trip, driver, or vehicle..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="text-xs px-3 py-1.5 border border-slate-300 rounded focus:outline-none focus:border-emerald-700 w-full sm:w-60"
+            />
+            <div className="flex rounded border border-slate-300 bg-white p-0.5 text-xs">
+              <button
+                onClick={() => setFilterSla('all')}
+                className={`px-2.5 py-1 rounded font-medium ${
+                  filterSla === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setFilterSla('delayed')}
+                className={`px-2.5 py-1 rounded font-medium ${
+                  filterSla === 'delayed' ? 'bg-amber-600 text-white' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Delayed Only
+              </button>
+            </div>
+          </div>
         </div>
 
+        {/* Operational Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border/60 text-xs font-bold text-secondary-text uppercase tracking-wider">
-                <th className="pb-3">Trip ID / Route</th>
-                <th className="pb-3">Driver &amp; Vehicle</th>
-                <th className="pb-3">Status</th>
-                <th className="pb-3">Handover Progress</th>
-                <th className="pb-3">ETA</th>
-                <th className="pb-3 text-right">Actions</th>
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
+              <tr>
+                <th className="py-2.5 px-4">Trip Code</th>
+                <th className="py-2.5 px-4">Route &amp; Destination</th>
+                <th className="py-2.5 px-4">Driver &amp; Vehicle</th>
+                <th className="py-2.5 px-4">Passenger Manifest</th>
+                <th className="py-2.5 px-4">Current Phase</th>
+                <th className="py-2.5 px-4">SLA Watch</th>
+                <th className="py-2.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40 text-sm">
-              {liveTrips.map((trip) => (
-                <tr key={trip.id} className="hover:bg-surface-container-low/50 transition-colors">
-                  <td className="py-4">
-                    <p className="font-bold text-primary-text">{trip.id}</p>
-                    <p className="text-xs text-secondary-text">{trip.route}</p>
+            <tbody className="divide-y divide-slate-200">
+              {filteredTrips.map((t) => (
+                <tr key={t.tripId} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-4 font-bold text-slate-900">{t.tripId}</td>
+                  <td className="py-3 px-4">
+                    <span className="font-semibold text-slate-900">{t.routeCode}</span>
+                    <span className="block text-[11px] text-slate-500">{t.schoolName}</span>
                   </td>
-                  <td className="py-4">
-                    <p className="font-semibold text-primary-text">{trip.driver}</p>
-                    <p className="text-xs text-secondary-text font-mono">{trip.vehicle}</p>
+                  <td className="py-3 px-4">
+                    <span className="font-medium text-slate-900">{t.driverName}</span>
+                    <span className="block text-[11px] text-slate-500 font-mono">{t.vehicleNumber}</span>
                   </td>
-                  <td className="py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${trip.phaseColor}`}>
-                      {trip.phase}
-                    </span>
-                  </td>
-                  <td className="py-4 font-medium text-primary-text">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[16px] text-primary">key</span>
-                      <span>{trip.handovers}</span>
+                  <td className="py-3 px-4">
+                    <span className="font-bold text-slate-900">{t.passengersBoarded}</span> / {t.totalPassengers} Boarded
+                    <div className="w-24 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                      <div
+                        className="bg-emerald-700 h-full rounded-full"
+                        style={{ width: `${(t.passengersBoarded / t.totalPassengers) * 100}%` }}
+                      />
                     </div>
                   </td>
-                  <td className="py-4">
-                    <p className="font-semibold text-primary-text">{trip.eta}</p>
-                    <p className="text-[11px] text-secondary-text">{trip.slaStatus}</p>
+                  <td className="py-3 px-4">
+                    {t.currentPhase === 'school_bay' && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                        At School Bay
+                      </span>
+                    )}
+                    {t.currentPhase === 'pickup_run' && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-800">
+                        Pickup Run (En Route)
+                      </span>
+                    )}
+                    {t.currentPhase === 'dispatch' && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+                        Depot Dispatch
+                      </span>
+                    )}
                   </td>
-                  <td className="py-4 text-right">
-                    <Link
-                      href="/trips"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline bg-surface-container-high px-3 py-1.5 rounded-lg border border-border/50"
+                  <td className="py-3 px-4">
+                    {t.slaStatus === 'normal' ? (
+                      <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                        On Time ({t.eta})
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        Delayed +{t.delayMinutes}m
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <a
+                      href={`tel:${t.driverPhone}`}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition-colors inline-flex items-center gap-1"
                     >
-                      <span>Track</span>
-                      <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                    </Link>
+                      Call Driver
+                    </a>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
 
-      {/* Quick Action Operations Desks */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Desk 1: KYC Verification */}
-        <div className="bg-surface-container-low rounded-2xl p-6 border border-border/60 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="p-2.5 bg-surface-container-lowest text-primary rounded-xl material-symbols-outlined text-[20px]">
-              badge
-            </span>
-            <span className="text-xs bg-sun-gold/20 text-sun-gold font-bold px-2 py-0.5 rounded-full">
-              3 Pending
-            </span>
+      {/* 4. Secondary Operational Grid: KYC Queue & Safety Audit */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* KYC & Supply Review Queue */}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Driver &amp; Vehicle Compliance Queue
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Mandatory background check &amp; fitness certificate approvals.
+              </p>
+            </div>
+            <Link href="/kyc" className="text-xs font-semibold text-emerald-800 hover:underline">
+              View All KYC →
+            </Link>
           </div>
-          <h4 className="font-headline text-base font-bold text-primary-text">Driver &amp; Van KYC Desk</h4>
-          <p className="text-xs text-secondary-text leading-relaxed">
-            Side-by-side verification of Commercial DL, Police Clearance Certificates, and Vehicle RC docs.
-          </p>
-          <Link
-            href="/kyc"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline pt-2"
-          >
-            <span>Open KYC Verification Desk</span>
-            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-          </Link>
+
+          <div className="divide-y divide-slate-200">
+            {pendingKyc.map((item) => (
+              <div key={item.id} className="p-3.5 flex justify-between items-center hover:bg-slate-50">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-slate-900">{item.name}</span>
+                    <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                      {item.type}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">{item.documentType}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{item.submittedAt}</p>
+                </div>
+
+                <div>
+                  {item.status === 'pending_review' ? (
+                    <button
+                      onClick={() => handleApproveKyc(item.id)}
+                      className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-medium transition-colors"
+                    >
+                      Approve
+                    </button>
+                  ) : (
+                    <span className="text-xs font-semibold text-emerald-700">✓ Approved</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Desk 2: Safety Exceptions & Triage */}
-        <div className="bg-surface-container-low rounded-2xl p-6 border border-border/60 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="p-2.5 bg-surface-container-lowest text-error rounded-xl material-symbols-outlined text-[20px]">
-              warning
-            </span>
-            <span className="text-xs bg-error-container text-on-error-container font-bold px-2 py-0.5 rounded-full">
-              1 Open SLA
-            </span>
+        {/* Safety Exception & Delay Watch */}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Active Route Watch &amp; Exceptions
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                SLA variances and route detour notifications.
+              </p>
+            </div>
+            <Link href="/safety" className="text-xs font-semibold text-emerald-800 hover:underline">
+              View Safety Center →
+            </Link>
           </div>
-          <h4 className="font-headline text-base font-bold text-primary-text">Safety &amp; Exception Triage</h4>
-          <p className="text-xs text-secondary-text leading-relaxed">
-            SLA timers for failed OTPs, gate delays, and unverified handovers with Central Dispatch escalation.
-          </p>
-          <Link
-            href="/safety"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline pt-2"
-          >
-            <span>Open Safety Exceptions Desk</span>
-            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-          </Link>
-        </div>
 
-        {/* Desk 3: Finance & Double-Entry Ledger */}
-        <div className="bg-surface-container-low rounded-2xl p-6 border border-border/60 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="p-2.5 bg-surface-container-lowest text-secondary rounded-xl material-symbols-outlined text-[20px]">
-              receipt_long
-            </span>
-            <span className="text-xs bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">
-              0 Discrepancy
-            </span>
+          <div className="p-4 space-y-3">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <div className="flex justify-between items-start">
+                <span className="text-xs font-bold text-amber-900">Route M-02 (TS09-TR-105) Slowdown</span>
+                <span className="text-[10px] font-semibold text-amber-800 bg-amber-200 px-1.5 py-0.5 rounded">
+                  +8 min delay
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 mt-1">
+                Traffic backlog at Outer Ring Road Gachibowli Junction. Driver reported via in-cab console. Parents and School Gate 2 notified automatically.
+              </p>
+              <div className="mt-2 text-[11px] text-amber-900 font-medium">
+                Driver: Venkatesh Rao • 9 students on board • Expected School Gate ETA: 08:14 AM
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-600">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-slate-900">Student Absence Broadcast</span>
+                <span className="text-[10px] text-slate-500">07:22 AM</span>
+              </div>
+              <p className="mt-1">
+                Parent Priya Sharma marked <strong>Zoya Khan</strong> absent for today (Medical appointment). Route M-01 manifest updated to bypass stop.
+              </p>
+            </div>
           </div>
-          <h4 className="font-headline text-base font-bold text-primary-text">Finance &amp; Ledger Audit</h4>
-          <p className="text-xs text-secondary-text leading-relaxed">
-            Double-entry balanced ledger verification, 15% platform commission vs 85% operator payable.
-          </p>
-          <Link
-            href="/finance"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline pt-2"
-          >
-            <span>Open Finance &amp; Payouts Desk</span>
-            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-          </Link>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
