@@ -14,8 +14,13 @@ export function AdminShell({ children }: AdminShellProps) {
     'admin',
   );
 
+  // If on public consumer landing page, bypass admin sidebar
+  if (pathname === '/' || pathname === '/landing') {
+    return <>{children}</>;
+  }
+
   const navItems = [
-    { label: 'Overview', href: '/', icon: 'dashboard' },
+    { label: 'Overview', href: '/ops', icon: 'dashboard' },
     { label: 'Driver Verification', href: '/kyc', icon: 'verified_user' },
     { label: 'Live Fleet Monitor', href: '/trips', icon: 'map' },
     { label: 'Safety Exceptions', href: '/safety', icon: 'warning' },

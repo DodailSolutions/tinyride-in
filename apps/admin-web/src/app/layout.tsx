@@ -2,8 +2,8 @@ import './globals.css';
 import { AdminShell } from '@/components/AdminShell';
 
 export const metadata = {
-  title: 'TinyRide — Operations & Admin Console',
-  description: 'Operations, Safety Monitoring, KYC & Finance by Dodail Solutions',
+  title: 'TinyRide — School rides, without the worry.',
+  description: 'Know when your child’s ride is arriving, who is driving, and when they reach school — all from one simple app.',
 };
 
 export default function RootLayout({
