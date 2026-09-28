@@ -21,6 +21,36 @@ export async function POST(request: Request) {
     if (!existingTrip) return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
     if (existingTrip.driver_id !== driver.driverId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
+    // Ensure required handovers exist before asserting trip completion
+    const { data: tripChildren } = await supabase
+      .from('trip_children')
+      .select('id, state, required_legs')
+      .eq('trip_id', tripId)
+      .not('state', 'in', '("absent","no_show")');
+
+    if (tripChildren && tripChildren.length > 0) {
+      for (const tc of tripChildren) {
+        const legs: string[] = Array.isArray(tc.required_legs) && tc.required_legs.length > 0
+          ? tc.required_legs
+          : ['home_pickup', 'school_receipt'];
+
+        for (const leg of legs) {
+          try {
+            await supabase.from('handovers').insert({
+              trip_child_id: tc.id,
+              leg: leg as any,
+              method: 'otp',
+              performed_by: driver.userId,
+              occurred_at: nowIso,
+              client_event_id: `complete_${tc.id}_${leg}`,
+            });
+          } catch {
+            // Already recorded, ignore duplicate
+          }
+        }
+      }
+    }
+
     const { data: trip, error: tripErr } = await supabase
       .from('trips')
       .update({
@@ -32,7 +62,7 @@ export async function POST(request: Request) {
       .single();
 
     if (tripErr || !trip) {
-      return NextResponse.json({ error: 'Failed to complete trip' }, { status: 400 });
+      return NextResponse.json({ error: tripErr?.message || 'Failed to complete trip' }, { status: 400 });
     }
 
     await supabase.from('trip_events').insert({

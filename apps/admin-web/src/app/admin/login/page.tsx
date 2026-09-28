@@ -18,13 +18,20 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      // Basic operational auth verification
       if (!email.trim() || !passcode.trim()) {
         throw new Error('Please provide administrator credentials.');
       }
-      // Simulate quick secure authentication token session
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const res = await fetch('/api/auth/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), passcode: passcode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Authentication failed');
+      }
       router.push('/admin');
+      router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {

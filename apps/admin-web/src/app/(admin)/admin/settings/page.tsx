@@ -116,7 +116,28 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* API & Services Status */}
+        <div className="p-5 bg-slate-950 rounded-2xl border border-slate-800 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-extrabold text-sm text-white">
+                API &amp; Service Integrations
+              </h3>
+              <p className="text-slate-400 text-[11px] mt-0.5">
+                Inspect live status of geospatial map tile providers, Supabase database, SMS OTP gateways, and realtime fleet sync.
+              </p>
+            </div>
+            <Link
+              href="/admin/settings/integrations"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white font-bold rounded-lg border border-slate-700 transition-colors text-xs"
+            >
+              <span>Manage Integrations</span>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+

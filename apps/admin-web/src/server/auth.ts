@@ -129,17 +129,30 @@ export async function sendPhoneOtp(rawPhone: string): Promise<{
     sendCountWindow: 1,
   });
 
-  console.log(`[TinyRide Auth] SMS OTP dispatched for ${phone}: ${code} (Token generated)`);
+  const isTwilioConfigured = Boolean(
+    process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_AUTH_TOKEN &&
+    process.env.TWILIO_PHONE_NUMBER
+  );
+  const isDevBypass = process.env.DEV_OTP_BYPASS === 'true';
+
+  if (!isTwilioConfigured && process.env.NODE_ENV === 'production' && !isDevBypass) {
+    throw new Error('OTP provider is not configured. Add SMS gateway credentials to server environment.');
+  }
+
+  if (isDevBypass || process.env.NODE_ENV !== 'production') {
+    console.log(`[TinyRide Auth Dev] OTP generated for ${phone} (Development Mode)`);
+  }
 
   // If an external SMS gateway is configured (e.g. Twilio), call it here
-  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+  if (isTwilioConfigured) {
     try {
       const basicAuth = Buffer.from(
         `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`
       ).toString('base64');
       const body = new URLSearchParams({
         To: phone,
-        From: process.env.TWILIO_PHONE_NUMBER,
+        From: process.env.TWILIO_PHONE_NUMBER!,
         Body: `Your TinyRide verification code is: ${code}. Valid for 15 minutes. Do not share this code.`,
       });
       await fetch(
@@ -155,21 +168,42 @@ export async function sendPhoneOtp(rawPhone: string): Promise<{
       );
     } catch (err) {
       console.warn('[TinyRide Auth] Failed to dispatch via Twilio gateway:', err);
+      if (process.env.NODE_ENV === 'production' && !isDevBypass) {
+        throw new Error('SMS gateway failed to dispatch verification code. Please try again.');
+      }
     }
   }
 
+  const message = isTwilioConfigured
+    ? 'Verification code sent to your mobile number'
+    : 'OTP provider is not configured (Development mode active)';
+
   return {
     success: true,
-    message: 'Verification code sent to your mobile number',
+    message,
     phoneE164: phone,
     expiresInSeconds: 900,
     otpToken,
-    // Always provide debugCode in test/preview or dev environments so verification is immediately usable
-    debugCode: code,
+    debugCode: (isDevBypass || process.env.NODE_ENV !== 'production') ? code : undefined,
   };
 }
 
 export const SCHOOL_SESSION_COOKIE_NAME = 'tinyride_school_session';
+export const ADMIN_SESSION_COOKIE_NAME = 'tinyride_admin_session';
+
+export function signAdminSessionToken(_email: string, displayName = 'Central Controller (Platform Admin)'): string {
+  const payload: SessionPayload = {
+    userId: 'admin-controller',
+    parentId: '',
+    phone: '',
+    role: 'admin',
+    displayName,
+    onboardingStatus: 'complete',
+    exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
+  };
+  return signSessionToken(payload);
+}
+
 
 export interface SessionPayload {
   userId: string;
@@ -246,10 +280,16 @@ export async function verifyPhoneOtp(
   if (!phone) throw new Error('Phone number is required');
   if (!code || code.length !== 6) throw new Error('Enter a valid 6-digit verification code');
 
-  // Master Test Bypass codes: always valid in all environments
-  const isMasterBypass = code === '482910' || code === '123456' || code === '999999';
+  const isDevBypass = process.env.DEV_OTP_BYPASS === 'true';
+  const isMasterBypass = isDevBypass && (code === '482910' || code === '123456');
 
   let isValidOtp = isMasterBypass;
+
+  const rec = otpStore.get(phone);
+  if (rec && rec.attempts >= 5) {
+    otpStore.delete(phone);
+    throw new Error('Too many invalid attempts. Please request a new verification code.');
+  }
 
   // 1. Verify via signed stateless OTP token (works across any serverless lambdas)
   if (!isValidOtp && otpToken) {
@@ -266,19 +306,21 @@ export async function verifyPhoneOtp(
 
   // 2. Verify via in-memory store fallback (for single-process / local development)
   if (!isValidOtp) {
-    const rec = otpStore.get(phone);
     if (rec && Date.now() <= rec.expiresAt) {
       const computed = crypto.scryptSync(code, rec.salt, 32).toString('hex');
       if (computed === rec.hash) {
         isValidOtp = true;
-        otpStore.delete(phone);
       }
     }
   }
 
   if (!isValidOtp) {
-    throw new Error('Invalid verification code. Please check your code or use test code 482910.');
+    if (rec) rec.attempts += 1;
+    throw new Error('Invalid verification code. Please check the code sent to your phone.');
   }
+
+  // Single-use: immediately delete from store
+  otpStore.delete(phone);
 
   const supabase = getServiceSupabase();
   let userId: string = '';
@@ -497,9 +539,15 @@ export async function verifyPhoneOtpDriver(
   if (!phone) throw new Error('Phone number is required');
   if (!code || code.length !== 6) throw new Error('Enter a valid 6-digit verification code');
 
-  // Same OTP verification logic as parent
-  const isMasterBypass = code === '482910' || code === '123456' || code === '999999';
+  const isDevBypass = process.env.DEV_OTP_BYPASS === 'true';
+  const isMasterBypass = isDevBypass && (code === '482910' || code === '123456');
   let isValidOtp = isMasterBypass;
+
+  const rec = otpStore.get(phone);
+  if (rec && rec.attempts >= 5) {
+    otpStore.delete(phone);
+    throw new Error('Too many invalid attempts. Please request a new verification code.');
+  }
 
   if (!isValidOtp && otpToken) {
     const verified = verifyOtpToken(otpToken);
@@ -510,19 +558,21 @@ export async function verifyPhoneOtpDriver(
   }
 
   if (!isValidOtp) {
-    const rec = otpStore.get(phone);
     if (rec && Date.now() <= rec.expiresAt) {
       const computed = crypto.scryptSync(code, rec.salt, 32).toString('hex');
       if (computed === rec.hash) {
         isValidOtp = true;
-        otpStore.delete(phone);
       }
     }
   }
 
   if (!isValidOtp) {
-    throw new Error('Invalid verification code.');
+    if (rec) rec.attempts += 1;
+    throw new Error('Invalid verification code. Please check the code sent to your phone.');
   }
+
+  // Single-use: delete from store upon success
+  otpStore.delete(phone);
 
   const supabase = getServiceSupabase();
 

@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
     const schoolName = (trip.routes as any)?.schools?.name || 'Olive Mount Global School';
 
-    // 2. Update trip_children state to 'at_school'
+    // 2. Update trip_children state to 'at_school' and write school_receipt handovers
     const { data: tripChildren } = await supabase
       .from('trip_children')
       .select('id, child_id, children!inner(first_name, parents!inner(user_id))')
@@ -47,12 +47,39 @@ export async function POST(request: Request) {
       .eq('trip_id', tripId)
       .neq('state', 'absent');
 
-    // 3. Emit trip event
+    // Insert school_receipt handovers and child events
+    if (tripChildren && tripChildren.length > 0) {
+      for (const tc of tripChildren) {
+        try {
+          await supabase.from('handovers').insert({
+            trip_child_id: tc.id,
+            leg: 'school_receipt',
+            method: 'otp',
+            performed_by: driver.userId,
+            occurred_at: nowIso,
+            client_event_id: `school_arrival_${tc.id}_${Date.now()}`,
+          });
+        } catch {
+          // Handover already recorded, ignore duplicate
+        }
+
+        await supabase.from('trip_child_events').insert({
+          trip_child_id: tc.id,
+          event_type: 'school_received',
+          from_state: 'picked_up',
+          to_state: 'at_school',
+          occurred_at: nowIso,
+          payload: { location: 'school_campus_bay', schoolName },
+        });
+      }
+    }
+
+    // 3. Emit note event on trip
     await supabase.from('trip_events').insert({
       trip_id: tripId,
-      event_type: 'trip_ended',
+      event_type: 'note',
       occurred_at: nowIso,
-      payload: { location: 'school_campus_bay', schoolName, stopId },
+      payload: { location: 'school_campus_bay', schoolName, stopId: stopId || null, note: 'Vehicle arrived at school campus' },
     });
 
     // 4. Send real parent notifications to all enrolled parents

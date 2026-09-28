@@ -155,12 +155,6 @@ export default function ParentVerifyPage() {
     }
   };
 
-  const handleUseDemoOtp = () => {
-    const demoCode = ['4', '8', '2', '9', '1', '0'];
-    setDigits(demoCode);
-    setError('');
-    verifyCode('482910');
-  };
 
   const handleResend = async () => {
     if (timer > 0) return;
@@ -268,17 +262,6 @@ export default function ParentVerifyPage() {
                 ))}
               </div>
 
-              {/* Demo Helper Button */}
-              <div className="flex items-center justify-between text-xs px-1">
-                <span className="text-slate-400">Demo code: 123456</span>
-                <button
-                  type="button"
-                  onClick={handleUseDemoOtp}
-                  className="font-semibold text-xs text-[#006B2F] hover:underline cursor-pointer select-none"
-                >
-                  Auto-fill demo code
-                </button>
-              </div>
             </div>
 
             {/* Primary Verify CTA */}

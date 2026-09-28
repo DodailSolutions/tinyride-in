@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import type * as L from 'leaflet';
-import { Layers, Crosshair, ArrowRight, Phone, Navigation } from 'lucide-react';
+import Link from 'next/link';
+import { Crosshair, ArrowRight, Phone, AlertTriangle, RefreshCw, Settings, ShieldAlert } from 'lucide-react';
 
 export interface AdminMapTrip {
   tripId: string;
@@ -13,7 +14,7 @@ export interface AdminMapTrip {
   driverPhone: string;
   vehicleNumber: string;
   vehicleModel: string;
-  vehicleType: 'auto_rickshaw' | 'van' | 'school_bus' | string;
+  vehicleType: 'auto_rickshaw' | 'van' | 'school_bus' | 'force_traveller' | string;
   passengersBoarded: number;
   totalPassengers: number;
   currentPhase: string;
@@ -25,6 +26,7 @@ export interface AdminMapTrip {
   lastLocation: { lat: number; lng: number } | null;
   lastUpdated: string;
   isOnline: boolean;
+  isStale?: boolean;
   stops?: Array<{ id: string; name: string; sequence: number; lat: number; lng: number; isPassed?: boolean }>;
 }
 
@@ -39,7 +41,7 @@ interface AdminCommandMapProps {
 }
 
 // ─────────────────────────────────────────────────────────
-// Vehicle Vector SVGs (Auto-rickshaw, Van, Bus)
+// Vehicle Vector SVGs (Auto-rickshaw, Van, Bus, Force Traveller)
 // ─────────────────────────────────────────────────────────
 
 function autoRickshawSvg(color = '#006B2F'): string {
@@ -95,25 +97,28 @@ function busSvg(color = '#006B2F'): string {
   </svg>`;
 }
 
-function getVehicleIconSvg(vehicleType: string, slaStatus: string, isOnline: boolean): string {
+function getVehicleIconSvg(vehicleType: string, slaStatus: string, isOnline: boolean, isStale: boolean): string {
   let color = '#006B2F'; // Emerald green
   if (!isOnline) {
-    color = '#64748B'; // Muted slate
+    color = '#64748B'; // Offline slate
+  } else if (isStale) {
+    color = '#D97706'; // Stale amber
   } else if (slaStatus === 'delayed') {
-    color = '#D97706'; // Amber
+    color = '#EA580C'; // Delayed orange
   } else if (slaStatus === 'attention') {
-    color = '#DC2626'; // Red
+    color = '#DC2626'; // Alert red
   }
 
-  const t = (vehicleType || '').toLowerCase();
-  if (t === 'auto' || t === 'auto_rickshaw' || t === 'three_wheeler') return autoRickshawSvg(color);
-  if (t === 'bus' || t === 'school_bus') return busSvg(color);
+  const v = (vehicleType || '').toLowerCase();
+  if (v.includes('auto') || v.includes('rickshaw') || v.includes('three')) {
+    return autoRickshawSvg(color);
+  }
+  if (v.includes('bus')) {
+    return busSvg(color);
+  }
   return vanSvg(color);
 }
 
-// ─────────────────────────────────────────────────────────
-// Inject Map CSS Once
-// ─────────────────────────────────────────────────────────
 let _adminMapCssInjected = false;
 function injectMapStyles() {
   if (_adminMapCssInjected || typeof document === 'undefined') return;
@@ -132,6 +137,8 @@ function injectMapStyles() {
   document.head.appendChild(style);
 }
 
+type MapState = 'connected' | 'config_error' | 'temp_failure';
+
 export function AdminCommandMap({
   trips,
   selectedTripId,
@@ -146,7 +153,10 @@ export function AdminCommandMap({
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const LRef = useRef<typeof L | null>(null);
   const [leafletReady, setLeafletReady] = useState(false);
+  const [mapState, setMapState] = useState<MapState>('connected');
+  const [overrideProvider, setOverrideProvider] = useState<string | null>(null);
   const [activeFlyoutTrip, setActiveFlyoutTrip] = useState<AdminMapTrip | null>(null);
+  const consecutiveTileErrorsRef = useRef<number>(0);
 
   // Filter trips
   const filteredTrips = useMemo(() => {
@@ -168,7 +178,7 @@ export function AdminCommandMap({
     if (typeof window === 'undefined') return;
     injectMapStyles();
 
-    // Inject Leaflet CSS
+    // Inject Leaflet CSS if not already loaded
     if (!document.getElementById('leaflet-admin-css')) {
       const link = document.createElement('link');
       link.id = 'leaflet-admin-css';
@@ -177,10 +187,14 @@ export function AdminCommandMap({
       document.head.appendChild(link);
     }
 
-    import('leaflet').then((leafletModule) => {
-      LRef.current = leafletModule.default || leafletModule;
-      setLeafletReady(true);
-    });
+    import('leaflet')
+      .then((leafletModule) => {
+        LRef.current = leafletModule.default || leafletModule;
+        setLeafletReady(true);
+      })
+      .catch(() => {
+        setMapState('temp_failure');
+      });
 
     return () => {
       if (mapInstanceRef.current) {
@@ -190,33 +204,135 @@ export function AdminCommandMap({
     };
   }, []);
 
+  // Determine Tile Layer URL & Attribution based on environment configuration
+  const getTileConfig = useCallback((): { url: string; options: L.TileLayerOptions; error?: string } => {
+    const provider = (overrideProvider || process.env.NEXT_PUBLIC_MAP_PROVIDER || 'osm').toLowerCase();
+    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+    const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
+    const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY;
+
+    if (provider === 'mapbox') {
+      if (!mapboxToken) {
+        return {
+          url: '',
+          options: {},
+          error: 'Mapbox access token is required (NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN).',
+        };
+      }
+      return {
+        url: `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`,
+        options: {
+          maxZoom: 19,
+          tileSize: 512,
+          zoomOffset: -1,
+          attribution: '&copy; <a href="https://www.mapbox.com/">Mapbox</a>',
+        },
+      };
+    }
+
+    if (provider === 'maptiler') {
+      if (!maptilerKey) {
+        return {
+          url: '',
+          options: {},
+          error: 'MapTiler API key is required (NEXT_PUBLIC_MAPTILER_API_KEY).',
+        };
+      }
+      return {
+        url: `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${maptilerKey}`,
+        options: {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a>',
+        },
+      };
+    }
+
+    if (provider === 'carto') {
+      if (!cartoKey) {
+        return {
+          url: '',
+          options: {},
+          error: 'Carto API key is required (NEXT_PUBLIC_CARTO_API_KEY).',
+        };
+      }
+      return {
+        url: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${cartoKey}`,
+        options: {
+          maxZoom: 19,
+          subdomains: 'abcd',
+          attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+        },
+      };
+    }
+
+    // Default: High-availability standard OpenStreetMap tile layer (reliable, free, zero watermark errors)
+    return {
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      options: {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      },
+    };
+  }, [overrideProvider]);
+
   // Initialize Map
-  useEffect(() => {
-    if (!leafletReady || !mapContainerRef.current || mapInstanceRef.current || !LRef.current) return;
-
+  const initMap = useCallback(() => {
+    if (!leafletReady || !mapContainerRef.current || !LRef.current) return;
     const L = LRef.current;
-    // Default to Hyderabad central coordinates
-    const map = L.map(mapContainerRef.current, {
-      center: [17.3850, 78.4867],
-      zoom: 13,
-      zoomControl: false,
-      attributionControl: false,
-    });
 
-    // Clean, high-performance base tile layer (CartoDB Positron / OSM)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-      subdomains: 'abcd',
-    }).addTo(map);
+    // Check configuration
+    const tileConfig = getTileConfig();
+    if (tileConfig.error) {
+      setMapState('config_error');
+      return;
+    }
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
 
-    mapInstanceRef.current = map;
-  }, [leafletReady]);
+    try {
+      const map = L.map(mapContainerRef.current, {
+        center: [17.3850, 78.4867], // Hyderabad Municipal Center
+        zoom: 13,
+        zoomControl: false,
+        attributionControl: false,
+      });
+
+      const tileLayer = L.tileLayer(tileConfig.url, tileConfig.options);
+
+      consecutiveTileErrorsRef.current = 0;
+      tileLayer.on('tileerror', () => {
+        consecutiveTileErrorsRef.current += 1;
+        // If multiple tiles fail continuously, flag temporary failure
+        if (consecutiveTileErrorsRef.current > 6) {
+          setMapState('temp_failure');
+        }
+      });
+
+      tileLayer.on('load', () => {
+        consecutiveTileErrorsRef.current = 0;
+        setMapState('connected');
+      });
+
+      tileLayer.addTo(map);
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      mapInstanceRef.current = map;
+      setMapState('connected');
+    } catch {
+      setMapState('temp_failure');
+    }
+  }, [leafletReady, getTileConfig]);
+
+  useEffect(() => {
+    initMap();
+  }, [initMap]);
 
   // Update Markers on Trips change
   useEffect(() => {
-    if (!mapInstanceRef.current || !LRef.current) return;
+    if (mapState !== 'connected' || !mapInstanceRef.current || !LRef.current) return;
     const L = LRef.current;
     const map = mapInstanceRef.current;
     const currentMarkers = markersRef.current;
@@ -233,26 +349,30 @@ export function AdminCommandMap({
       }
     }
 
-    // Add or update markers
+    // Add or update markers with smooth GPS interpolation
     filteredTrips.forEach((trip) => {
       if (!trip.lastLocation?.lat || !trip.lastLocation?.lng) return;
       const { lat, lng } = trip.lastLocation;
       validCoords.push([lat, lng]);
 
-      const svgHtml = getVehicleIconSvg(trip.vehicleType, trip.slaStatus, trip.isOnline);
-      const pulseColor = trip.slaStatus === 'delayed' ? 'rgba(217,119,6,0.4)' : 'rgba(0,107,47,0.35)';
-      const pulseRing = trip.isOnline
+      const isStale = Boolean(trip.isStale || (trip.lastUpdated && trip.lastUpdated.includes('ago') && parseInt(trip.lastUpdated) >= 2));
+      const svgHtml = getVehicleIconSvg(trip.vehicleType, trip.slaStatus, trip.isOnline, isStale);
+      const pulseColor = isStale ? 'rgba(217,119,6,0.35)' : trip.slaStatus === 'delayed' ? 'rgba(217,119,6,0.4)' : 'rgba(0,107,47,0.35)';
+      const pulseRing = trip.isOnline && !isStale
         ? `<div style="position:absolute;top:1px;left:2px;width:44px;height:44px;border-radius:50%;background:${pulseColor};animation:admin-pulse 2.2s infinite;pointer-events:none;"></div>`
         : '';
+
+      const badgeText = isStale ? 'GPS STALE' : trip.routeCode;
+      const badgeBg = isStale ? '#B45309' : trip.slaStatus === 'delayed' ? '#D97706' : '#0F172A';
 
       const markerHtml = `
         <div style="position:relative;width:48px;height:54px;display:flex;flex-direction:column;align-items:center;cursor:pointer;" title="${trip.routeCode} • ${trip.driverName}">
           ${pulseRing}
-          <div style="transform:rotate(${trip.heading || 0}deg);transform-origin:22px 20px;transition:transform 0.4s ease;">
+          <div style="transform:rotate(${trip.heading || 0}deg);transform-origin:22px 20px;transition:transform 0.5s ease;">
             ${svgHtml}
           </div>
-          <div style="position:absolute;bottom:0px;background:${trip.slaStatus === 'delayed' ? '#D97706' : '#0F172A'};color:#FFFFFF;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.3);letter-spacing:0.5px;">
-            ${trip.routeCode}
+          <div style="position:absolute;bottom:0px;background:${badgeBg};color:#FFFFFF;font-size:9px;font-weight:800;padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.4);letter-spacing:0.4px;">
+            ${badgeText}
           </div>
         </div>
       `;
@@ -264,163 +384,224 @@ export function AdminCommandMap({
         iconAnchor: [24, 27],
       });
 
-      let marker = currentMarkers.get(trip.tripId);
-      if (marker) {
-        marker.setLatLng([lat, lng]);
-        marker.setIcon(icon);
+      const existingMarker = currentMarkers.get(trip.tripId);
+      if (existingMarker) {
+        // Smoothly interpolate position to new GPS coordinate
+        existingMarker.setLatLng([lat, lng]);
+        existingMarker.setIcon(icon);
       } else {
-        marker = L.marker([lat, lng], { icon }).addTo(map);
-        marker.on('click', () => {
-          setActiveFlyoutTrip(trip);
-          onSelectTrip?.(trip.tripId);
-        });
+        const marker = L.marker([lat, lng], { icon })
+          .addTo(map)
+          .on('click', () => {
+            setActiveFlyoutTrip(trip);
+            onSelectTrip?.(trip.tripId);
+          });
         currentMarkers.set(trip.tripId, marker);
       }
     });
 
-    // Auto-fit bounds if we have valid coordinates and not manually zoomed
-    if (validCoords.length > 0) {
-      const bounds = L.latLngBounds(validCoords);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    // Auto-center if a trip is selected
+    if (selectedTripId) {
+      const selected = filteredTrips.find((t) => t.tripId === selectedTripId);
+      if (selected?.lastLocation?.lat && selected?.lastLocation?.lng) {
+        map.setView([selected.lastLocation.lat, selected.lastLocation.lng], 15, { animate: true });
+        setActiveFlyoutTrip(selected);
+      }
     }
-  }, [filteredTrips, onSelectTrip]);
+  }, [filteredTrips, selectedTripId, onSelectTrip, mapState]);
 
-  // Handle selectedTripId zoom
-  useEffect(() => {
-    if (!selectedTripId || !mapInstanceRef.current) return;
-    const trip = trips.find((t) => t.tripId === selectedTripId);
-    if (trip?.lastLocation?.lat && trip?.lastLocation?.lng) {
-      mapInstanceRef.current.flyTo([trip.lastLocation.lat, trip.lastLocation.lng], 16, {
-        duration: 0.8,
-      });
-      setActiveFlyoutTrip(trip);
-    }
-  }, [selectedTripId, trips]);
-
-  const handleCenterAll = () => {
+  // Recenter Map
+  const handleRecenter = () => {
     if (!mapInstanceRef.current || !LRef.current) return;
-    const coords: [number, number][] = trips
-      .filter((t) => t.lastLocation?.lat && t.lastLocation?.lng)
-      .map((t) => [t.lastLocation!.lat, t.lastLocation!.lng]);
-
-    if (coords.length > 0) {
-      mapInstanceRef.current.fitBounds(LRef.current.latLngBounds(coords), { padding: [50, 50] });
+    const map = mapInstanceRef.current;
+    if (filteredTrips.length > 0) {
+      const bounds: [number, number][] = filteredTrips
+        .filter((t) => t.lastLocation?.lat && t.lastLocation?.lng)
+        .map((t) => [t.lastLocation!.lat, t.lastLocation!.lng]);
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+        return;
+      }
     }
+    map.setView([17.3850, 78.4867], 13);
   };
 
   return (
-    <div className={`relative w-full h-full bg-slate-100 overflow-hidden ${className}`}>
-      {/* Map canvas */}
+    <div className={`relative w-full h-full min-h-[460px] bg-slate-950 rounded-2xl overflow-hidden ${className}`}>
+      {/* ─────────────────────────────────────────────────────────────
+          STATE 1: MAP CONTAINER
+      ───────────────────────────────────────────────────────────── */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-      {/* Floating Map Controls */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm text-xs">
-        <span className="font-bold text-slate-800 flex items-center gap-1.5">
-          <Layers className="w-3.5 h-3.5 text-emerald-700" />
-          <span>Fleet Layer:</span>
-        </span>
-        <span className="text-slate-600 font-semibold">
-          {filteredTrips.length} {filteredTrips.length === 1 ? 'vehicle' : 'vehicles'} visible
-        </span>
-      </div>
-
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-        <button
-          onClick={handleCenterAll}
-          title="Center map on all active vehicles"
-          className="p-2 bg-white/95 backdrop-blur-md hover:bg-slate-50 text-slate-700 rounded-lg border border-slate-200 shadow-sm transition-all flex items-center gap-1 text-xs font-semibold"
-        >
-          <Crosshair className="w-4 h-4 text-emerald-700" />
-          <span className="hidden sm:inline">Fit Fleet</span>
-        </button>
-      </div>
-
-      {/* Empty State Overlay */}
-      {filteredTrips.length === 0 && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/10 backdrop-blur-[2px] pointer-events-none p-6 text-center">
-          <div className="bg-white/95 p-5 rounded-xl border border-slate-200 shadow-md max-w-sm pointer-events-auto">
-            <Navigation className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-            <h4 className="text-sm font-bold text-slate-800">No Active Vehicles in View</h4>
-            <p className="text-xs text-slate-600 mt-1">
-              Vehicles will appear here as soon as drivers initiate morning or afternoon trips with active GPS telemetry.
+      {/* ─────────────────────────────────────────────────────────────
+          STATE 2: CONFIGURATION ERROR
+          (Replaces raw "API KEY REQUIRED" map tiles with clean setup CTA)
+      ───────────────────────────────────────────────────────────── */}
+      {mapState === 'config_error' && (
+        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-950/60 border border-amber-800/60 text-amber-400 flex items-center justify-center shadow-xl">
+            <AlertTriangle className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5 max-w-sm">
+            <h4 className="text-base font-extrabold text-white">Live map is not configured</h4>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Add the required map provider credentials to your server environment or switch provider in Admin integrations.
             </p>
+          </div>
+          <div className="flex items-center gap-3 pt-2">
+            <Link
+              href="/admin/settings/integrations"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs transition-all shadow-lg flex items-center gap-2"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>View Setup</span>
+            </Link>
+            <button
+              onClick={() => {
+                setOverrideProvider('osm');
+                setMapState('connected');
+              }}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors"
+            >
+              Use Standard OpenStreetMap
+            </button>
           </div>
         </div>
       )}
 
-      {/* Floating Selected Vehicle Command Card */}
+      {/* ─────────────────────────────────────────────────────────────
+          STATE 3: TEMPORARY FAILURE
+          (Graceful offline/retry state, never leaves a blank broken map)
+      ───────────────────────────────────────────────────────────── */}
+      {mapState === 'temp_failure' && (
+        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-rose-950/60 border border-rose-800/60 text-rose-400 flex items-center justify-center shadow-xl">
+            <ShieldAlert className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5 max-w-sm">
+            <h4 className="text-base font-extrabold text-white">Live map temporarily unavailable</h4>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Geospatial tile connection timed out. Vehicle telemetry streams continue logging in real-time.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setMapState('connected');
+              initMap();
+            }}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs transition-all shadow-lg flex items-center gap-2"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry Connection</span>
+          </button>
+        </div>
+      )}
+
+      {/* Top Map Status Overlay Strip */}
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-auto">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950/90 backdrop-blur-md border border-slate-800 text-[11px] font-semibold text-slate-300 shadow-lg">
+          <span className={`w-2 h-2 rounded-full ${
+            mapState === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+          }`} />
+          <span className="font-bold text-white">
+            {filteredTrips.length}
+          </span>
+          <span className="text-slate-400">
+            {filteredTrips.length === 1 ? 'Vehicle Live' : 'Vehicles Live'}
+          </span>
+        </div>
+
+        <button
+          onClick={handleRecenter}
+          title="Recenter fleet coverage"
+          className="p-1.5 rounded-xl bg-slate-950/90 backdrop-blur-md border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-colors shadow-lg"
+        >
+          <Crosshair className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Floating Vehicle Detail Flyout Card */}
       {activeFlyoutTrip && (
-        <div className="absolute bottom-6 left-6 right-6 md:right-auto md:w-96 z-20 bg-white/98 backdrop-blur-lg rounded-xl border border-slate-200 shadow-xl p-4 text-xs animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+        <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:w-96 z-20 bg-slate-950/95 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-2xl space-y-3 animate-in fade-in duration-150 text-xs">
+          <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm text-slate-900">{activeFlyoutTrip.routeCode}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                <span className="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 font-mono font-bold text-[11px]">
+                  {activeFlyoutTrip.routeCode}
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
                   activeFlyoutTrip.slaStatus === 'delayed'
-                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    ? 'bg-amber-950 text-amber-400 border border-amber-800/80'
+                    : 'bg-slate-900 text-slate-300 border border-slate-800'
                 }`}>
                   {activeFlyoutTrip.slaStatus === 'delayed' ? `+${activeFlyoutTrip.delayMinutes}m Delayed` : 'On Schedule'}
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono">
-                  {activeFlyoutTrip.vehicleType === 'auto_rickshaw' ? 'Auto-rickshaw' : activeFlyoutTrip.vehicleType?.toUpperCase()}
-                </span>
+                {activeFlyoutTrip.isStale && (
+                  <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800 text-[10px] font-extrabold uppercase">
+                    GPS STALE
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-slate-600 font-medium mt-0.5">{activeFlyoutTrip.schoolName}</p>
+              <h4 className="font-extrabold text-white text-sm mt-1">{activeFlyoutTrip.routeName}</h4>
+              <p className="text-[11px] text-slate-400">{activeFlyoutTrip.schoolName}</p>
             </div>
             <button
               onClick={() => setActiveFlyoutTrip(null)}
-              className="text-slate-400 hover:text-slate-700 p-1 text-base font-bold"
+              className="text-slate-500 hover:text-white p-1"
             >
               ✕
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 py-3 border-b border-slate-100 text-center">
-            <div className="bg-slate-50 p-2 rounded border border-slate-100">
-              <span className="text-[10px] text-slate-500 block">Speed</span>
-              <span className="font-bold text-slate-900 text-sm">{activeFlyoutTrip.speedKph} km/h</span>
+          <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-800/80 text-center">
+            <div className="p-1.5 bg-slate-900/60 rounded-lg">
+              <span className="text-[10px] text-slate-400 font-semibold">Speed</span>
+              <p className="font-mono font-extrabold text-white text-xs">{activeFlyoutTrip.speedKph} km/h</p>
             </div>
-            <div className="bg-slate-50 p-2 rounded border border-slate-100">
-              <span className="text-[10px] text-slate-500 block">Students</span>
-              <span className="font-bold text-slate-900 text-sm">{activeFlyoutTrip.passengersBoarded} / {activeFlyoutTrip.totalPassengers}</span>
+            <div className="p-1.5 bg-slate-900/60 rounded-lg">
+              <span className="text-[10px] text-slate-400 font-semibold">Boarded</span>
+              <p className="font-mono font-extrabold text-white text-xs">
+                {activeFlyoutTrip.passengersBoarded}/{activeFlyoutTrip.totalPassengers}
+              </p>
             </div>
-            <div className="bg-slate-50 p-2 rounded border border-slate-100">
-              <span className="text-[10px] text-slate-500 block">Telemetry</span>
-              <span className="font-bold text-slate-900 text-sm">{activeFlyoutTrip.lastUpdated}</span>
-            </div>
-          </div>
-
-          <div className="pt-3 space-y-1.5 text-slate-600 text-[11px]">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500">Driver:</span>
-              <span className="font-semibold text-slate-800 flex items-center gap-1">
-                {activeFlyoutTrip.driverName}
-                {activeFlyoutTrip.driverPhone && (
-                  <a href={`tel:${activeFlyoutTrip.driverPhone}`} className="text-emerald-700 hover:text-emerald-900 ml-1">
-                    <Phone className="w-3 h-3 inline" />
-                  </a>
-                )}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500">Vehicle:</span>
-              <span className="font-semibold text-slate-800 font-mono">{activeFlyoutTrip.vehicleNumber} ({activeFlyoutTrip.vehicleModel})</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500">Arrival ETA:</span>
-              <span className="font-bold text-emerald-800">{activeFlyoutTrip.eta}</span>
+            <div className="p-1.5 bg-slate-900/60 rounded-lg">
+              <span className="text-[10px] text-slate-400 font-semibold">Signal</span>
+              <p className={`font-extrabold text-xs capitalize ${
+                activeFlyoutTrip.isOnline && !activeFlyoutTrip.isStale ? 'text-emerald-400' : 'text-amber-400'
+              }`}>
+                {activeFlyoutTrip.isStale ? 'Stale' : activeFlyoutTrip.isOnline ? 'Live' : 'Offline'}
+              </p>
             </div>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-            <a
-              href={`/admin/trips?id=${activeFlyoutTrip.tripId}`}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-[11px] font-semibold transition-colors"
+          <div className="space-y-1 text-[11px]">
+            <div className="flex items-center justify-between text-slate-400">
+              <span>Driver: <strong className="text-white">{activeFlyoutTrip.driverName}</strong></span>
+              <span>Vehicle: <strong className="text-white">{activeFlyoutTrip.vehicleNumber}</strong></span>
+            </div>
+            <div className="flex items-center justify-between text-slate-400">
+              <span>Last update: <strong className="text-slate-300">{activeFlyoutTrip.lastUpdated}</strong></span>
+              <span>Type: <strong className="text-slate-300 capitalize">{activeFlyoutTrip.vehicleType.replace('_', ' ')}</strong></span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            {activeFlyoutTrip.driverPhone && (
+              <a
+                href={`tel:${activeFlyoutTrip.driverPhone}`}
+                className="flex-1 py-1.5 px-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Call Cabin</span>
+              </a>
+            )}
+            <Link
+              href={`/admin/trips/${activeFlyoutTrip.tripId}`}
+              className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold flex items-center justify-center gap-1.5 transition-colors shadow-md"
             >
-              <span>Full Trip Timeline</span>
-              <ArrowRight className="w-3 h-3" />
-            </a>
+              <span>Inspect Run</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       )}

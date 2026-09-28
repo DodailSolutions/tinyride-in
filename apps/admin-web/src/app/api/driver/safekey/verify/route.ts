@@ -87,7 +87,22 @@ export async function POST(request: Request) {
       .update({ state: 'picked_up' })
       .eq('id', tripChildId);
 
-    // 4. Record trip_child_event
+    // 4. Record handover entry in public.handovers for completable validation
+    try {
+      await supabase.from('handovers').insert({
+        trip_child_id: tripChildId,
+        leg: 'home_pickup',
+        method: 'otp',
+        performed_by: driver.userId,
+        token_id: tokenRecord?.id || null,
+        occurred_at: nowIso,
+        client_event_id: `safekey_${tripChildId}_${Date.now()}`,
+      });
+    } catch {
+      // If already recorded via client_event_id, proceed
+    }
+
+    // 5. Record trip_child_event
     await supabase.from('trip_child_events').insert({
       trip_child_id: tripChildId,
       event_type: 'pickup_confirmed',
