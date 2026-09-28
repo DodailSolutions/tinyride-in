@@ -1,483 +1,390 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  Navigation,
-  KeyRound,
   CheckCircle2,
   Play,
-  School,
   RefreshCw,
-  MapPin,
   Compass,
+  AlertTriangle,
+  LogOut,
+  Truck,
 } from 'lucide-react';
+import { logoutDriver } from '@/lib/driverAuth';
 
-interface DriverTrip {
+interface RouteStop {
   id: string;
-  status: string;
-  serviceType: string;
-  route: {
-    id: string;
-    name: string;
-    schoolName: string;
-    stops: Array<{
-      id: string;
-      name: string;
-      latitude: number;
-      longitude: number;
-      stopOrder: number;
-    }>;
-  };
-  vehicle: {
-    registrationNumber: string;
-    makeModel: string;
-  };
-  children: Array<{
-    tripChildId: string;
-    childId: string;
-    name: string;
-    grade: string;
-    state: 'pending' | 'picked_up' | 'at_school' | 'dropped_off' | 'absent';
-    pickupStopName?: string;
-  }>;
+  name: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  stopType?: string;
 }
 
-// 4 realistic waypoints from Rainbow Vistas Gate 2 to Olive Mount Campus
-const SIMULATED_WAYPOINTS = [
-  { lat: 17.4720, lng: 78.3970, heading: 175, speed: 24, name: 'Rainbow Vistas Gate 2' },
-  { lat: 17.4420, lng: 78.4010, heading: 160, speed: 38, name: 'Hitec City Flyover' },
-  { lat: 17.4100, lng: 78.4120, heading: 155, speed: 42, name: 'Jubilee Enroute' },
-  { lat: 17.3719, lng: 78.4182, heading: 140, speed: 18, name: 'Olive Mount Campus Bay' },
-];
+interface StudentManifest {
+  tripChildId: string;
+  childId: string;
+  name: string;
+  grade: string;
+  stopName: string;
+  state: 'pending' | 'picked_up' | 'at_school' | 'dropped_off' | 'absent';
+}
 
-export default function DriverConsolePage() {
-  const [trip, setTrip] = useState<DriverTrip | null>(null);
+interface DriverTripSummary {
+  id: string;
+  state: string;
+  direction: string;
+  scheduled_start?: string;
+  actual_start?: string;
+  actual_end?: string;
+  route_id: string;
+}
+
+interface ActiveTripDetail extends DriverTripSummary {
+  routeName: string;
+  schoolName: string;
+  routeStops: RouteStop[];
+  students: StudentManifest[];
+}
+
+interface DriverDataResponse {
+  driver: {
+    id: string;
+    name: string | null;
+    phone: string;
+    status: string;
+  };
+  vehicle: {
+    id: string;
+    registrationNumber: string;
+    makeModel: string;
+    vehicleType: string;
+  } | null;
+  todayTrips: DriverTripSummary[];
+  activeTrip: ActiveTripDetail | null;
+}
+
+export default function DriverDashboardPage() {
+  const router = useRouter();
+  const [data, setData] = useState<DriverDataResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [safeKeyCode, setSafeKeyCode] = useState('');
-  const [selectedTripChildId, setSelectedTripChildId] = useState<string>('');
-  const [isVerifyingKey, setIsVerifyingKey] = useState(false);
-  const [currentWaypointIdx, setCurrentWaypointIdx] = useState(0);
-  const [isAutoSimulating, setIsAutoSimulating] = useState(false);
-  const [isUsingDeviceGps, setIsUsingDeviceGps] = useState(false);
-  const simTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const watchIdRef = useRef<number | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isStartingTrip, setIsStartingTrip] = useState(false);
+  const [confirmStartTripId, setConfirmStartTripId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const loadDriverData = async () => {
-    setIsLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    else setIsRefreshing(true);
+    setErrorMsg(null);
+
     try {
-      const res = await fetch('/api/driver/trips');
-      if (res.ok) {
-        const data = await res.json();
-        setTrip(data.trip || null);
-        if (data.trip?.children?.length > 0) {
-          setSelectedTripChildId(data.trip.children[0].tripChildId);
-        }
+      const res = await fetch('/api/driver/data', { credentials: 'include' });
+      if (res.status === 401) {
+        router.replace('/driver/login');
+        return;
       }
-    } catch (err) {
-      console.error('Failed to load driver trip:', err);
+      if (!res.ok) {
+        throw new Error('Failed to load driver dashboard data');
+      }
+      const json: DriverDataResponse = await res.json();
+      setData(json);
+
+      // If there's an active trip in progress, auto-redirect or prompt to view
+      if (json.activeTrip && json.activeTrip.state === 'in_progress') {
+        router.push(`/driver/trip/${json.activeTrip.id}`);
+      }
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Connection failed');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    loadDriverData();
-    return () => {
-      if (simTimerRef.current) clearInterval(simTimerRef.current);
-      if (watchIdRef.current !== null && typeof navigator !== 'undefined') {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-    };
+    loadData();
   }, []);
 
-  const sendGpsTelemetry = async (lat: number, lng: number, heading = 0, speed = 25) => {
-    if (!trip) return;
+  const handleStartTrip = async (tripId: string) => {
+    setIsStartingTrip(true);
+    setErrorMsg(null);
     try {
-      const res = await fetch('/api/driver/location', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tripId: trip.id,
-          latitude: lat,
-          longitude: lng,
-          heading,
-          speedKph: speed,
-          accuracyMeters: 4.5,
-        }),
-      });
-      if (res.ok) {
-        setStatusMessage(`GPS broadcasted: [${lat.toFixed(4)}, ${lng.toFixed(4)}] @ ${speed} km/h`);
+      // Optional: try getting current coordinate to send with start
+      let lat: number | undefined;
+      let lng: number | undefined;
+      if (navigator.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });
+          });
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+        } catch {}
       }
-    } catch (e) {
-      console.warn('GPS telemetry send failed:', e);
-    }
-  };
 
-  const handleStartTrip = async () => {
-    if (!trip) return;
-    try {
       const res = await fetch('/api/driver/trip/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tripId: trip.id }),
+        credentials: 'include',
+        body: JSON.stringify({ tripId, lat, lng }),
       });
-      if (res.ok) {
-        setStatusMessage('Trip started! Route is live.');
-        loadDriverData();
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Failed to start trip');
       }
-    } catch {
-      setStatusMessage('Error starting trip');
+
+      // Success -> navigate to active trip console
+      router.push(`/driver/trip/${tripId}`);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Error starting trip');
+      setIsStartingTrip(false);
     }
   };
 
-  const handleNextWaypoint = () => {
-    const nextIdx = (currentWaypointIdx + 1) % SIMULATED_WAYPOINTS.length;
-    setCurrentWaypointIdx(nextIdx);
-    const pt = SIMULATED_WAYPOINTS[nextIdx]!;
-    sendGpsTelemetry(pt.lat, pt.lng, pt.heading, pt.speed);
-  };
-
-  const toggleAutoSim = () => {
-    if (isAutoSimulating) {
-      if (simTimerRef.current) clearInterval(simTimerRef.current);
-      setIsAutoSimulating(false);
-      setStatusMessage('Auto GPS transmission paused.');
-    } else {
-      setIsAutoSimulating(true);
-      setStatusMessage('Auto GPS active: broadcasting vehicle telemetry every 3s.');
-      let idx = currentWaypointIdx;
-      simTimerRef.current = setInterval(() => {
-        idx = (idx + 1) % SIMULATED_WAYPOINTS.length;
-        setCurrentWaypointIdx(idx);
-        const pt = SIMULATED_WAYPOINTS[idx]!;
-        sendGpsTelemetry(pt.lat, pt.lng, pt.heading, pt.speed);
-      }, 3000);
-    }
-  };
-
-  const toggleDeviceGps = () => {
-    if (isUsingDeviceGps) {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-      setIsUsingDeviceGps(false);
-      setStatusMessage('Phone GPS disconnected.');
-    } else {
-      if (!navigator.geolocation) {
-        alert('Geolocation is not supported by your browser.');
-        return;
-      }
-      setIsUsingDeviceGps(true);
-      setStatusMessage('Listening to real device GPS...');
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (pos) => {
-          sendGpsTelemetry(
-            pos.coords.latitude,
-            pos.coords.longitude,
-            pos.coords.heading || 0,
-            pos.coords.speed ? pos.coords.speed * 3.6 : 30
-          );
-        },
-        (err) => {
-          setStatusMessage(`GPS error: ${err.message}`);
-          setIsUsingDeviceGps(false);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
-      );
-    }
-  };
-
-  const handleVerifySafeKey = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!selectedTripChildId || !safeKeyCode.trim()) {
-      setStatusMessage('Please enter student SafeKey code.');
-      return;
-    }
-    setIsVerifyingKey(true);
-    try {
-      const res = await fetch('/api/driver/safekey/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tripChildId: selectedTripChildId,
-          code: safeKeyCode.trim(),
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setStatusMessage(`SafeKey Verified! Student marked boarded.`);
-        setSafeKeyCode('');
-        loadDriverData();
-      } else {
-        setStatusMessage(data.error || 'Invalid SafeKey code');
-      }
-    } catch {
-      setStatusMessage('Verification request failed');
-    } finally {
-      setIsVerifyingKey(false);
-    }
-  };
-
-  const handleArriveSchool = async () => {
-    if (!trip) return;
-    try {
-      const res = await fetch('/api/driver/trip/arrive', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tripId: trip.id }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setStatusMessage('Campus arrival logged! All parents notified.');
-        loadDriverData();
-      } else {
-        setStatusMessage(data.error || 'Campus arrival failed');
-      }
-    } catch {
-      setStatusMessage('Network error recording arrival');
-    }
+  const handleLogout = async () => {
+    await logoutDriver();
+    router.replace('/driver/login');
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
-        <RefreshCw className="w-6 h-6 animate-spin text-emerald-400" />
+      <div className="min-h-dvh bg-slate-900 text-white flex flex-col items-center justify-center p-6">
+        <RefreshCw className="w-8 h-8 text-[#006B2F] animate-spin mb-4" />
+        <p className="text-sm font-medium text-slate-400">Loading driver console...</p>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Driver Cockpit Header */}
-      <header className="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-30">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center font-black text-white text-xs">
-              TR
-            </div>
-            <div>
-              <h1 className="font-bold text-sm text-white flex items-center gap-1.5">
-                <span>Driver Cockpit</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
-                  {trip?.vehicle?.registrationNumber || 'TS09-TR-102'}
-                </span>
-              </h1>
-              <p className="text-[11px] text-slate-400">
-                {trip?.route?.name || 'Route 04 Express'} • Ravi Kumar
-              </p>
-            </div>
-          </div>
+  const driver = data?.driver;
+  const vehicle = data?.vehicle;
+  const todayTrips = data?.todayTrips || [];
+  const scheduledTrip = todayTrips.find((t) => t.state === 'scheduled' || t.state === 'ready');
+  const completedTrips = todayTrips.filter((t) => t.state === 'completed');
 
-          <div className="flex items-center gap-2">
-            <Link
-              href="/parent"
-              target="_blank"
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
-            >
-              Open Parent App ↗
-            </Link>
+  return (
+    <div className="min-h-dvh bg-slate-950 text-white flex flex-col font-sans pb-12 select-none">
+      {/* Top Mobile App Bar */}
+      <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-[#006B2F] flex items-center justify-center font-black text-white text-xs shadow-inner">
+            TR
           </div>
+          <div>
+            <h1 className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">TinyRide Driver</h1>
+            <p className="text-sm font-bold text-white tracking-tight mt-0.5">{driver?.name || 'Driver Console'}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => loadData(true)}
+            disabled={isRefreshing}
+            className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white active:scale-95 transition-all"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-rose-400 active:scale-95 transition-all"
+            title="Log Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
-      {/* Main Console Content */}
-      <main className="flex-1 max-w-2xl mx-auto w-full p-4 space-y-4">
-        {/* Status Toast Notification Bar */}
-        {statusMessage && (
-          <div className="p-3 rounded-2xl bg-emerald-950/80 border border-emerald-700/60 text-xs text-emerald-200 flex items-center justify-between animate-in fade-in">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{statusMessage}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setStatusMessage('')}
-              className="text-emerald-400 font-bold px-1"
-            >
-              ✕
-            </button>
+      {/* Main Content Area */}
+      <main className="flex-1 px-4 pt-5 max-w-lg mx-auto w-full flex flex-col gap-4">
+        {errorMsg && (
+          <div className="p-3.5 bg-rose-950/80 border border-rose-800/60 rounded-2xl flex items-center gap-3 text-rose-200 text-xs animate-in fade-in">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+            <p className="flex-1 leading-snug">{errorMsg}</p>
           </div>
         )}
 
-        {/* 1. Trip Controls Card */}
-        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400">Current Trip Status</div>
-              <div className="text-lg font-black text-white capitalize">{trip?.status || 'Scheduled'}</div>
-            </div>
-            <button
-              type="button"
-              onClick={handleStartTrip}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all"
-            >
-              <Play className="w-4 h-4" />
-              <span>Start Trip</span>
-            </button>
-          </div>
-
-          {/* GPS Broadcast Controls */}
-          <div className="space-y-2">
-            <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Navigation className="w-4 h-4 text-emerald-400" />
-              <span>Real-Time GPS Broadcast</span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={handleNextWaypoint}
-                className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white border border-slate-700 flex flex-col items-center justify-center text-center gap-1 active:scale-95 transition-all"
-              >
-                <Compass className="w-4 h-4 text-emerald-400" />
-                <span>Next Waypoint</span>
-                <span className="text-[10px] text-slate-400 truncate max-w-[120px]">
-                  {SIMULATED_WAYPOINTS[currentWaypointIdx]?.name || 'Waypoint'}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={toggleAutoSim}
-                className={`p-3 rounded-xl text-xs font-semibold border flex flex-col items-center justify-center text-center gap-1 active:scale-95 transition-all ${
-                  isAutoSimulating
-                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-900/50'
-                    : 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700'
-                }`}
-              >
-                <Navigation className={`w-4 h-4 ${isAutoSimulating ? 'animate-spin' : 'text-emerald-400'}`} />
-                <span>{isAutoSimulating ? 'Pause Auto Sim' : 'Auto Drive Sim'}</span>
-                <span className="text-[10px] opacity-75">Every 3s broadcast</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={toggleDeviceGps}
-                className={`p-3 rounded-xl text-xs font-semibold border flex flex-col items-center justify-center text-center gap-1 active:scale-95 transition-all col-span-2 sm:col-span-1 ${
-                  isUsingDeviceGps
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-md'
-                    : 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700'
-                }`}
-              >
-                <MapPin className="w-4 h-4 text-blue-400" />
-                <span>{isUsingDeviceGps ? 'Stop Phone GPS' : 'Use Phone GPS'}</span>
-                <span className="text-[10px] opacity-75">Native Geolocation</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. SafeKey Handshake / Student Manifest Card */}
-        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <KeyRound className="w-5 h-5 text-emerald-400" />
-              <h2 className="font-bold text-sm text-white">SafeKey Boarding Handshake</h2>
-            </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
-              {trip?.children?.filter((c) => c.state === 'picked_up').length || 0} /{' '}
-              {trip?.children?.length || 0} Boarded
+        {/* Assigned Vehicle Card */}
+        <section className="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Assigned Vehicle</span>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Ready
             </span>
           </div>
 
-          {/* Student Picker */}
-          {trip?.children && trip.children.length > 0 ? (
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-400">Select Student to Verify:</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {trip.children.map((c) => (
-                    <button
-                      key={c.tripChildId}
-                      type="button"
-                      onClick={() => setSelectedTripChildId(c.tripChildId)}
-                      className={`p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
-                        selectedTripChildId === c.tripChildId
-                          ? 'bg-emerald-950/60 border-emerald-500 text-white'
-                          : 'bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-800'
-                      }`}
-                    >
-                      <div>
-                        <div className="font-bold text-xs">{c.name}</div>
-                        <div className="text-[10px] text-slate-400">{c.grade} • {c.pickupStopName}</div>
-                      </div>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          c.state === 'picked_up'
-                            ? 'bg-emerald-900 text-emerald-300'
-                            : c.state === 'at_school'
-                            ? 'bg-blue-900 text-blue-300'
-                            : c.state === 'absent'
-                            ? 'bg-rose-900 text-rose-300'
-                            : 'bg-slate-700 text-slate-300'
-                        }`}
-                      >
-                        {c.state.toUpperCase()}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+          {vehicle ? (
+            <div className="flex items-center gap-3.5 mt-1">
+              <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700/60 flex items-center justify-center shrink-0 text-emerald-400">
+                <Truck className="w-6 h-6" />
               </div>
-
-              {/* SafeKey Form */}
-              <form onSubmit={handleVerifySafeKey} className="flex gap-2 pt-2">
-                <input
-                  type="text"
-                  maxLength={6}
-                  placeholder="Enter 6-digit SafeKey"
-                  value={safeKeyCode}
-                  onChange={(e) => setSafeKeyCode(e.target.value)}
-                  className="flex-1 px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                />
-                <button
-                  type="submit"
-                  disabled={isVerifyingKey}
-                  className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {isVerifyingKey ? 'Verifying...' : 'Verify SafeKey'}
-                </button>
-              </form>
-
-              {/* Quick One-Click Fill for Aarav Sharma */}
-              <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400">
-                <span>Quick Test Code:</span>
-                <button
-                  type="button"
-                  onClick={() => setSafeKeyCode('482910')}
-                  className="text-emerald-400 font-mono font-bold hover:underline"
-                >
-                  482910
-                </button>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-extrabold text-white tracking-wide truncate">
+                  {vehicle.registrationNumber}
+                </h3>
+                <p className="text-xs text-slate-400 font-medium capitalize truncate">
+                  {vehicle.makeModel} • {vehicle.vehicleType.replace('_', ' ')}
+                </p>
               </div>
             </div>
           ) : (
-            <div className="text-xs text-slate-500 py-3">No students assigned to trip.</div>
-          )}
-        </div>
-
-        {/* 3. Campus Arrival Card */}
-        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-          <div>
-            <div className="text-sm font-bold text-white flex items-center gap-1.5">
-              <School className="w-4 h-4 text-blue-400" />
-              <span>Campus Drop-Off</span>
+            <div className="py-2 text-slate-500 text-xs font-medium">
+              No vehicle actively assigned today. Contact your fleet supervisor.
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Arrive at {trip?.route?.schoolName || 'Olive Mount Global School'}
-            </p>
-          </div>
+          )}
+        </section>
 
-          <button
-            type="button"
-            onClick={handleArriveSchool}
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white shadow-md active:scale-95 transition-all"
-          >
-            Log Arrival
-          </button>
-        </div>
+        {/* Action Priority / Next Ride */}
+        <section className="flex-1 flex flex-col gap-3">
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
+            Today&apos;s Schedule
+          </h2>
+
+          {scheduledTrip ? (
+            <div className="bg-gradient-to-br from-slate-900 to-slate-900/90 border-2 border-emerald-600/40 rounded-3xl p-5 shadow-xl flex flex-col gap-4 relative overflow-hidden">
+              <div className="absolute -right-4 -bottom-4 w-28 h-28 bg-[#006B2F]/10 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-1.5">
+                    {scheduledTrip.direction === 'inbound' ? 'Morning School Run' : 'Afternoon Dropoff'}
+                  </span>
+                  <h3 className="text-xl font-black text-white tracking-tight">Scheduled Route</h3>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-slate-400 block font-medium">Scheduled</span>
+                  <span className="text-sm font-black text-white font-mono">
+                    {scheduledTrip.scheduled_start
+                      ? new Date(scheduledTrip.scheduled_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : '07:15 AM'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center justify-between text-xs text-slate-300">
+                <div className="flex items-center gap-2">
+                  <Compass className="w-4 h-4 text-emerald-400" />
+                  <span>GPS Telemetry &amp; Parent Sync</span>
+                </div>
+                <span className="font-bold text-emerald-400">Live Ready</span>
+              </div>
+
+              {/* Start Trip CTA */}
+              <button
+                type="button"
+                onClick={() => setConfirmStartTripId(scheduledTrip.id)}
+                disabled={isStartingTrip}
+                className="w-full py-4 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-[0.98] text-white font-black text-base rounded-2xl shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[56px]"
+              >
+                <Play className="w-5 h-5 fill-current" />
+                <span>START TRIP NOW</span>
+              </button>
+            </div>
+          ) : (
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center flex flex-col items-center justify-center gap-2">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mb-1" />
+              <h3 className="text-base font-bold text-white">No active trips scheduled</h3>
+              <p className="text-xs text-slate-400 max-w-xs">
+                {completedTrips.length > 0
+                  ? "You've successfully completed all scheduled rides for today. Safe driving!"
+                  : 'You have no trips assigned for today. Check back later or contact school transport ops.'}
+              </p>
+            </div>
+          )}
+
+          {/* Past / Completed Rides list */}
+          {completedTrips.length > 0 && (
+            <div className="mt-2 flex flex-col gap-2">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
+                Completed Today ({completedTrips.length})
+              </span>
+              {completedTrips.map((t) => (
+                <div
+                  key={t.id}
+                  className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-200 capitalize">
+                        {t.direction === 'inbound' ? 'Morning Pickup' : 'Afternoon Return'}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        Finished {t.actual_end ? new Date(t.actual_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold bg-slate-800 text-slate-400 px-2 py-1 rounded-md">
+                    Complete
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
+
+      {/* Confirmation Modal: Start Trip */}
+      {confirmStartTripId && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-5 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <Play className="w-5 h-5 fill-current" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Start School Ride?</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  This will notify parents and initiate live GPS satellite tracking for your vehicle.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-950 rounded-2xl p-3 flex flex-col gap-2 text-xs border border-slate-800/80">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Vehicle:</span>
+                <span className="font-bold text-slate-200">{vehicle?.registrationNumber || 'Assigned Bus'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Telemetry:</span>
+                <span className="font-bold text-emerald-400">High-precision GPS</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setConfirmStartTripId(null)}
+                disabled={isStartingTrip}
+                className="flex-1 py-3 text-slate-400 hover:text-white font-bold text-xs rounded-xl bg-slate-800 active:scale-95 transition-all min-h-[44px]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStartTrip(confirmStartTripId)}
+                disabled={isStartingTrip}
+                className="flex-2 py-3 bg-[#006B2F] hover:bg-[#005525] active:scale-95 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all min-h-[44px]"
+              >
+                {isStartingTrip ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Initiating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Confirm &amp; Start</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

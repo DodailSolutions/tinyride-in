@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
     await supabase.from('trip_child_events').insert({
       trip_child_id: tripChildId,
-      event_type: 'absent_marked',
+      event_type: 'marked_absent',
       from_state: tripChild.state,
       to_state: 'absent',
       occurred_at: nowIso,
