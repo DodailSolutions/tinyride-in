@@ -428,9 +428,9 @@ export default function TinyRideLandingPage() {
                 Log In to Parent Portal
               </Link>
               <div className="flex items-center justify-center gap-3 pt-2 text-[11px] text-slate-500">
-                <a href="#" className="hover:text-emerald-800">Privacy</a>
+                <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} className="hover:text-emerald-800">Privacy</Link>
                 <span>•</span>
-                <a href="#" className="hover:text-emerald-800">Terms</a>
+                <Link href="/terms" onClick={() => setMobileMenuOpen(false)} className="hover:text-emerald-800">Terms</Link>
                 <span>•</span>
                 <a href="mailto:support@tinyride.in" className="hover:text-emerald-800">support@tinyride.in</a>
               </div>
@@ -1678,9 +1678,9 @@ export default function TinyRideLandingPage() {
           <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-slate-400">
             <p>© {new Date().getFullYear()} TinyRide by Dodail Solutions Private Limited. All rights reserved.</p>
             <div className="flex gap-4">
-              <a href="#" className="hover:text-slate-600 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-slate-600 transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-slate-600 transition-colors">Hyderabad, IN</a>
+              <Link href="/privacy" className="hover:text-slate-600 transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms of Service</Link>
+              <Link href="/safety" className="hover:text-slate-600 transition-colors">Trust &amp; Safety</Link>
             </div>
           </div>
         </div>
@@ -1690,11 +1690,11 @@ export default function TinyRideLandingPage() {
       <div className="xl:hidden border-t border-slate-200 bg-white/70 py-6 px-4 text-center text-xs text-slate-500 space-y-2">
         <p>© {new Date().getFullYear()} TinyRide by Dodail Solutions Private Limited. All rights reserved.</p>
         <div className="flex items-center justify-center gap-4 text-[11px] text-slate-600 font-medium">
-          <a href="#" className="hover:text-emerald-800 transition-colors">Privacy Policy</a>
+          <Link href="/privacy" className="hover:text-emerald-800 transition-colors">Privacy Policy</Link>
           <span>•</span>
-          <a href="#" className="hover:text-emerald-800 transition-colors">Terms of Service</a>
+          <Link href="/terms" className="hover:text-emerald-800 transition-colors">Terms of Service</Link>
           <span>•</span>
-          <a href="mailto:support@tinyride.in" className="hover:text-emerald-800 transition-colors">support@tinyride.in</a>
+          <Link href="/safety" className="hover:text-emerald-800 transition-colors">Safety</Link>
         </div>
       </div>
 

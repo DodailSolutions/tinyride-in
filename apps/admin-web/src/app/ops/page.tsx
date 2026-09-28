@@ -401,7 +401,7 @@ export default function OverviewDashboardPage() {
                 SLA variances and route detour notifications.
               </p>
             </div>
-            <Link href="/safety" className="text-xs font-semibold text-emerald-800 hover:underline">
+            <Link href="/ops/safety" className="text-xs font-semibold text-emerald-800 hover:underline">
               View Safety Center →
             </Link>
           </div>

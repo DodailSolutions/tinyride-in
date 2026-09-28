@@ -252,7 +252,7 @@ export default function ParentsLandingPage() {
     },
     {
       q: 'How do parents know when their child boards?',
-      a: 'At your designated pickup stop, the attendant or driver scans your student’s unique SafeKey token. You receive an instant lock-screen notification confirming your child is safely on board.',
+      a: 'At your designated pickup stop, your student’s unique SafeKey token is verified upon boarding. You receive an instant lock-screen notification confirming your child is safely on board.',
     },
     {
       q: 'Can parents see the driver and vehicle?',
@@ -470,9 +470,9 @@ export default function ParentsLandingPage() {
                   opacity: heroMounted ? 1 : 0,
                   transform: heroMounted ? 'translateY(0)' : 'translateY(16px)',
                 }}
-                className="transition-all text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl"
+                className="transition-all text-base sm:text-lg text-slate-600 leading-relaxed max-w-[600px]"
               >
-                See where your child&apos;s school ride is, know who&apos;s driving, and stay updated from pickup to school arrival.
+                See the ride. Know who&apos;s driving. Know when your child boards and arrives at school — all in one simple experience.
               </p>
 
               {/* CTAs */}
@@ -485,19 +485,18 @@ export default function ParentsLandingPage() {
                 }}
                 className="transition-all flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2"
               >
-                <button
-                  type="button"
-                  onClick={handlePrimaryCta}
-                  className="cursor-pointer h-12 min-h-[48px] px-7 bg-[#006B2F] hover:bg-[#005525] active:scale-[0.98] text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-950/15 transition-all flex items-center justify-center gap-2"
+                <Link
+                  href={isAuth ? '/parent' : '/parent/signup'}
+                  className="cursor-pointer h-12 min-h-[48px] px-7 bg-[#006B2F] hover:bg-[#005525] active:scale-[0.98] text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-950/15 transition-all flex items-center justify-center gap-2 group"
                 >
                   <span>Get Started as a Parent</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                </button>
+                </Link>
 
                 {!isAuth && (
                   <Link
                     href="/parent/login"
-                    className="h-12 min-h-[48px] px-5 flex items-center justify-center text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+                    className="h-12 min-h-[48px] px-5 flex items-center justify-center text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200/80 sm:border-transparent"
                   >
                     Already have an account? Log in
                   </Link>
@@ -514,16 +513,16 @@ export default function ParentsLandingPage() {
                 className="transition-opacity pt-3 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-slate-500"
               >
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Police-Verified Drivers</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#006B2F] shrink-0" />
+                  <span>Driver information</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>SafeKey Boarding Token</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#006B2F] shrink-0" />
+                  <span>Live ride updates</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Zero App Download Required</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#006B2F] shrink-0" />
+                  <span>Boarding notifications</span>
                 </div>
               </div>
             </div>
@@ -539,16 +538,16 @@ export default function ParentsLandingPage() {
               className="lg:col-span-6 transition-all"
             >
               {/* Product UI Container: Native app card frame */}
-              <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-2xl shadow-slate-300/50 border border-slate-200/90 relative">
+              <div className="bg-white rounded-3xl p-5 sm:p-7 shadow-2xl shadow-slate-300/50 border border-slate-200/90 relative">
                 {/* Product Header / Active Status Banner */}
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#006B2F] font-bold text-sm flex items-center justify-center">
+                    <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-[#006B2F] font-bold text-sm flex items-center justify-center">
                       AS
                     </div>
                     <div>
-                      <div className="text-xs sm:text-sm font-bold text-slate-900">Aarav Sharma</div>
-                      <div className="text-[11px] text-slate-500">Grade 3A • Olive Mount</div>
+                      <div className="text-sm font-bold text-slate-900">Aarav Sharma</div>
+                      <div className="text-xs text-slate-500">Grade 3A • Route 04 (Olive Mount)</div>
                     </div>
                   </div>
 
@@ -581,7 +580,7 @@ export default function ParentsLandingPage() {
                 </div>
 
                 {/* Vector Map Canvas with Live Vehicle Interpolation */}
-                <div className="relative h-60 sm:h-64 w-full bg-[#f2f6f2] rounded-2xl overflow-hidden border border-slate-200/80 select-none">
+                <div className="relative h-64 sm:h-72 w-full bg-[#f2f6f2] rounded-2xl overflow-hidden border border-slate-200/80 select-none">
                   {/* Street grid illustration */}
                   <svg className="absolute inset-0 w-full h-full stroke-slate-200/80" strokeWidth="6" fill="none">
                     <line x1="0" y1="60" x2="100%" y2="60" stroke="#e5ede5" strokeWidth="16" />
@@ -622,12 +621,12 @@ export default function ParentsLandingPage() {
                   {/* Pin Markers Callout */}
                   <div className="absolute left-[44%] top-[12%] -translate-x-1/2 bg-blue-600 text-white px-2 py-0.5 rounded-md text-[10px] font-bold shadow-sm flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
-                    <span>Your Pickup Gate</span>
+                    <span>Rainbow Vistas Gate 2</span>
                   </div>
 
                   <div className="absolute right-[4%] top-[22%] bg-rose-600 text-white px-2 py-0.5 rounded-md text-[10px] font-bold shadow-sm flex items-center gap-1">
                     <Bus className="w-3 h-3" />
-                    <span>School Campus</span>
+                    <span>Olive Mount Campus</span>
                   </div>
 
                   {/* Moving Vehicle with Directional Rotation & Calm Live Pulse */}
@@ -658,11 +657,11 @@ export default function ParentsLandingPage() {
                   </div>
                 </div>
 
-                {/* Escort and Safety Guarantee footer */}
+                {/* Factual transport details footer */}
                 <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                   <div className="flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Attendant: Sunita Devi (Certified Female Escort)</span>
+                    <ShieldCheck className="w-4 h-4 text-[#006B2F] shrink-0" />
+                    <span>Stop: Rainbow Vistas Gate 2</span>
                   </div>
                   <span className="font-semibold text-slate-700">SafeKey: 482-910</span>
                 </div>
@@ -693,23 +692,23 @@ export default function ParentsLandingPage() {
             {[
               {
                 icon: Navigation,
-                title: 'Live Location Telemetry',
-                desc: 'See the vehicle moving along its approved route with minute-by-minute ETA calculated using traffic data.',
+                title: 'Live Location',
+                desc: 'Follow the vehicle along its mapped route with minute-by-minute ETAs adjusted for live traffic.',
               },
               {
                 icon: UserCheck,
-                title: 'Driver & Vehicle ID',
-                desc: 'View photo, verified driver credentials, female attendant details, and vehicle registration upfront.',
+                title: 'Driver & Vehicle',
+                desc: 'See assigned driver details, vehicle registration, and model upfront before the ride begins.',
               },
               {
                 icon: KeyRound,
-                title: 'SafeKey Boarding Scan',
-                desc: 'Every student carries a unique digital or physical SafeKey token verified at the vehicle door.',
+                title: 'Boarding Status',
+                desc: 'Get confirmed lock-screen alerts the moment your child steps onto the vehicle with SafeKey verification.',
               },
               {
                 icon: ShieldCheck,
-                title: 'School Arrival Verified',
-                desc: 'Receive immediate campus gate confirmation the moment the vehicle enters the school drop-off bay.',
+                title: 'School Arrival',
+                desc: 'Receive automated arrival confirmation as soon as the vehicle reaches the campus gate drop-off bay.',
               },
             ].map((feature, idx) => (
               <ScrollReveal key={idx} delay={idx * 100}>
@@ -750,43 +749,81 @@ export default function ParentsLandingPage() {
               {
                 step: '01',
                 time: '07:15 AM',
-                title: 'Driver Starts',
+                title: 'Driver starts',
                 desc: 'Vehicle departs depot on pre-approved route corridor.',
               },
               {
                 step: '02',
                 time: '07:32 AM',
-                title: 'Approaching Pickup',
+                title: 'Approaching pickup',
                 desc: 'Automated 10-minute warning sent to guardian phone.',
               },
               {
                 step: '03',
                 time: '07:36 AM',
-                title: 'Child Boarded',
+                title: 'Child boarded',
                 desc: 'SafeKey boarding verified at door with instant confirmation.',
               },
               {
                 step: '04',
                 time: '07:38 AM',
-                title: 'En Route',
+                title: 'En route',
                 desc: 'Live telemetry tracks vehicle speed and upcoming stops.',
               },
               {
                 step: '05',
                 time: '08:04 AM',
-                title: 'School Arrival',
+                title: 'School arrival',
                 desc: 'Campus gate verified with arrival notification.',
               },
-            ].map((st, idx) => (
-              <ScrollReveal key={idx} delay={idx * 80}>
-                <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs h-full relative">
-                  <span className="text-xs font-bold text-[#006B2F]">{st.step}</span>
-                  <div className="text-xs font-semibold text-slate-400 mt-1 mb-2">{st.time}</div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-1.5">{st.title}</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">{st.desc}</p>
-                </div>
-              </ScrollReveal>
-            ))}
+            ].map((st, idx) => {
+              const activeStepIdx =
+                tripPhase === 'Driver started'
+                  ? 0
+                  : tripPhase === 'Approaching pickup'
+                  ? 1
+                  : tripPhase === 'Arrived at pickup' || tripPhase === 'Child boarded'
+                  ? 2
+                  : tripPhase === 'En route to school'
+                  ? 3
+                  : 4;
+              const isCompleted = idx < activeStepIdx;
+              const isCurrent = idx === activeStepIdx;
+
+              return (
+                <ScrollReveal key={idx} delay={idx * 80}>
+                  <div
+                    className={`p-5 rounded-3xl border transition-all h-full relative ${
+                      isCurrent
+                        ? 'bg-white border-[#006B2F] shadow-md ring-2 ring-emerald-600/10'
+                        : isCompleted
+                        ? 'bg-white border-slate-200/90 shadow-2xs'
+                        : 'bg-white/70 border-slate-200/60 shadow-2xs opacity-80'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-400">{st.step}</span>
+                      {isCompleted ? (
+                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-[#006B2F] font-bold text-xs flex items-center justify-center">
+                          ✓
+                        </span>
+                      ) : isCurrent ? (
+                        <span className="w-5 h-5 rounded-full bg-[#006B2F] text-white font-bold text-[10px] flex items-center justify-center">
+                          ●
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 text-xs flex items-center justify-center">
+                          ○
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] font-semibold text-slate-400 mb-1">{st.time}</div>
+                    <h3 className="text-sm font-bold text-slate-900 mb-1.5">{st.title}</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">{st.desc}</p>
+                  </div>
+                </ScrollReveal>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -841,7 +878,9 @@ export default function ParentsLandingPage() {
                   TODAY&apos;S RIDE • {activeTab === 'morning' ? 'MORNING PICKUP' : 'AFTERNOON RETURN'}
                 </span>
                 <div className="text-2xl font-extrabold text-white mt-1">Aarav Sharma</div>
-                <div className="text-xs text-slate-400 mt-0.5">Olive Mount • Route 04</div>
+                <div className="text-xs text-slate-400 mt-0.5">
+                  Olive Mount • Route 04 • Pickup: Rainbow Vistas Gate 2
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -861,7 +900,7 @@ export default function ParentsLandingPage() {
               <div className="bg-slate-800/60 p-4 rounded-2xl">
                 <span className="text-slate-400 text-[11px] block">Driver &amp; Vehicle</span>
                 <div className="text-base font-bold text-white mt-1">Ravi Kumar</div>
-                <span className="text-slate-400 text-[11px]">TS09-TR-102 (Force 18S)</span>
+                <span className="text-slate-400 text-[11px]">TS09-TR-102 (Force 18-Seater)</span>
               </div>
               <div className="bg-slate-800/60 p-4 rounded-2xl">
                 <span className="text-slate-400 text-[11px] block">Boarding Pass</span>
@@ -877,10 +916,10 @@ export default function ParentsLandingPage() {
               </div>
 
               <Link
-                href="/parent/signup"
+                href={isAuth ? '/parent' : '/parent/login'}
                 className="w-full sm:w-auto py-2.5 px-5 rounded-xl bg-[#006B2F] hover:bg-[#005525] text-white text-xs font-bold transition-all text-center"
               >
-                Experience Live Parent App &rarr;
+                {isAuth ? 'Open Parent Dashboard \u2192' : 'View Parent App \u2192'}
               </Link>
             </div>
           </div>
@@ -895,28 +934,32 @@ export default function ParentsLandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-6 space-y-5">
               <span className="text-xs font-bold text-[#006B2F] uppercase tracking-wider">
-                Rigorous Safety Standards
+                Safety &amp; Verification
               </span>
               <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                 Know who&apos;s driving and what&apos;s happening.
               </h2>
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                We know that trusting someone with your child&apos;s school commute is significant. That&apos;s why every aspect of the TinyRide network is thoroughly verified.
+                We know that trusting someone with your child&apos;s school commute is significant. That&apos;s why every ride in the TinyRide network provides clear visibility and verified driver details.
               </p>
 
               <div className="space-y-3.5 pt-2">
                 {[
                   {
-                    title: '100% Police-Verified Drivers',
-                    desc: 'Every driver undergoes strict criminal background verification and continuous driving record audits.',
+                    title: 'Verified Driver Identity',
+                    desc: 'Driver credentials, verified contact info, and validated school transportation experience are always transparent.',
                   },
                   {
-                    title: 'Certified Female Attendant Onboard',
-                    desc: 'A trained female escort assists children with boarding, seating, seatbelts, and de-boarding at every stop.',
+                    title: 'SafeKey Boarding Confirmation',
+                    desc: 'A digital boarding handshake at the vehicle door confirms when your child boards and alights.',
                   },
                   {
-                    title: 'Real-Time Speed & Geofence Guard',
-                    desc: 'Automated telemetry flags speed anomalies or off-route detours immediately to school operations.',
+                    title: 'Sanctioned Route Visibility',
+                    desc: 'View progress along school-approved corridors with traffic-adjusted live arrival estimates.',
+                  },
+                  {
+                    title: 'Direct School Coordination',
+                    desc: 'Vehicle status and boarding logs are synced in real time with your school transportation desk.',
                   },
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-start gap-3">
@@ -942,7 +985,7 @@ export default function ParentsLandingPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-bold text-slate-900">Ravi Kumar</span>
                       <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-[#006B2F] text-[10px] font-bold border border-emerald-100">
-                        Police Verified
+                        Verified Driver
                       </span>
                     </div>
                     <div className="text-xs text-slate-500">7+ Years School Transportation Experience</div>
@@ -953,12 +996,12 @@ export default function ParentsLandingPage() {
                   <div>
                     <span className="text-slate-400 block text-[10px]">VEHICLE</span>
                     <strong className="text-slate-900">TS09-TR-102</strong>
-                    <span className="text-slate-500 block text-[11px]">Force Traveller 18S</span>
+                    <span className="text-slate-500 block text-[11px]">Force Traveller 18-Seater</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">FEMALE ATTENDANT</span>
-                    <strong className="text-slate-900">Sunita Devi</strong>
-                    <span className="text-slate-500 block text-[11px]">First-Aid Certified</span>
+                    <span className="text-slate-400 block text-[10px]">PICKUP STOP</span>
+                    <strong className="text-slate-900">Gate 2 Stop</strong>
+                    <span className="text-slate-500 block text-[11px]">Rainbow Vistas</span>
                   </div>
                 </div>
 
@@ -989,25 +1032,30 @@ export default function ParentsLandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {[
               {
                 step: '1',
                 title: 'Mobile Verification',
-                desc: 'Enter your 10-digit mobile number and verify with a fast 6-digit OTP.',
+                desc: 'Enter your 10-digit mobile number and confirm with a fast 6-digit OTP.',
               },
               {
                 step: '2',
-                title: 'Link Child & School',
-                desc: 'Tell us your student’s name, grade, and select their enrolled school campus.',
+                title: 'Parent Profile',
+                desc: 'Add your name, emergency contact details, and notification preferences.',
               },
               {
                 step: '3',
-                title: 'Get SafeKey & Track',
-                desc: 'Receive your family’s unique boarding PIN and start viewing live morning rides.',
+                title: 'Child & School',
+                desc: 'Connect your child’s enrolled school campus, grade, and transport section.',
+              },
+              {
+                step: '4',
+                title: 'Transportation Activation',
+                desc: 'Confirm your pickup stop, receive your family SafeKey, and view live rides.',
               },
             ].map((st, idx) => (
-              <ScrollReveal key={idx} delay={idx * 100}>
+              <ScrollReveal key={idx} delay={idx * 80}>
                 <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-xs h-full flex flex-col justify-between">
                   <div>
                     <div className="w-10 h-10 rounded-xl bg-[#006B2F] text-white font-extrabold text-sm flex items-center justify-center mb-4">
@@ -1061,6 +1109,8 @@ export default function ParentsLandingPage() {
                 >
                   <button
                     type="button"
+                    id={`faq-btn-${idx}`}
+                    aria-controls={`faq-panel-${idx}`}
                     onClick={() => setActiveFaq(isOpen ? null : idx)}
                     aria-expanded={isOpen}
                     className="w-full py-4 px-5 text-left flex items-center justify-between gap-4 cursor-pointer min-h-[48px] focus:outline-none focus:ring-2 focus:ring-[#006B2F]/20"
@@ -1074,7 +1124,12 @@ export default function ParentsLandingPage() {
                   </button>
 
                   {isOpen && (
-                    <div className="px-5 pb-4 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100">
+                    <div
+                      id={`faq-panel-${idx}`}
+                      role="region"
+                      aria-labelledby={`faq-btn-${idx}`}
+                      className="px-5 pb-4 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100"
+                    >
                       {faq.a}
                     </div>
                   )}
@@ -1094,7 +1149,7 @@ export default function ParentsLandingPage() {
             Give your mornings peace of mind.
           </h2>
           <p className="text-base sm:text-lg text-emerald-100 max-w-xl mx-auto leading-relaxed">
-            Join thousands of parents who know exactly when their child&apos;s vehicle arrives.
+            Stay informed from pickup to school arrival.
           </p>
 
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -1110,7 +1165,7 @@ export default function ParentsLandingPage() {
                 href="/parent/login"
                 className="h-12 min-h-[48px] px-5 flex items-center justify-center text-xs sm:text-sm font-semibold text-emerald-100 hover:text-white"
               >
-                Log in to existing account
+                Already have an account? Log in
               </Link>
             )}
           </div>
@@ -1138,9 +1193,9 @@ export default function ParentsLandingPage() {
             <Link href="/terms" className="hover:text-slate-900 transition-colors">
               Terms of Service
             </Link>
-            <a href="#safety" className="hover:text-slate-900 transition-colors">
+            <Link href="/safety" className="hover:text-slate-900 transition-colors">
               Trust &amp; Safety
-            </a>
+            </Link>
           </div>
         </div>
       </footer>
