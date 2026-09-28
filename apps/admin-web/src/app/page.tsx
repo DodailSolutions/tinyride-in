@@ -228,9 +228,9 @@ export default function TinyRideLandingPage() {
             <Link href={parentHref} className="hover:text-emerald-800 transition-colors duration-150">
               For Parents
             </Link>
-            <a href="#for-schools" className="hover:text-emerald-800 transition-colors duration-150">
+            <Link href="/schools" className="hover:text-emerald-800 transition-colors duration-150">
               For Schools
-            </a>
+            </Link>
             <Link href="/drivers" className="hover:text-emerald-800 transition-colors duration-150">
               For Drivers
             </Link>
@@ -250,9 +250,9 @@ export default function TinyRideLandingPage() {
             <Link href={parentHref} className="hover:text-emerald-800 transition-colors duration-150">
               For Parents
             </Link>
-            <a href="#for-schools" className="hover:text-emerald-800 transition-colors duration-150">
+            <Link href="/schools" className="hover:text-emerald-800 transition-colors duration-150">
               For Schools
-            </a>
+            </Link>
             <Link href="/drivers" className="hover:text-emerald-800 transition-colors duration-150">
               For Drivers
             </Link>
@@ -359,13 +359,13 @@ export default function TinyRideLandingPage() {
             >
               For Parents
             </Link>
-            <a
-              href="#for-schools"
+            <Link
+              href="/schools"
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-800 min-h-[44px] flex items-center"
             >
               For Schools
-            </a>
+            </Link>
             <Link
               href="/drivers"
               onClick={() => setMobileMenuOpen(false)}
@@ -1579,12 +1579,12 @@ export default function TinyRideLandingPage() {
                   >
                     Get Started
                   </button>
-                  <a
-                    href="#for-schools"
+                  <Link
+                    href="/schools"
                     className="h-12 min-h-[48px] w-full sm:w-auto px-7 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 active:scale-95 text-slate-200 border border-slate-700 font-semibold text-sm rounded-xl btn-micro flex items-center justify-center"
                   >
                     Talk to Your School
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -1618,7 +1618,7 @@ export default function TinyRideLandingPage() {
               <ul className="space-y-1.5">
                 <li><a href="#how-it-works" className="hover:text-emerald-800 transition-colors">How It Works</a></li>
                 <li><Link href={parentHref} className="hover:text-emerald-800 transition-colors">For Parents</Link></li>
-                <li><a href="#for-schools" className="hover:text-emerald-800 transition-colors">For Schools</a></li>
+                <li><Link href="/schools" className="hover:text-emerald-800 transition-colors">For Schools</Link></li>
                 <li><Link href="/drivers" className="hover:text-emerald-800 transition-colors">For Drivers</Link></li>
                 <li><a href="#trust" className="hover:text-emerald-800 transition-colors">Trust & Safety</a></li>
                 <li><a href="#faq" className="hover:text-emerald-800 transition-colors">FAQ</a></li>
@@ -1776,8 +1776,8 @@ export default function TinyRideLandingPage() {
               </Link>
 
               {/* School */}
-              <a
-                href="#for-schools"
+              <Link
+                href="/schools"
                 onClick={() => setIsRoleModalOpen(false)}
                 className="group p-4 rounded-2xl border border-slate-200 hover:border-[#006B2F] hover:bg-emerald-50/40 transition-all flex items-center justify-between"
               >
@@ -1789,7 +1789,7 @@ export default function TinyRideLandingPage() {
                   <p className="text-xs text-slate-500 mt-0.5">Manage school transportation, route manifests, and student safety.</p>
                 </div>
                 <span className="text-slate-400 group-hover:text-[#006B2F] group-hover:translate-x-0.5 transition-all text-sm font-bold ml-2">→</span>
-              </a>
+              </Link>
 
               {/* Driver */}
               <Link

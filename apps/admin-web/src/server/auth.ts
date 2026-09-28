@@ -169,13 +169,18 @@ export async function sendPhoneOtp(rawPhone: string): Promise<{
   };
 }
 
+export const SCHOOL_SESSION_COOKIE_NAME = 'tinyride_school_session';
+
 export interface SessionPayload {
   userId: string;
   parentId: string;
   phone: string;
-  role: 'parent' | 'driver' | 'admin';
+  role: 'parent' | 'driver' | 'admin' | 'school';
   displayName?: string | null;
   onboardingStatus: 'incomplete' | 'complete';
+  schoolId?: string;
+  staffRole?: string;
+  schoolStatus?: string;
   exp: number;
 }
 
@@ -611,5 +616,47 @@ export async function getAuthenticatedDriver(
     driverId: payload.parentId, // stored in parentId field
     phone: payload.phone,
     displayName: payload.displayName || null,
+  };
+}
+
+/**
+ * Extracts and verifies school staff session from an incoming API request.
+ * Checks tinyride_school_session cookie or Authorization: Bearer header.
+ */
+export async function getAuthenticatedSchool(
+  req: Request
+): Promise<{
+  userId: string;
+  schoolId: string;
+  phone: string;
+  displayName: string | null;
+  staffRole: string;
+  schoolStatus: string;
+} | null> {
+  let token: string | null = null;
+
+  const cookieHeader = req.headers.get('cookie') || '';
+  const match = cookieHeader.match(new RegExp(`${SCHOOL_SESSION_COOKIE_NAME}=([^;]+)`));
+  if (match && match[1]) token = match[1];
+
+  if (!token) {
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    }
+  }
+
+  if (!token) return null;
+
+  const payload = verifySessionToken(token);
+  if (!payload || payload.role !== 'school' || !payload.schoolId) return null;
+
+  return {
+    userId: payload.userId,
+    schoolId: payload.schoolId,
+    phone: payload.phone,
+    displayName: payload.displayName || null,
+    staffRole: payload.staffRole || 'viewer',
+    schoolStatus: payload.schoolStatus || 'pending',
   };
 }
