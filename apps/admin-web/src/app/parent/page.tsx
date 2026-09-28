@@ -15,9 +15,10 @@ import {
   Share2,
   AlertTriangle,
   LogOut,
-  Compass,
   Bus,
   Check,
+  Bell,
+  WifiOff,
 } from 'lucide-react';
 import {
   getParentSession,
@@ -28,12 +29,28 @@ import {
   type ParentChild,
 } from '@/lib/parentAuth';
 
+type TripState =
+  | 'Not Started'
+  | 'Driver Started'
+  | 'Approaching Pickup'
+  | 'Arrived at Pickup'
+  | 'Child Boarded'
+  | 'En Route'
+  | 'Arrived at School'
+  | 'Delayed'
+  | 'Cancelled'
+  | 'Completed';
+
 export default function ParentDashboardPage() {
   const router = useRouter();
   const [session, setSession] = useState<ParentSession | null>(null);
   const [activeChild, setActiveChild] = useState<ParentChild>(DEFAULT_DEMO_CHILD);
-  const [selectedTab, setSelectedTab] = useState<'home' | 'tracking' | 'timeline' | 'profile'>('home');
-  const [isClient, setIsClient] = useState(false);
+  const [selectedNav, setSelectedNav] = useState<'home' | 'trips' | 'notifications' | 'children' | 'profile'>('home');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(true);
+
+  // Active Trip State
+  const [tripState, setTripState] = useState<TripState>('Child Boarded');
 
   // Modals
   const [showSafeKeyModal, setShowSafeKeyModal] = useState(false);
@@ -42,14 +59,24 @@ export default function ParentDashboardPage() {
   const [showChildPicker, setShowChildPicker] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
 
-  // Live Vehicle Animation State
-  const [vehicleProgress, setVehicleProgress] = useState(48); // % along the route
-  const [liveSpeed, setLiveSpeed] = useState(26);
-  const [currentEtaMinutes, setCurrentEtaMinutes] = useState(6);
-  const [ridePhase, setRidePhase] = useState<'morning' | 'afternoon'>('morning');
+  // Live Vehicle Telemetry State
+  const [vehicleProgress, setVehicleProgress] = useState(58); // % along the route
+  const [liveSpeed, setLiveSpeed] = useState(28);
+  const [currentEtaMinutes, setCurrentEtaMinutes] = useState(12);
+
+  // Morning vs Return phase
+  const [isReturnRide, setIsReturnRide] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    if (typeof window === 'undefined') return;
+
+    // Check connectivity
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     const curr = getParentSession();
 
     if (!curr || !curr.token || curr.user?.role !== 'parent') {
@@ -64,37 +91,57 @@ export default function ParentDashboardPage() {
 
     setSession(curr);
 
-    const active = curr.children?.find((c) => c.id === curr.activeChildId) || curr.children?.[0] || DEFAULT_DEMO_CHILD;
+    const active =
+      curr.children?.find((c) => c.id === curr.activeChildId) ||
+      curr.children?.[0] ||
+      DEFAULT_DEMO_CHILD;
     setActiveChild(active);
+
+    // Subtle loading skeleton delay
+    const loadTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 350);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearTimeout(loadTimer);
+    };
   }, [router]);
 
-  // Smooth telemetry simulation
+  // Smooth telemetry movement when in live transit states
   useEffect(() => {
-    if (!isClient) return;
+    if (!isOnline || isLoading) return;
+    if (tripState !== 'Approaching Pickup' && tripState !== 'Child Boarded' && tripState !== 'En Route') {
+      return;
+    }
+
     const interval = setInterval(() => {
       setVehicleProgress((prev) => {
-        if (prev >= 94) return 20;
+        if (prev >= 92) return 52;
         return prev + 1;
       });
       setLiveSpeed((prev) => {
         const change = Math.floor(Math.random() * 5) - 2;
         return Math.min(38, Math.max(18, prev + change));
       });
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [isClient]);
+    }, 2800);
 
-  // Calculate dynamic ETA
+    return () => clearInterval(interval);
+  }, [isOnline, isLoading, tripState]);
+
+  // Dynamic ETA calculation
   useEffect(() => {
-    // 50% is roughly child's stop
-    if (vehicleProgress < 50) {
-      const remaining = Math.max(1, Math.round(((50 - vehicleProgress) / 50) * 12));
+    if (tripState === 'Approaching Pickup') {
+      const remaining = Math.max(2, Math.round(((50 - vehicleProgress) / 50) * 10));
       setCurrentEtaMinutes(remaining);
-    } else {
-      const schoolRemaining = Math.max(1, Math.round(((95 - vehicleProgress) / 45) * 16));
-      setCurrentEtaMinutes(schoolRemaining);
+    } else if (tripState === 'Child Boarded' || tripState === 'En Route') {
+      const remaining = Math.max(1, Math.round(((94 - vehicleProgress) / 44) * 16));
+      setCurrentEtaMinutes(remaining);
+    } else if (tripState === 'Arrived at Pickup' || tripState === 'Arrived at School' || tripState === 'Completed') {
+      setCurrentEtaMinutes(0);
     }
-  }, [vehicleProgress]);
+  }, [vehicleProgress, tripState]);
 
   const handleLogout = () => {
     clearParentSession();
@@ -128,30 +175,60 @@ export default function ParentDashboardPage() {
     setTimeout(() => {
       setAbsentSuccess(false);
       setShowAbsentModal(false);
-    }, 2000);
+      setTripState('Cancelled');
+    }, 1800);
   };
 
-  if (!isClient || !session) {
+  // Time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  // Loading Skeleton State
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-9 h-9 border-3 border-[#006B2F] border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-semibold text-slate-600">Loading your child&apos;s ride...</span>
+      <div className="min-h-screen bg-[#FAFAF9] p-4 sm:p-6 md:p-8 flex flex-col justify-between max-w-6xl mx-auto">
+        <div className="space-y-6 animate-pulse">
+          {/* Header skeleton */}
+          <div className="h-12 bg-slate-200/80 rounded-2xl w-full" />
+          {/* Greeting skeleton */}
+          <div className="space-y-2">
+            <div className="h-4 bg-slate-200/70 rounded-md w-36" />
+            <div className="h-8 bg-slate-200 rounded-xl w-64" />
+          </div>
+          {/* Dominant ride card skeleton */}
+          <div className="h-64 bg-slate-200 rounded-3xl w-full" />
+          {/* Two column skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="h-48 bg-slate-200 rounded-3xl" />
+            <div className="h-48 bg-slate-200 rounded-3xl" />
+          </div>
         </div>
       </div>
     );
   }
 
-  const isBeforePickup = vehicleProgress < 50;
-
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 md:pb-8 flex flex-col selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="min-h-screen bg-[#FAFAF9] text-slate-900 pb-24 md:pb-12 flex flex-col selection:bg-emerald-100 selection:text-emerald-900 font-sans">
       {/* ========================================================
-          STICKY TOP APP HEADER
+          1. OFFLINE WARNING BANNER (When connectivity drops)
       ======================================================== */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+      {!isOnline && (
+        <div className="bg-amber-500 text-white text-xs font-bold py-2 px-4 flex items-center justify-center gap-2 sticky top-0 z-50 shadow-sm">
+          <WifiOff className="w-4 h-4 shrink-0" />
+          <span>You&apos;re offline · Showing last known status from 08:02 AM</span>
+        </div>
+      )}
+
+      {/* ========================================================
+          2. STICKY TOP APP HEADER
+      ======================================================== */}
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Logo & Parent Identity */}
+          {/* Official Logo */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 group shrink-0">
               <img
@@ -161,84 +238,27 @@ export default function ParentDashboardPage() {
               />
             </Link>
 
-            <span className="h-5 w-px bg-slate-200 hidden sm:block" />
-
-            {/* Child Selector Pill */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowChildPicker(!showChildPicker)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200/80 transition-colors text-left cursor-pointer"
-              >
-                <div className="w-6 h-6 rounded-full bg-[#006B2F] text-white text-xs font-bold flex items-center justify-center">
-                  {activeChild.name.charAt(0)}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-slate-900 leading-tight max-w-[120px] sm:max-w-none truncate">
-                    {activeChild.name}
-                  </span>
-                  <span className="text-[10px] text-slate-500 leading-none">{activeChild.grade}</span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-              </button>
-
-              {/* Child Switcher Dropdown */}
-              {showChildPicker && (
-                <div className="absolute top-full left-0 mt-1.5 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/80 p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="text-[11px] font-semibold text-slate-400 px-3 py-1.5 uppercase tracking-wider">
-                    Select Student
-                  </div>
-                  {session.children.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => handleSwitchChild(c.id)}
-                      className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
-                        c.id === activeChild.id ? 'bg-emerald-50 text-[#006B2F]' : 'hover:bg-slate-50 text-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center">
-                          {c.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold">{c.name}</div>
-                          <div className="text-[11px] text-slate-500">{c.schoolName}</div>
-                        </div>
-                      </div>
-                      {c.id === activeChild.id && <Check className="w-4 h-4 text-[#006B2F]" />}
-                    </button>
-                  ))}
-                  <div className="pt-2 mt-2 border-t border-slate-100 px-1">
-                    <Link
-                      href="/parent/onboarding"
-                      className="w-full text-center block py-1.5 text-xs font-semibold text-[#006B2F] hover:bg-emerald-50 rounded-lg transition-colors"
-                      onClick={() => setShowChildPicker(false)}
-                    >
-                      + Add Another Child
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
+            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-900 text-[11px] font-bold border border-emerald-200/80">
+              Parent App
+            </span>
           </div>
 
-          {/* Right Header: SafeKey Button & User Profile Menu */}
+          {/* Right Header: SafeKey Button & Logout */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowSafeKeyModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-[#006B2F] border border-emerald-200/80 text-xs font-semibold transition-colors cursor-pointer shadow-xs active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-[#006B2F] border border-emerald-200 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
             >
               <KeyRound className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">SafeKey:</span>
-              <span className="font-mono font-bold">{activeChild.safeKey}</span>
+              <span className="font-mono">{activeChild.safeKey}</span>
             </button>
 
             <button
               type="button"
               onClick={handleLogout}
-              title="Log out of Parent Portal"
+              title="Log out"
               className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
@@ -248,96 +268,174 @@ export default function ParentDashboardPage() {
       </header>
 
       {/* ========================================================
-          PAGE BODY: RESPONSIVE DASHBOARD
+          3. DASHBOARD MAIN CONTENT
       ======================================================== */}
-      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 pt-5 md:pt-7 flex-1">
-        {/* Ride Phase Toggle (Morning Pickup vs Afternoon Drop) */}
-        <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-          <div className="flex items-center gap-2 bg-slate-200/70 p-1 rounded-xl">
-            <button
-              type="button"
-              onClick={() => setRidePhase('morning')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                ridePhase === 'morning'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Morning Pickup
-            </button>
-            <button
-              type="button"
-              onClick={() => setRidePhase('afternoon')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                ridePhase === 'afternoon'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Afternoon Drop
-            </button>
-          </div>
+      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 pt-5 md:pt-6 flex-1 space-y-6">
+        {/* 1. GREETING & CHILD SELECTOR */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-slate-200/60">
+          <div>
+            <span className="text-xs font-medium text-slate-500 block">
+              {getGreeting()}, {session?.user?.name ? session.user.name.split(' ')[0] : 'Parent'}
+            </span>
+            <div className="relative inline-block mt-0.5">
+              <button
+                type="button"
+                onClick={() => setShowChildPicker(!showChildPicker)}
+                className="flex items-center gap-2 text-xl sm:text-2xl font-black text-slate-900 hover:text-[#006B2F] transition-colors cursor-pointer group"
+              >
+                <span>{activeChild.name}</span>
+                {session && session.children.length > 1 && (
+                  <ChevronDown className="w-5 h-5 text-slate-400 group-hover:text-[#006B2F] transition-transform" />
+                )}
+              </button>
 
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-medium">Live Telemetry Active</span>
-            <span className="text-slate-300">•</span>
-            <span>Refreshed just now</span>
-          </div>
-        </div>
-
-        {/* PRIMARY STATUS BANNER */}
-        <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-950 via-[#004B21] to-[#006B2F] text-white shadow-xl shadow-emerald-950/15 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 text-xs font-semibold border border-emerald-400/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping" />
-                {isBeforePickup ? 'En Route to Your Stop' : 'Boarded — On Way to School'}
-              </span>
-              <span className="text-xs text-emerald-100/70">
-                Route 14A • {activeChild.vehicleNumber}
-              </span>
+              {/* Child Switcher Dropdown */}
+              {showChildPicker && session && session.children.length > 1 && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="text-[10px] font-bold text-slate-400 px-3 py-1.5 uppercase tracking-wider">
+                    Switch Student
+                  </div>
+                  {session.children.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => handleSwitchChild(c.id)}
+                      className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-colors cursor-pointer ${
+                        c.id === activeChild.id
+                          ? 'bg-emerald-50 text-[#006B2F]'
+                          : 'hover:bg-slate-50 text-slate-800'
+                      }`}
+                    >
+                      <div>
+                        <div className="text-xs font-bold">{c.name}</div>
+                        <div className="text-[11px] text-slate-500">{c.grade}</div>
+                      </div>
+                      {c.id === activeChild.id && <Check className="w-4 h-4 text-[#006B2F]" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              {isBeforePickup
-                ? `Arriving at ${activeChild.pickupLocation.split(',')[0]} in ~${currentEtaMinutes} mins`
-                : `${activeChild.name} is on board • School ETA: ~${currentEtaMinutes} mins`}
-            </h1>
-            <p className="text-xs text-emerald-100/80">
-              {activeChild.schoolName} ({activeChild.schoolBranch})
-            </p>
+            <div className="text-xs text-slate-500 mt-0.5">
+              {activeChild.grade} • {activeChild.schoolName}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowSafeKeyModal(true)}
-              className="py-2.5 px-4 rounded-xl bg-white text-[#006B2F] hover:bg-emerald-50 text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+          {/* Quick Trip State Switcher (To test all 10 realistic states easily) */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-400 hidden lg:inline">Trip State:</span>
+            <select
+              value={tripState}
+              onChange={(e) => setTripState(e.target.value as TripState)}
+              className="py-1.5 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs focus:outline-none focus:ring-2 focus:ring-[#006B2F]/20 cursor-pointer"
             >
-              <KeyRound className="w-4 h-4" />
-              <span>Show SafeKey</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAbsentModal(true)}
-              className="py-2.5 px-4 rounded-xl bg-emerald-900/60 hover:bg-emerald-900 text-emerald-100 border border-emerald-700/60 text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
-            >
-              <CalendarX className="w-4 h-4 text-emerald-300" />
-              <span>Mark Absent</span>
-            </button>
+              <option value="Not Started">Not Started</option>
+              <option value="Driver Started">Driver Started</option>
+              <option value="Approaching Pickup">Approaching Pickup</option>
+              <option value="Arrived at Pickup">Arrived at Pickup</option>
+              <option value="Child Boarded">Child Boarded</option>
+              <option value="En Route">En Route</option>
+              <option value="Arrived at School">Arrived at School</option>
+              <option value="Completed">Completed</option>
+              <option value="Delayed">Delayed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
           </div>
         </div>
 
         {/* ========================================================
-            GRID LAYOUT: MAP + TELEMETRY (SPLIT / STACKED)
+            2. DOMINANT COMPONENT: TODAY'S RIDE STATUS BANNER
+        ======================================================== */}
+        <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-emerald-950 via-[#004B21] to-[#006B2F] text-white shadow-xl shadow-emerald-950/15">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-300">
+                  TODAY&apos;S RIDE • {isReturnRide ? 'AFTERNOON RETURN' : 'MORNING COMMUTE'}
+                </span>
+                <span className="text-emerald-100/60">•</span>
+                <span className="text-xs text-emerald-100 font-medium">Route 14A Express</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  {tripState === 'Not Started' && 'Scheduled for 07:35 AM'}
+                  {tripState === 'Driver Started' && 'Driver Started Route'}
+                  {tripState === 'Approaching Pickup' && `Arriving in ~${currentEtaMinutes} mins`}
+                  {tripState === 'Arrived at Pickup' && 'Vehicle At Your Stop'}
+                  {tripState === 'Child Boarded' && 'Boarded · En route to school'}
+                  {tripState === 'En Route' && 'En route to school'}
+                  {tripState === 'Arrived at School' && 'Safely Reached Campus'}
+                  {tripState === 'Completed' && 'Trip Completed Successfully'}
+                  {tripState === 'Delayed' && 'Delayed by 8 mins (Traffic)'}
+                  {tripState === 'Cancelled' && 'Marked Absent Today'}
+                </h1>
+
+                {/* Status Indicator Pill */}
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
+                    tripState === 'Cancelled'
+                      ? 'bg-rose-500/20 text-rose-200 border-rose-400/30'
+                      : tripState === 'Delayed'
+                      ? 'bg-amber-500/20 text-amber-200 border-amber-400/30'
+                      : 'bg-emerald-500/25 text-emerald-200 border-emerald-400/30'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>● {tripState.toUpperCase()}</span>
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-emerald-100/80 pt-1">
+                <span>
+                  ETA <strong>08:04 AM</strong>
+                </span>
+                <span>•</span>
+                <span>
+                  <strong>{currentEtaMinutes} min</strong> remaining
+                </span>
+                <span>•</span>
+                <span>4.2 km to campus</span>
+                <span>•</span>
+                <span>Speed: {liveSpeed} km/h</span>
+              </div>
+            </div>
+
+            {/* Quick Actions in Banner */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowSafeKeyModal(true)}
+                className="py-2.5 px-4 rounded-xl bg-white text-[#006B2F] hover:bg-emerald-50 text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>Show SafeKey</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAbsentModal(true)}
+                className="py-2.5 px-4 rounded-xl bg-emerald-900/60 hover:bg-emerald-900 text-emerald-100 border border-emerald-700/60 text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+              >
+                <CalendarX className="w-4 h-4 text-emerald-300" />
+                <span>Mark Absent</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================
+            3. RESPONSIVE GRID: LIVE MAP + TELEMETRY + TIMELINE
         ======================================================== */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* LEFT COLUMN: LIVE MAP & REAL-TIME TRACKING (7 Cols on desktop) */}
+          {/* ====================================================
+              LEFT COLUMN: LARGE PROMINENT LIVE MAP & DRIVER CARD
+          ==================================================== */}
           <div className="lg:col-span-7 space-y-6">
-            {/* LIVE MAP CARD */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden">
-              {/* Map Title Bar */}
-              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            {/* PROMINENT LIVE MAP */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-md overflow-hidden">
+              {/* Map Header Strip */}
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
                 <div className="flex items-center gap-2">
                   <Navigation className="w-4 h-4 text-[#006B2F]" />
                   <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -347,30 +445,33 @@ export default function ParentDashboardPage() {
                 <div className="flex items-center gap-3 text-xs">
                   <span className="font-semibold text-slate-700">Speed: {liveSpeed} km/h</span>
                   <span className="text-slate-300">|</span>
-                  <span className="text-emerald-700 font-semibold">GPS Lock: 100%</span>
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    GPS 100%
+                  </span>
                 </div>
               </div>
 
-              {/* Interactive Vector Map Canvas */}
-              <div className="relative h-72 sm:h-80 w-full bg-[#f4f7f4] overflow-hidden select-none">
-                {/* Subtle map grid roads */}
+              {/* Vector Map Canvas */}
+              <div className="relative h-80 sm:h-96 w-full bg-[#f4f7f4] overflow-hidden select-none">
+                {/* Subtle map road grid */}
                 <svg className="absolute inset-0 w-full h-full stroke-slate-200/70" strokeWidth="6" fill="none">
                   <line x1="0" y1="80" x2="100%" y2="80" stroke="#e8ece8" strokeWidth="18" />
-                  <line x1="0" y1="210" x2="100%" y2="210" stroke="#e8ece8" strokeWidth="16" />
-                  <line x1="120" y1="0" x2="120" y2="100%" stroke="#e8ece8" strokeWidth="14" />
-                  <line x1="380" y1="0" x2="380" y2="100%" stroke="#e8ece8" strokeWidth="14" />
+                  <line x1="0" y1="240" x2="100%" y2="240" stroke="#e8ece8" strokeWidth="16" />
+                  <line x1="140" y1="0" x2="140" y2="100%" stroke="#e8ece8" strokeWidth="14" />
+                  <line x1="420" y1="0" x2="420" y2="100%" stroke="#e8ece8" strokeWidth="14" />
                 </svg>
 
-                {/* Primary Route Path (S-curve) */}
+                {/* S-curve route path */}
                 <svg className="absolute inset-0 w-full h-full" viewBox="0 0 600 320" fill="none" preserveAspectRatio="none">
-                  {/* Route shadow */}
+                  {/* Remaining route corridor */}
                   <path
                     d="M 40 250 C 160 250, 160 80, 290 80 C 420 80, 420 180, 560 180"
                     stroke="#cbd5e1"
                     strokeWidth="10"
                     strokeLinecap="round"
                   />
-                  {/* Completed segment */}
+                  {/* Completed route segment */}
                   <path
                     d="M 40 250 C 160 250, 160 80, 290 80 C 420 80, 420 180, 560 180"
                     stroke="#006B2F"
@@ -381,19 +482,19 @@ export default function ParentDashboardPage() {
                     className="transition-all duration-700 ease-out"
                   />
 
-                  {/* Stop 1: Aparna */}
+                  {/* Prior Stop 1 */}
                   <circle cx="160" cy="165" r="7" fill="#006B2F" stroke="#ffffff" strokeWidth="3" />
 
-                  {/* Stop 2: Child's Stop (Rainbow Vistas) */}
+                  {/* Child's Designated Pickup Point */}
                   <circle cx="290" cy="80" r="10" fill="#2563eb" stroke="#ffffff" strokeWidth="3" />
 
-                  {/* Stop 3: Oakridge School */}
+                  {/* School Campus Gate */}
                   <circle cx="560" cy="180" r="11" fill="#dc2626" stroke="#ffffff" strokeWidth="3" />
                 </svg>
 
-                {/* Markers Labels */}
-                <div className="absolute left-[20%] top-[46%] -translate-x-1/2 bg-white/90 backdrop-blur-xs px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-700 shadow-xs border border-slate-200">
-                  Aparna Sarovar (Passed)
+                {/* Stop Markers Labels */}
+                <div className="absolute left-[22%] top-[48%] -translate-x-1/2 bg-white/90 px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-700 shadow-xs border border-slate-200">
+                  Stop 1: Aparna (Passed)
                 </div>
 
                 <div className="absolute left-[48%] top-[14%] -translate-x-1/2 bg-blue-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-md flex items-center gap-1">
@@ -401,12 +502,12 @@ export default function ParentDashboardPage() {
                   <span>{activeChild.name}&apos;s Stop</span>
                 </div>
 
-                <div className="absolute right-[4%] top-[62%] -translate-y-1/2 bg-rose-600 text-white px-2 py-1 rounded-lg text-[11px] font-bold shadow-md flex items-center gap-1">
+                <div className="absolute right-[4%] top-[62%] -translate-y-1/2 bg-rose-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-md flex items-center gap-1">
                   <Bus className="w-3 h-3" />
                   <span>Oakridge Campus</span>
                 </div>
 
-                {/* Moving Vehicle Avatar Pin */}
+                {/* Moving Vehicle Avatar Pin with Calm Pulsing Ring */}
                 <div
                   className="absolute transition-all duration-700 ease-out -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
                   style={{
@@ -421,30 +522,30 @@ export default function ParentDashboardPage() {
                   }}
                 >
                   <div className="relative">
+                    <span className="absolute -inset-2 rounded-2xl bg-emerald-400/40 animate-ping" />
                     <div className="w-10 h-10 rounded-2xl bg-[#006B2F] border-2 border-white shadow-xl flex items-center justify-center text-white">
                       <Bus className="w-5 h-5 animate-pulse" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full" />
                   </div>
                 </div>
 
-                {/* Map telemetry overlay badge */}
-                <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-md border border-slate-200/80 text-xs flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 text-slate-700">
-                    <Compass className="w-4 h-4 text-[#006B2F]" />
-                    <span className="font-bold">Heading: East</span>
+                {/* Floating Map Status Overlay */}
+                <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-sm border border-slate-200/80 text-xs flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 text-slate-800">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="font-bold">● LIVE · Updated just now</span>
                   </div>
                   <span className="text-slate-300">|</span>
-                  <div className="text-slate-600">
-                    Next Stop: <strong className="text-slate-900">Rainbow Vistas</strong>
+                  <div className="text-slate-600 font-medium">
+                    Heading: <strong className="text-slate-900">East to Oakridge</strong>
                   </div>
                 </div>
 
-                {/* Action Floating: Share live location */}
+                {/* Floating Share Link */}
                 <button
                   type="button"
                   onClick={handleShareTracking}
-                  className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 px-3 py-2 rounded-2xl shadow-md border border-slate-200/80 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                  className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 px-3.5 py-2 rounded-2xl shadow-sm border border-slate-200/80 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
                 >
                   <Share2 className="w-3.5 h-3.5 text-emerald-700" />
                   <span>{copyFeedback ? 'Link Copied!' : 'Share Live Route'}</span>
@@ -457,24 +558,24 @@ export default function ParentDashboardPage() {
                   <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>Encrypted school satellite positioning via TinyRide GPS Gateway</span>
                 </div>
-                <div className="font-semibold text-slate-900">Vehicle: {activeChild.vehicleNumber}</div>
+                <div className="font-bold text-slate-900">Vehicle: {activeChild.vehicleNumber}</div>
               </div>
             </div>
 
             {/* DRIVER & VEHICLE DETAILS CARD */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-md p-5">
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5">
               <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
                 Assigned Driver &amp; Escort
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-200 text-[#006B2F] font-bold text-lg flex items-center justify-center border border-emerald-300/60 shadow-xs">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-200 text-[#006B2F] font-black text-lg flex items-center justify-center border border-emerald-300/60 shadow-xs">
                     RK
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-slate-900 text-base">{activeChild.driverName}</span>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-[#006B2F] text-[10px] font-semibold border border-emerald-100">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-[#006B2F] text-[10px] font-bold border border-emerald-100">
                         Police Verified
                       </span>
                     </div>
@@ -490,7 +591,7 @@ export default function ParentDashboardPage() {
                 <div className="flex items-center gap-2">
                   <a
                     href={`tel:${activeChild.driverPhone}`}
-                    className="flex-1 sm:flex-none py-2.5 px-4 rounded-xl bg-[#006B2F] hover:bg-[#005525] text-white text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5"
+                    className="flex-1 sm:flex-none py-2.5 px-4 rounded-xl bg-[#006B2F] hover:bg-[#005525] text-white text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 min-h-[44px]"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     <span>Call Driver</span>
@@ -500,32 +601,34 @@ export default function ParentDashboardPage() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: RIDE TIMELINE & QUICK ACTIONS (5 Cols on desktop) */}
+          {/* ====================================================
+              RIGHT COLUMN: JOURNEY TIMELINE & RECENT UPDATES
+          ==================================================== */}
           <div className="lg:col-span-5 space-y-6">
-            {/* TODAY'S TIMELINE CARD */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-md p-5">
-              <div className="flex items-center justify-between mb-4">
+            {/* JOURNEY TIMELINE CARD */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 sm:p-6">
+              <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-[#006B2F]" />
                   <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Today&apos;s Stop Progress
+                    Journey Timeline
                   </span>
                 </div>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-[#006B2F]">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#006B2F] border border-emerald-100">
                   Stop 3 of 4
                 </span>
               </div>
 
-              {/* Timeline Steps */}
+              {/* Progress Milestones */}
               <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-                {/* Step 1 */}
+                {/* Step 1: Trip Started */}
                 <div className="relative">
                   <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-emerald-600 border-2 border-white shadow-xs flex items-center justify-center text-[9px] text-white font-bold">
                     ✓
                   </div>
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900">Trip Commenced</span>
+                      <span className="text-xs font-bold text-slate-900">Trip Started</span>
                       <span className="text-[11px] text-slate-500 font-medium">07:15 AM</span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-0.5">
@@ -534,7 +637,7 @@ export default function ParentDashboardPage() {
                   </div>
                 </div>
 
-                {/* Step 2 */}
+                {/* Step 2: Stop 1 */}
                 <div className="relative">
                   <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-emerald-600 border-2 border-white shadow-xs flex items-center justify-center text-[9px] text-white font-bold">
                     ✓
@@ -550,102 +653,97 @@ export default function ParentDashboardPage() {
                   </div>
                 </div>
 
-                {/* Step 3: Your Stop */}
+                {/* Step 3: Your Stop (Active) */}
                 <div className="relative">
                   <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-blue-600 border-2 border-white shadow-xs animate-ping" />
                   <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-blue-600 border-2 border-white shadow-xs" />
-                  <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-200/80">
+                  <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-blue-950">
-                        Your Stop: {activeChild.pickupLocation.split(',')[0]}
+                        {activeChild.name} Boarded
                       </span>
                       <span className="text-xs font-bold text-blue-700 bg-white px-2 py-0.5 rounded-full shadow-xs">
-                        ~{currentEtaMinutes} mins
+                        07:36 AM
                       </span>
                     </div>
-                    <p className="text-[11px] text-blue-800 mt-1">
-                      Scheduled: <strong>{activeChild.pickupTime}</strong>. Please bring your SafeKey: <strong className="font-mono">{activeChild.safeKey}</strong>.
+                    <p className="text-[11px] text-blue-800 mt-1 leading-normal">
+                      Verified with SafeKey <strong className="font-mono">{activeChild.safeKey}</strong> at Gate 2.
                     </p>
                   </div>
                 </div>
 
-                {/* Step 4: School Arrival */}
-                <div className="relative opacity-60">
+                {/* Step 4: School Arrival (Upcoming) */}
+                <div className="relative opacity-65">
                   <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-slate-300 border-2 border-white shadow-xs" />
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700">School Arrival</span>
-                      <span className="text-[11px] text-slate-500">Est. 07:55 AM</span>
+                      <span className="text-xs font-bold text-slate-700">School Campus Arrival</span>
+                      <span className="text-[11px] text-slate-500">Est. 08:04 AM</span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      {activeChild.schoolName} main bus bay
+                      {activeChild.schoolName} main drop bay
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* STUDENT & SAFETY PROTOCOL SUMMARY */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-md p-5 space-y-4">
+            {/* RECENT NOTIFICATIONS CARD */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 space-y-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#006B2F]" />
+                  <Bell className="w-4 h-4 text-[#006B2F]" />
                   <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Safety &amp; Health Note
+                    Recent Updates
                   </span>
                 </div>
-                <Link
-                  href="/parent/onboarding"
-                  className="text-xs font-semibold text-[#006B2F] hover:underline"
+                <button
+                  type="button"
+                  onClick={() => setSelectedNav('notifications')}
+                  className="text-[11px] font-bold text-[#006B2F] hover:underline cursor-pointer"
                 >
-                  Edit
-                </Link>
+                  View all &rarr;
+                </button>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Student Name:</span>
-                  <span className="font-bold text-slate-900">{activeChild.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Grade &amp; Section:</span>
-                  <span className="font-bold text-slate-900">{activeChild.grade}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Designated Stop:</span>
-                  <span className="font-bold text-slate-900 text-right max-w-[200px] truncate">
-                    {activeChild.pickupLocation}
-                  </span>
-                </div>
-                {activeChild.medicalNotes && (
-                  <div className="pt-2 border-t border-slate-200 text-slate-700">
-                    <span className="font-semibold text-slate-900 block mb-0.5">Medical Note:</span>
-                    {activeChild.medicalNotes}
+              <div className="space-y-2 text-xs">
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-bold text-slate-900">{activeChild.name} safely boarded</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">SafeKey verified at Rainbow Vistas Gate 2</div>
                   </div>
-                )}
+                  <span className="text-[10px] text-slate-400 font-semibold shrink-0">2 min ago</span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-bold text-slate-900">Vehicle approaching pickup stop</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">10-minute automated arrival warning</div>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-semibold shrink-0">8 min ago</span>
+                </div>
               </div>
             </div>
 
-            {/* QUICK ACTIONS ROW */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* AFTER SCHOOL / RETURN RIDE STATE CARD */}
+            <div className="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                  Afternoon Return Ride
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900">
+                  Scheduled
+                </span>
+              </div>
+              <p className="text-xs text-emerald-900 leading-relaxed">
+                School dismissal pickup scheduled for <strong className="font-bold">03:30 PM</strong> from {activeChild.schoolName}.
+              </p>
               <button
                 type="button"
-                onClick={handleShareTracking}
-                className="p-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-left transition-all shadow-xs cursor-pointer active:scale-95"
+                onClick={() => setIsReturnRide(!isReturnRide)}
+                className="w-full py-2 px-3 rounded-xl bg-white hover:bg-emerald-100/60 border border-emerald-300/80 text-[#006B2F] text-xs font-bold transition-all shadow-2xs cursor-pointer min-h-[44px]"
               >
-                <Share2 className="w-4 h-4 text-emerald-700 mb-1.5" />
-                <div className="text-xs font-bold text-slate-900">Share Telemetry</div>
-                <div className="text-[10px] text-slate-500">Send live link to family</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowAbsentModal(true)}
-                className="p-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-left transition-all shadow-xs cursor-pointer active:scale-95"
-              >
-                <CalendarX className="w-4 h-4 text-rose-600 mb-1.5" />
-                <div className="text-xs font-bold text-slate-900">Mark Absence</div>
-                <div className="text-[10px] text-slate-500">Notify bus coordinator</div>
+                {isReturnRide ? 'View Morning Commute' : 'View Afternoon Return Ride'}
               </button>
             </div>
           </div>
@@ -653,14 +751,14 @@ export default function ParentDashboardPage() {
       </main>
 
       {/* ========================================================
-          MOBILE BOTTOM APP BAR (App-like touch bar)
+          4. MOBILE / TABLET APP-LIKE BOTTOM NAVIGATION
       ======================================================== */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2 flex items-center justify-around shadow-lg">
         <button
           type="button"
-          onClick={() => setSelectedTab('home')}
-          className={`flex flex-col items-center gap-0.5 py-1 text-xs cursor-pointer ${
-            selectedTab === 'home' ? 'text-[#006B2F] font-bold' : 'text-slate-500'
+          onClick={() => setSelectedNav('home')}
+          className={`flex flex-col items-center gap-0.5 py-1 text-xs cursor-pointer min-h-[44px] justify-center ${
+            selectedNav === 'home' ? 'text-[#006B2F] font-bold' : 'text-slate-500'
           }`}
         >
           <Navigation className="w-5 h-5" />
@@ -670,7 +768,7 @@ export default function ParentDashboardPage() {
         <button
           type="button"
           onClick={() => setShowSafeKeyModal(true)}
-          className="flex flex-col items-center gap-0.5 py-1 text-xs cursor-pointer text-slate-500 hover:text-slate-900"
+          className="flex flex-col items-center gap-0.5 py-1 text-xs cursor-pointer text-slate-500 hover:text-slate-900 min-h-[44px] justify-center"
         >
           <div className="w-9 h-9 -mt-4 rounded-full bg-[#006B2F] text-white flex items-center justify-center shadow-md">
             <KeyRound className="w-5 h-5" />
@@ -681,7 +779,7 @@ export default function ParentDashboardPage() {
         <button
           type="button"
           onClick={() => setShowAbsentModal(true)}
-          className={`flex flex-col items-center gap-0.5 py-1 text-xs cursor-pointer text-slate-500 hover:text-slate-900`}
+          className="flex flex-col items-center gap-0.5 py-1 text-xs cursor-pointer text-slate-500 hover:text-slate-900 min-h-[44px] justify-center"
         >
           <CalendarX className="w-5 h-5" />
           <span className="text-[10px]">Absent</span>
@@ -690,7 +788,7 @@ export default function ParentDashboardPage() {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex flex-col items-center gap-0.5 py-1 text-xs cursor-pointer text-slate-500 hover:text-slate-900"
+          className="flex flex-col items-center gap-0.5 py-1 text-xs cursor-pointer text-slate-500 hover:text-slate-900 min-h-[44px] justify-center"
         >
           <LogOut className="w-5 h-5" />
           <span className="text-[10px]">Logout</span>
@@ -725,7 +823,7 @@ export default function ParentDashboardPage() {
                 {activeChild.safeKey}
               </div>
               <div className="text-xs text-slate-300">
-                Show to driver {activeChild.driverName} or bus escort at vehicle door
+                Show to driver {activeChild.driverName} or attendant at vehicle door
               </div>
             </div>
 
@@ -747,7 +845,7 @@ export default function ParentDashboardPage() {
             <button
               type="button"
               onClick={() => setShowSafeKeyModal(false)}
-              className="w-full py-3 rounded-xl bg-[#006B2F] hover:bg-[#005525] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+              className="w-full py-3 rounded-xl bg-[#006B2F] hover:bg-[#005525] text-white text-xs font-bold transition-all shadow-sm cursor-pointer min-h-[44px]"
             >
               Done
             </button>
@@ -803,14 +901,14 @@ export default function ParentDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setShowAbsentModal(false)}
-                    className="flex-1 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer"
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer min-h-[44px]"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleConfirmAbsent}
-                    className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                    className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer min-h-[44px]"
                   >
                     Confirm Absence
                   </button>

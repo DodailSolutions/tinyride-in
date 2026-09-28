@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
-        disallow: ['/api/'],
+        allow: ['/', '/parents'],
+        disallow: ['/api/', '/parent/', '/parent$'],
       },
     ],
     sitemap: 'https://tinyride.in/sitemap.xml',
