@@ -205,14 +205,14 @@ export default function AdminCommandCenterPage() {
   return (
     <div className="space-y-6 max-w-[1520px] mx-auto text-slate-100 text-xs">
       {/* ─────────────────────────────────────────────────────────────
-          1. OPERATIONAL SUMMARY KPI STRIP (7 Clickable Control Cards)
+          1. OPERATIONAL SUMMARY KPI STRIP (Swipeable on Mobile, Grid on Tablet/Desktop)
       ───────────────────────────────────────────────────────────── */}
       <section aria-label="Operations Overview Metrics">
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="flex overflow-x-auto scrollbar-none snap-x gap-2.5 pb-1 -mx-3 px-3 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3">
           {/* 1. Active Trips */}
           <Link
             href="/admin/trips?status=active"
-            className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
+            className="flex-shrink-0 w-[140px] sm:w-auto snap-start p-3 sm:p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
           >
             <span className="text-[11px] font-semibold text-slate-400 group-hover:text-slate-200">
               Active Trips
@@ -228,7 +228,7 @@ export default function AdminCommandCenterPage() {
           {/* 2. Students in Transit */}
           <Link
             href="/admin/students?status=in_transit"
-            className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
+            className="flex-shrink-0 w-[140px] sm:w-auto snap-start p-3 sm:p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
           >
             <span className="text-[11px] font-semibold text-slate-400 group-hover:text-slate-200">
               Students in Transit
@@ -244,7 +244,7 @@ export default function AdminCommandCenterPage() {
           {/* 3. Vehicles Live */}
           <Link
             href="/admin/fleet?status=active"
-            className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
+            className="flex-shrink-0 w-[140px] sm:w-auto snap-start p-3 sm:p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
           >
             <span className="text-[11px] font-semibold text-slate-400 group-hover:text-slate-200">
               Vehicles Live
@@ -260,7 +260,7 @@ export default function AdminCommandCenterPage() {
           {/* 4. Drivers Active */}
           <Link
             href="/admin/drivers?status=active"
-            className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
+            className="flex-shrink-0 w-[140px] sm:w-auto snap-start p-3 sm:p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
           >
             <span className="text-[11px] font-semibold text-slate-400 group-hover:text-slate-200">
               Drivers Active
@@ -276,7 +276,7 @@ export default function AdminCommandCenterPage() {
           {/* 5. Delayed Routes */}
           <Link
             href="/admin/alerts?type=delay"
-            className={`p-3.5 bg-slate-950 rounded-xl border transition-all group flex flex-col justify-between ${
+            className={`flex-shrink-0 w-[140px] sm:w-auto snap-start p-3 sm:p-3.5 bg-slate-950 rounded-xl border transition-all group flex flex-col justify-between ${
               metrics.delayedTrips > 0
                 ? 'border-amber-600/80 bg-amber-950/20 hover:border-amber-500'
                 : 'border-slate-800 hover:border-slate-700'
@@ -300,7 +300,7 @@ export default function AdminCommandCenterPage() {
           {/* 6. Critical Alerts */}
           <Link
             href="/admin/safety?severity=critical"
-            className={`p-3.5 bg-slate-950 rounded-xl border transition-all group flex flex-col justify-between ${
+            className={`flex-shrink-0 w-[140px] sm:w-auto snap-start p-3 sm:p-3.5 bg-slate-950 rounded-xl border transition-all group flex flex-col justify-between ${
               metrics.criticalAlerts > 0
                 ? 'border-red-600/80 bg-red-950/20 hover:border-red-500'
                 : 'border-slate-800 hover:border-slate-700'
@@ -324,7 +324,7 @@ export default function AdminCommandCenterPage() {
           {/* 7. Completed Today */}
           <Link
             href="/admin/trips?status=completed"
-            className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
+            className="flex-shrink-0 w-[140px] sm:w-auto snap-start p-3 sm:p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-emerald-600 transition-all group flex flex-col justify-between"
           >
             <span className="text-[11px] font-semibold text-slate-400 group-hover:text-slate-200">
               Completed Runs
@@ -348,7 +348,7 @@ export default function AdminCommandCenterPage() {
             {actionRequired.map((alertItem: any) => (
               <div
                 key={alertItem.id}
-                className="bg-amber-950/30 border border-amber-600/80 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-sm animate-in fade-in duration-200"
+                className="bg-amber-950/30 border border-amber-600/80 rounded-xl p-3.5 sm:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-sm animate-in fade-in duration-200"
               >
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-amber-500 text-slate-950 flex-shrink-0 font-bold">
@@ -374,23 +374,23 @@ export default function AdminCommandCenterPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center">
+                <div className="flex flex-wrap items-center gap-2 flex-shrink-0 w-full md:w-auto pt-2 md:pt-0">
                   <button
                     onClick={() => handleContactDriver(alertItem.tripId, alertItem.driverName, alertItem.driverPhone)}
-                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
+                    className="flex-1 md:flex-initial px-3 py-2 md:py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 min-h-[40px] md:min-h-0"
                   >
-                    <Phone className="w-3 h-3 text-emerald-400" />
+                    <Phone className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Contact Driver</span>
                   </button>
                   <button
                     onClick={() => handleNotifySchool(alertItem.tripId, alertItem.schoolName)}
-                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 rounded-lg text-xs font-bold transition-colors"
+                    className="flex-1 md:flex-initial px-3 py-2 md:py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 rounded-lg text-xs font-bold transition-colors min-h-[40px] md:min-h-0"
                   >
                     Notify School
                   </button>
                   <Link
                     href={`/admin/trips?id=${alertItem.tripId}`}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
+                    className="px-3 py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1 min-h-[40px] md:min-h-0"
                   >
                     <span>View Trip</span>
                     <ArrowRight className="w-3 h-3" />
@@ -418,20 +418,20 @@ export default function AdminCommandCenterPage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. LIVE FLEET MAP + LIST SPLIT VIEW (60% Map / 40% Live Trips)
+          3. LIVE FLEET MAP + LIST SPLIT VIEW (Stacked on Mobile, 7:5 on Desktop)
       ───────────────────────────────────────────────────────────── */}
       <section aria-label="Live Fleet Command Matrix" className="space-y-3">
         {/* Filter Controls Bar */}
         <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] mr-1 hidden sm:inline">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5 max-w-full">
+            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] mr-1 hidden sm:inline flex-shrink-0">
               Filter:
             </span>
             {(['all', 'active', 'delayed', 'at_school', 'offline'] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => setMapFilterStatus(status)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all capitalize ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all capitalize flex-shrink-0 ${
                   mapFilterStatus === status
                     ? 'bg-emerald-700 text-white shadow-sm'
                     : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
@@ -442,7 +442,7 @@ export default function AdminCommandCenterPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             {/* Vehicle Type Dropdown */}
             <select
               value={mapFilterVehicleType}
@@ -465,10 +465,10 @@ export default function AdminCommandCenterPage() {
           </div>
         </div>
 
-        {/* 60% Map / 40% Live Trips Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[560px]">
-          {/* Left: 60% Real Interactive Telemetry Map (7 cols on lg) */}
-          <div className="lg:col-span-7 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden relative shadow-lg">
+        {/* Responsive Map & Live Trips Grid (Stacked on Mobile/Tablet, 7:5 on Desktop) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[560px]">
+          {/* Map: 380px on mobile, 450px on tablet, 100% on desktop */}
+          <div className="lg:col-span-7 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden relative shadow-lg h-[380px] sm:h-[450px] lg:h-full">
             <AdminCommandMap
               trips={liveTrips}
               selectedTripId={selectedTripId}
@@ -480,8 +480,8 @@ export default function AdminCommandCenterPage() {
             />
           </div>
 
-          {/* Right: 40% Live Trips Control Stream (5 cols on lg) */}
-          <div className="lg:col-span-5 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col overflow-hidden shadow-lg">
+          {/* Live Trips List: 400px on mobile/tablet, 100% on desktop */}
+          <div className="lg:col-span-5 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col overflow-hidden shadow-lg h-[400px] lg:h-full">
             <div className="p-3.5 px-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
               <div className="flex items-center gap-2">
                 <Navigation className="w-4 h-4 text-emerald-400" />
@@ -802,18 +802,18 @@ export default function AdminCommandCenterPage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          6. ADMIN QUICK ACTIONS FLOATING DOCK
+          6. ADMIN QUICK ACTIONS (Responsive Grid on Mobile, Flex on Desktop)
       ───────────────────────────────────────────────────────────── */}
-      <section aria-label="Admin Operational Quick Actions" className="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+      <section aria-label="Admin Operational Quick Actions" className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-3">
         <div className="flex items-center gap-2 text-slate-300 font-bold text-xs">
           <Maximize2 className="w-4 h-4 text-emerald-400" />
           <span>Quick Actions:</span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 text-xs">
           <Link
             href="/admin/drivers"
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-lg font-semibold transition-colors flex items-center gap-1.5"
+            className="px-3 py-2.5 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-lg font-semibold transition-colors flex items-center justify-center sm:justify-start gap-1.5 min-h-[44px] sm:min-h-0"
           >
             <Plus className="w-3.5 h-3.5 text-emerald-400" />
             <span>Add Driver</span>
@@ -821,7 +821,7 @@ export default function AdminCommandCenterPage() {
 
           <Link
             href="/admin/vehicles"
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-lg font-semibold transition-colors flex items-center gap-1.5"
+            className="px-3 py-2.5 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-lg font-semibold transition-colors flex items-center justify-center sm:justify-start gap-1.5 min-h-[44px] sm:min-h-0"
           >
             <Plus className="w-3.5 h-3.5 text-emerald-400" />
             <span>Add Vehicle</span>
@@ -829,7 +829,7 @@ export default function AdminCommandCenterPage() {
 
           <Link
             href="/admin/routes"
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-lg font-semibold transition-colors flex items-center gap-1.5"
+            className="px-3 py-2.5 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-lg font-semibold transition-colors flex items-center justify-center sm:justify-start gap-1.5 min-h-[44px] sm:min-h-0"
           >
             <Plus className="w-3.5 h-3.5 text-emerald-400" />
             <span>Create Route</span>
@@ -837,10 +837,10 @@ export default function AdminCommandCenterPage() {
 
           <Link
             href="/admin/fleet"
-            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-bold transition-colors flex items-center gap-1.5"
+            className="col-span-2 sm:col-span-1 px-3 py-2.5 sm:py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-bold transition-colors flex items-center justify-center sm:justify-start gap-1.5 min-h-[44px] sm:min-h-0 shadow-sm"
           >
             <Navigation className="w-3.5 h-3.5" />
-            <span>Open Full Fleet Screen</span>
+            <span>Open Fleet Screen</span>
           </Link>
         </div>
       </section>

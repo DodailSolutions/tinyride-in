@@ -103,10 +103,10 @@ export default function AdminLiveFleetPage() {
         </div>
       </div>
 
-      {/* Main Map + Side Telemetry Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[640px]">
-        {/* Full Interactive Map (8 cols) */}
-        <div className="lg:col-span-8 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden relative shadow-xl">
+      {/* Main Map + Side Telemetry Grid (Stacked on mobile/tablet, 8:4 on desktop) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[640px]">
+        {/* Full Interactive Map: 380px on mobile, 480px on tablet, 100% on desktop */}
+        <div className="lg:col-span-8 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden relative shadow-xl h-[380px] sm:h-[480px] lg:h-full">
           <AdminCommandMap
             trips={trips}
             selectedTripId={selectedTripId}
@@ -117,8 +117,8 @@ export default function AdminLiveFleetPage() {
           />
         </div>
 
-        {/* Live Vehicle Telemetry Cards (4 cols) */}
-        <div className="lg:col-span-4 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col overflow-hidden shadow-xl">
+        {/* Live Vehicle Telemetry Cards: 400px on mobile/tablet, 100% on desktop */}
+        <div className="lg:col-span-4 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col overflow-hidden shadow-xl h-[400px] lg:h-full">
           <div className="p-3.5 px-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
             <span className="font-bold text-white text-xs">Fleet Transponders</span>
             <span className="text-[11px] font-mono text-slate-400">{filteredTrips.length} Registered</span>

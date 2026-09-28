@@ -111,8 +111,69 @@ export default function AdminDriversPage() {
         />
       </div>
 
+      {/* Drivers Content: Mobile Cards (< md) + Desktop Table (>= md) */}
       <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
+        {/* Mobile View: Operational Cards (< md) */}
+        <div className="md:hidden divide-y divide-slate-850 p-3 space-y-3">
+          {filtered.length > 0 ? (
+            filtered.map((d) => (
+              <div
+                key={d.id}
+                className="p-3.5 bg-slate-900/70 border border-slate-800 rounded-xl space-y-3 text-xs"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="font-extrabold text-sm text-white block">{d.name}</span>
+                    <span className="text-[10px] font-mono text-slate-500">ID: {d.id.slice(0, 8)}</span>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider ${
+                      d.state === 'approved'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : d.state === 'pending'
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                    }`}
+                  >
+                    {d.state}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 p-2.5 bg-slate-950/60 rounded-lg border border-slate-850 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Contact &amp; DL</span>
+                    <a href={`tel:${d.phone}`} className="font-mono text-emerald-400 font-bold block">{d.phone}</a>
+                    <span className="font-mono text-slate-400 text-[10px]">{d.licenseNumber}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Vehicle &amp; Run</span>
+                    <span className="font-semibold text-slate-200 block truncate">{d.assignedVehicle}</span>
+                    <span className="text-slate-400 text-[10px] block truncate">{d.currentTrip || 'Off duty'}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[10px] text-slate-500 font-mono">Joined: {d.joinedDate}</span>
+                  <Link
+                    href={`/admin/drivers/${d.id}`}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5 min-h-[40px]"
+                  >
+                    <span>View Profile</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                  </Link>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-12 text-center text-slate-500">
+              <p className="font-bold text-slate-300">No Drivers Match Filter</p>
+              <p className="text-[11px] mt-1">Adjust search or status parameters.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View: Full Data Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-900/90 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800">
               <tr>

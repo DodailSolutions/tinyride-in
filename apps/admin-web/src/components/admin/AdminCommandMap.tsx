@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import type * as L from 'leaflet';
 import Link from 'next/link';
-import { Crosshair, ArrowRight, Phone, AlertTriangle, RefreshCw, Settings, ShieldAlert } from 'lucide-react';
+import { Crosshair, ArrowRight, Phone, AlertTriangle, RefreshCw, Settings, ShieldAlert, Share2, X, Check } from 'lucide-react';
 
 export interface AdminMapTrip {
   tripId: string;
@@ -156,6 +156,7 @@ export function AdminCommandMap({
   const [mapState, setMapState] = useState<MapState>('connected');
   const [overrideProvider, setOverrideProvider] = useState<string | null>(null);
   const [activeFlyoutTrip, setActiveFlyoutTrip] = useState<AdminMapTrip | null>(null);
+  const [copiedRoute, setCopiedRoute] = useState(false);
   const consecutiveTileErrorsRef = useRef<number>(0);
 
   // Filter trips
@@ -329,6 +330,45 @@ export function AdminCommandMap({
   useEffect(() => {
     initMap();
   }, [initMap]);
+
+  // Invalidate map size on container resize (e.g. sidebar toggle, orientation change, screen flex)
+  useEffect(() => {
+    if (!mapContainerRef.current || !mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    observer.observe(mapContainerRef.current);
+    return () => observer.disconnect();
+  }, [leafletReady, mapState]);
+
+  // Synchronize activeFlyoutTrip when selectedTripId is provided by parent
+  useEffect(() => {
+    if (selectedTripId) {
+      const match = trips.find((t) => t.tripId === selectedTripId);
+      if (match) {
+        setActiveFlyoutTrip(match);
+        if (mapInstanceRef.current && match.lastLocation?.lat && match.lastLocation?.lng) {
+          mapInstanceRef.current.setView([match.lastLocation.lat, match.lastLocation.lng], 15, { animate: true });
+        }
+      }
+    }
+  }, [selectedTripId, trips]);
+
+  const handleShareRoute = (trip: AdminMapTrip) => {
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/admin/trips/${trip.tripId}` : '';
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      navigator.share({
+        title: `TinyRide Route ${trip.routeCode} — ${trip.routeName}`,
+        text: `Live tracking for Route ${trip.routeCode} (${trip.schoolName})`,
+        url,
+      }).catch(() => {});
+    } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      setCopiedRoute(true);
+      setTimeout(() => setCopiedRoute(false), 2000);
+    }
+  };
 
   // Update Markers on Trips change
   useEffect(() => {
@@ -520,9 +560,11 @@ export function AdminCommandMap({
         </button>
       </div>
 
-      {/* Floating Vehicle Detail Flyout Card */}
+      {/* ─────────────────────────────────────────────────────────────
+          DESKTOP FLYOUT CARD (md:block)
+      ───────────────────────────────────────────────────────────── */}
       {activeFlyoutTrip && (
-        <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:w-96 z-20 bg-slate-950/95 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-2xl space-y-3 animate-in fade-in duration-150 text-xs">
+        <div className="hidden md:block absolute bottom-3 left-3 w-96 z-20 bg-slate-950/95 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-2xl space-y-3 animate-in fade-in duration-150 text-xs">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
@@ -547,9 +589,9 @@ export function AdminCommandMap({
             </div>
             <button
               onClick={() => setActiveFlyoutTrip(null)}
-              className="text-slate-500 hover:text-white p-1"
+              className="text-slate-500 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
 
@@ -589,7 +631,7 @@ export function AdminCommandMap({
             {activeFlyoutTrip.driverPhone && (
               <a
                 href={`tel:${activeFlyoutTrip.driverPhone}`}
-                className="flex-1 py-1.5 px-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-colors"
+                className="flex-1 py-2 px-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-colors text-xs"
               >
                 <Phone className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Call Cabin</span>
@@ -597,11 +639,133 @@ export function AdminCommandMap({
             )}
             <Link
               href={`/admin/trips/${activeFlyoutTrip.tripId}`}
-              className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold flex items-center justify-center gap-1.5 transition-colors shadow-md"
+              className="flex-1 py-2 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold flex items-center justify-center gap-1.5 transition-colors shadow-md text-xs"
             >
               <span>Inspect Run</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
+            <button
+              onClick={() => handleShareRoute(activeFlyoutTrip)}
+              title="Share Route"
+              className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 transition-colors"
+            >
+              {copiedRoute ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MOBILE BOTTOM SHEET (md:hidden)
+          Tapping vehicle opens bottom sheet with 44px+ touch targets
+      ───────────────────────────────────────────────────────────── */}
+      {activeFlyoutTrip && (
+        <div className="md:hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col justify-end animate-in fade-in duration-200">
+          <div
+            className="fixed inset-0"
+            onClick={() => setActiveFlyoutTrip(null)}
+          />
+          <div className="relative z-10 bg-slate-950 border-t border-slate-800 rounded-t-3xl p-5 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto pb-[calc(1.5rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-250">
+            {/* Drag Pill Handle */}
+            <div className="w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto" />
+
+            {/* Header with Route & Close Button */}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono font-black text-xs">
+                    {activeFlyoutTrip.routeCode}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                    activeFlyoutTrip.slaStatus === 'delayed'
+                      ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                      : 'bg-slate-900 text-slate-300 border border-slate-800'
+                  }`}>
+                    {activeFlyoutTrip.slaStatus === 'delayed' ? `+${activeFlyoutTrip.delayMinutes}m Delayed` : 'On Route'}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium capitalize">
+                    {activeFlyoutTrip.vehicleType.replace('_', ' ')}
+                  </span>
+                </div>
+                <h4 className="font-extrabold text-white text-base mt-1.5">{activeFlyoutTrip.routeName}</h4>
+                <p className="text-xs text-slate-400">{activeFlyoutTrip.schoolName}</p>
+              </div>
+              <button
+                onClick={() => setActiveFlyoutTrip(null)}
+                className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center flex-shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Metrics Quick Strip */}
+            <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-800 text-center">
+              <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-850">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Speed</span>
+                <p className="font-mono font-black text-white text-sm mt-0.5">{activeFlyoutTrip.speedKph} km/h</p>
+              </div>
+              <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-850">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Boarded</span>
+                <p className="font-mono font-black text-white text-sm mt-0.5">
+                  {activeFlyoutTrip.passengersBoarded}/{activeFlyoutTrip.totalPassengers}
+                </p>
+              </div>
+              <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-850">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Signal</span>
+                <p className={`font-black text-sm mt-0.5 capitalize ${
+                  activeFlyoutTrip.isOnline && !activeFlyoutTrip.isStale ? 'text-emerald-400' : 'text-amber-400'
+                }`}>
+                  {activeFlyoutTrip.isStale ? 'Stale' : activeFlyoutTrip.isOnline ? 'Live' : 'Offline'}
+                </p>
+              </div>
+            </div>
+
+            {/* Driver & Vehicle Metadata */}
+            <div className="bg-slate-900/50 p-3.5 rounded-xl border border-slate-850 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Driver</span>
+                <span className="text-white font-bold">{activeFlyoutTrip.driverName}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Vehicle</span>
+                <span className="text-white font-mono font-bold">{activeFlyoutTrip.vehicleNumber}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Estimated Arrival</span>
+                <span className="text-emerald-400 font-bold font-mono">{activeFlyoutTrip.eta}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Last Telemetry</span>
+                <span className="text-slate-300 font-mono text-[11px]">{activeFlyoutTrip.lastUpdated}</span>
+              </div>
+            </div>
+
+            {/* 3 Mobile Actions (Touch Target >= 44px) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+              {activeFlyoutTrip.driverPhone && (
+                <a
+                  href={`tel:${activeFlyoutTrip.driverPhone}`}
+                  className="min-h-[48px] px-4 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs"
+                >
+                  <Phone className="w-4 h-4 text-emerald-400" />
+                  <span>Call Driver</span>
+                </a>
+              )}
+              <Link
+                href={`/admin/trips/${activeFlyoutTrip.tripId}`}
+                className="min-h-[48px] px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs shadow-lg"
+              >
+                <span>View Trip</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <button
+                onClick={() => handleShareRoute(activeFlyoutTrip)}
+                className="min-h-[48px] px-4 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs"
+              >
+                {copiedRoute ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4 text-blue-400" />}
+                <span>{copiedRoute ? 'Link Copied!' : 'Share Route'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

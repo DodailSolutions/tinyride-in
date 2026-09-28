@@ -126,9 +126,81 @@ function AdminTripsContent() {
         />
       </div>
 
-      {/* Trips Table */}
+      {/* Trips Content: Mobile Cards (< md) + Desktop Table (>= md) */}
       <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
+        {/* Mobile View: Operational Cards (< md) */}
+        <div className="md:hidden divide-y divide-slate-850 p-3 space-y-3">
+          {filteredTrips.length > 0 ? (
+            filteredTrips.map((trip) => {
+              const isDelayed = trip.slaStatus === 'delayed';
+
+              return (
+                <div
+                  key={trip.tripId}
+                  className="p-3.5 bg-slate-900/70 border border-slate-800 rounded-xl space-y-3 text-xs"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-sm text-white">{trip.routeCode}</span>
+                        <span className="text-[10px] font-mono text-slate-500">{trip.tripId.slice(0, 8)}</span>
+                      </div>
+                      <p className="text-slate-300 font-medium text-xs mt-0.5">{trip.schoolName}</p>
+                    </div>
+
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider ${
+                        isDelayed
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : trip.currentPhase === 'completed'
+                          ? 'bg-slate-800 text-slate-300 border border-slate-700'
+                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      }`}
+                    >
+                      {isDelayed ? `Delayed (+${trip.delayMinutes}m)` : trip.currentPhase.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 p-2.5 bg-slate-950/60 rounded-lg border border-slate-850 text-[11px]">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Driver &amp; Vehicle</span>
+                      <span className="font-semibold text-slate-200">{trip.driverName}</span>
+                      <span className="text-slate-400 font-mono block text-[10px]">{trip.vehicleNumber}</span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Students / Speed</span>
+                      <span className="font-bold text-white">{trip.passengersBoarded}/{trip.totalPassengers} Boarded</span>
+                      <span className="text-emerald-400 font-mono block text-[10px]">{trip.speedKph} km/h · ETA {trip.eta}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] font-mono text-slate-400">
+                      Telemetry: {trip.lastUpdated}
+                    </span>
+                    <Link
+                      href={`/admin/trips/${trip.tripId}`}
+                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5 min-h-[40px]"
+                    >
+                      <span>View Run</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="py-12 text-center text-slate-500">
+              <Navigation className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+              <p className="font-bold text-slate-300">No Trips Matching Criteria</p>
+              <p className="text-[11px] mt-1">Adjust filters or search parameters above.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View: Full Data Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-900/90 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800">
               <tr>

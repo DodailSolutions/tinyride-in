@@ -15,6 +15,7 @@ import {
   Server,
   Shield,
   X,
+  LogOut,
 } from 'lucide-react';
 
 interface AdminShellProps {
@@ -95,11 +96,15 @@ export function AdminShell({ children }: AdminShellProps) {
   // Date Filter State
   const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'week'>('today');
 
-  // Load sidebar preference from localStorage
+  // Load sidebar preference or default to collapsed on tablet screens
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('tinyride_admin_sidebar_collapsed');
-      if (stored === 'true') setIsCollapsed(true);
+      if (stored !== null) {
+        setIsCollapsed(stored === 'true');
+      } else if (window.innerWidth < 1200 && window.innerWidth >= 768) {
+        setIsCollapsed(true);
+      }
     }
   }, []);
 
@@ -111,6 +116,15 @@ export function AdminShell({ children }: AdminShellProps) {
       }
       return next;
     });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } finally {
+      router.push('/admin/login');
+      router.refresh();
+    }
   };
 
   // Keyboard shortcut '/' to trigger search
@@ -422,30 +436,82 @@ export function AdminShell({ children }: AdminShellProps) {
       <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
         isCollapsed ? 'md:pl-16' : 'md:pl-60'
       }`}>
-        {/* Sticky Command Header */}
-        <header className="sticky top-0 z-40 h-16 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 sm:px-6">
-          {/* Left: Page Title & Location Zone */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="p-1.5 md:hidden text-slate-400 hover:text-white rounded-md hover:bg-slate-800"
-            >
-              <span className="material-symbols-outlined text-[22px]">menu</span>
-            </button>
-
-            {/* Mobile Official TinyRide Logo */}
-            <Link href="/admin" className="md:hidden flex items-center gap-2">
+        {/* ─────────────────────────────────────────────────────────────
+            A. MOBILE COMPACT HEADER (md:hidden)
+            2-row layout: Top row with logo & live badges, 2nd row with context & search
+        ───────────────────────────────────────────────────────────── */}
+        <header className="md:hidden sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-3.5 py-2 space-y-2">
+          {/* Row 1: Official Logo, Live Pill, Notifications, Profile Button */}
+          <div className="flex items-center justify-between">
+            <Link href="/admin" className="flex items-center gap-1.5">
               <img
                 src="/brand/logo-horizontal.png"
                 alt="TinyRide"
                 className="w-[105px] h-auto object-contain"
               />
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider bg-slate-800 text-emerald-400 border border-slate-700/60 uppercase">
+              <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold tracking-wider bg-slate-850 text-emerald-400 border border-slate-700/60 uppercase">
                 OPS
               </span>
             </Link>
 
-            <div className="hidden md:block">
+            <div className="flex items-center gap-2">
+              {/* LIVE status pulse pill */}
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[10px] font-bold">
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  connectionState === 'LIVE' ? 'bg-emerald-500 animate-pulse' :
+                  connectionState === 'CONNECTING' ? 'bg-amber-400' : 'bg-red-500'
+                }`} />
+                <span className="text-slate-300 font-mono text-[9px] uppercase tracking-wider">{connectionState}</span>
+              </div>
+
+              {/* Notification icon */}
+              <button
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="relative p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                title="Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500" />
+                )}
+              </button>
+
+              {/* Profile Avatar / More Menu Button */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                title="Open Operations Menu"
+                className="w-8 h-8 rounded-full bg-emerald-850 border border-emerald-700 text-white font-bold text-xs flex items-center justify-center flex-shrink-0"
+              >
+                AD
+              </button>
+            </div>
+          </div>
+
+          {/* Row 2: Page Context & Expandable Search Control */}
+          <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-slate-900">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 truncate">
+              <span className="font-extrabold text-white">Operations</span>
+              <span>·</span>
+              <span className="text-emerald-400 font-semibold truncate">Hyderabad Zone</span>
+            </div>
+
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-[11px] text-slate-400 hover:text-white flex-shrink-0"
+            >
+              <Search className="w-3 h-3 text-emerald-400" />
+              <span>Search</span>
+            </button>
+          </div>
+        </header>
+
+        {/* ─────────────────────────────────────────────────────────────
+            B. DESKTOP & TABLET COMMAND HEADER (hidden md:flex)
+        ───────────────────────────────────────────────────────────── */}
+        <header className="hidden md:flex sticky top-0 z-40 h-16 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 items-center justify-between px-4 sm:px-6">
+          {/* Left: Page Title & Location Zone */}
+          <div className="flex items-center gap-3">
+            <div>
               <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-2">
                 Operations Command Center
               </h1>
@@ -473,7 +539,7 @@ export function AdminShell({ children }: AdminShellProps) {
 
           {/* Right Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Mobile Search Button */}
+            {/* Mobile/Tablet Search Button on smaller viewports */}
             <button
               onClick={() => setSearchOpen(true)}
               className="lg:hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
@@ -563,10 +629,13 @@ export function AdminShell({ children }: AdminShellProps) {
         </header>
 
         {/* ─────────────────────────────────────────────────────────────
-            3. PAGE CHILDREN
+            3. PAGE CHILDREN WRAPPER
+            Safe area responsive padding for mobile bottom nav
         ───────────────────────────────────────────────────────────── */}
-        <main className="flex-1 bg-slate-900 p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-4rem)]">
-          {children}
+        <main className="flex-1 bg-slate-900 p-3 sm:p-5 lg:p-8 min-h-[calc(100vh-4rem)] pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
+          <div className="max-w-[1600px] mx-auto w-full">
+            {children}
+          </div>
         </main>
       </div>
 
@@ -796,11 +865,101 @@ export function AdminShell({ children }: AdminShellProps) {
         </div>
       )}
 
-      {/* Mobile Drawer */}
+      {/* ─────────────────────────────────────────────────────────────
+          6. FIXED 5-ITEM MOBILE BOTTOM NAVIGATION (md:hidden)
+          Adheres to iOS/Android safe area guidelines
+      ───────────────────────────────────────────────────────────── */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-slate-950/95 backdrop-blur-lg border-t border-slate-800 bottom-nav-safe"
+      >
+        <div className="grid grid-cols-5 h-14 items-center px-1">
+          {/* 1. Overview */}
+          <Link
+            href="/admin"
+            className={`flex flex-col items-center justify-center h-full min-h-[44px] transition-colors ${
+              pathname === '/admin'
+                ? 'text-emerald-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">dashboard</span>
+            <span className="text-[10px] mt-0.5 leading-none">Overview</span>
+          </Link>
+
+          {/* 2. Fleet */}
+          <Link
+            href="/admin/fleet"
+            className={`flex flex-col items-center justify-center h-full min-h-[44px] transition-colors ${
+              pathname.startsWith('/admin/fleet')
+                ? 'text-emerald-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">map</span>
+            <span className="text-[10px] mt-0.5 leading-none">Fleet</span>
+          </Link>
+
+          {/* 3. Trips */}
+          <Link
+            href="/admin/trips"
+            className={`flex flex-col items-center justify-center h-full min-h-[44px] transition-colors ${
+              pathname.startsWith('/admin/trips')
+                ? 'text-emerald-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">route</span>
+            <span className="text-[10px] mt-0.5 leading-none">Trips</span>
+          </Link>
+
+          {/* 4. Alerts */}
+          <Link
+            href="/admin/alerts"
+            className={`relative flex flex-col items-center justify-center h-full min-h-[44px] transition-colors ${
+              pathname.startsWith('/admin/alerts')
+                ? 'text-emerald-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <div className="relative">
+              <span className="material-symbols-outlined text-[20px]">notifications_active</span>
+              <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            </div>
+            <span className="text-[10px] mt-0.5 leading-none">Alerts</span>
+          </Link>
+
+          {/* 5. More */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className={`flex flex-col items-center justify-center h-full min-h-[44px] transition-colors ${
+              mobileMenuOpen
+                ? 'text-emerald-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">menu</span>
+            <span className="text-[10px] mt-0.5 leading-none">More</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* ─────────────────────────────────────────────────────────────
+          7. UPGRADED MOBILE "MORE" DRAWER (md:hidden)
+          Categorized groups, diagnostics, admin profile, logout
+      ───────────────────────────────────────────────────────────── */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden bg-slate-950/80 backdrop-blur-sm flex">
-          <div className="w-64 bg-slate-950 h-full p-4 border-r border-slate-800 flex flex-col space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          {/* Backdrop dismissal */}
+          <div
+            className="fixed inset-0"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Drawer content */}
+          <div className="relative w-[84vw] max-w-xs bg-slate-950 h-full border-r border-slate-800 flex flex-col shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-800">
               <div className="flex flex-col items-start gap-0.5">
                 <img
                   src="/brand/logo-horizontal.png"
@@ -808,30 +967,110 @@ export function AdminShell({ children }: AdminShellProps) {
                   className="w-[115px] h-auto object-contain"
                 />
                 <span className="text-[9px] font-extrabold tracking-wider text-emerald-400 uppercase pl-0.5">
-                  OPERATIONS
+                  OPERATIONS COMMAND
                 </span>
               </div>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-slate-400 hover:text-white">
-                <X className="w-4 h-4" />
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                aria-label="Close Menu"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <nav className="flex-1 overflow-y-auto space-y-3">
+
+            {/* Admin Profile Card */}
+            <div className="p-3 mx-3 my-2.5 bg-slate-900/80 border border-slate-800 rounded-xl flex items-center gap-3">
+              <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
+                AO
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-slate-950" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-white truncate">Operations Admin</p>
+                <p className="text-[10px] text-slate-400 truncate">admin@tinyride.in</p>
+              </div>
+              <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[9px] font-bold uppercase tracking-wider">
+                Super
+              </span>
+            </div>
+
+            {/* Telemetry Health Trigger Button */}
+            <div className="px-3 pb-2">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setHealthModalOpen(true);
+                }}
+                className="w-full flex items-center justify-between p-2.5 bg-emerald-950/20 border border-emerald-900/40 rounded-xl text-left hover:bg-emerald-950/40 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-200">System Telemetry</p>
+                    <p className="text-[9px] text-emerald-400">Database {systemHealth.database.latencyMs}ms · PostGIS</p>
+                  </div>
+                </div>
+                <Activity className="w-4 h-4 text-emerald-400" />
+              </button>
+            </div>
+
+            {/* Categorized Nav Groups */}
+            <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4 text-xs">
               {navGroups.map((g) => (
                 <div key={g.title}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">{g.title}</p>
-                  {g.items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block py-1.5 px-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 px-2">
+                    {g.title}
+                  </p>
+                  <div className="space-y-0.5">
+                    {g.items.map((item) => {
+                      const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`flex items-center justify-between py-2 px-2.5 rounded-lg text-xs font-semibold transition-colors min-h-[40px] ${
+                            isActive
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className={`material-symbols-outlined text-[18px] ${isActive ? 'text-emerald-400' : 'text-slate-400'}`}>
+                              {item.icon}
+                            </span>
+                            <span>{item.label}</span>
+                          </div>
+                          {item.badge && (
+                            <span className="px-1.5 py-0.2 bg-rose-500 text-white rounded text-[10px] font-bold">
+                              {item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
             </nav>
+
+            {/* Drawer Footer with Logout & Public Link */}
+            <div className="p-3 border-t border-slate-800 space-y-1.5 pb-safe">
+              <Link
+                href="/"
+                className="w-full flex items-center justify-between p-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition-colors"
+              >
+                <span>View Public Site</span>
+                <span className="material-symbols-outlined text-[15px]">arrow_outward</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 p-2 rounded-lg text-xs font-bold text-rose-400 hover:bg-rose-950/30 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
