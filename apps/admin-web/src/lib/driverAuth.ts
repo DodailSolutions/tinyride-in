@@ -12,6 +12,7 @@ export interface DriverProfile {
   name: string | null;
   phone: string;
   driverId: string;
+  status?: string;
 }
 
 export function saveDriverProfile(profile: DriverProfile): void {
@@ -28,6 +29,11 @@ export function getDriverProfile(): DriverProfile | null {
   } catch {
     return null;
   }
+}
+
+export function isApprovedDriver(): boolean {
+  const profile = getDriverProfile();
+  return profile?.status === 'approved';
 }
 
 export function clearDriverProfile(): void {

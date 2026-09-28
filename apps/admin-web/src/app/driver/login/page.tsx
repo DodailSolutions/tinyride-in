@@ -68,20 +68,27 @@ export default function DriverLoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Verification failed');
 
-      // Save minimal public profile for UI
-      saveDriverProfile({
-        name: data.driver?.displayName || null,
-        phone: phoneE164,
-        driverId: data.driverId || data.driver?.driverId || '',
-      });
+        // Save minimal public profile for UI
+        const driverStatus = data.driver?.status || data.status || 'approved';
+        saveDriverProfile({
+          name: data.driver?.displayName || null,
+          phone: phoneE164,
+          driverId: data.driverId || data.driver?.driverId || '',
+          status: driverStatus,
+        });
 
-      router.replace('/driver');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Invalid code. Try again.');
-    } finally {
-      setIsBusy(false);
+        if (driverStatus === 'approved') {
+          router.replace('/driver');
+        } else {
+          // Send to onboarding / status review page
+          router.replace(`/driver/onboarding?status=${encodeURIComponent(driverStatus)}`);
+        }
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Invalid code. Try again.');
+      } finally {
+        setIsBusy(false);
+      }
     }
-  }
 
   return (
     <div className="min-h-dvh bg-[#006B2F] flex flex-col">

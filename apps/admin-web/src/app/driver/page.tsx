@@ -91,6 +91,12 @@ export default function DriverDashboardPage() {
       const json: DriverDataResponse = await res.json();
       setData(json);
 
+      // Status check: Only approved drivers may access active dashboard
+      if (json.driver?.status && json.driver.status !== 'approved') {
+        router.replace(`/driver/onboarding?status=${encodeURIComponent(json.driver.status)}`);
+        return;
+      }
+
       // If there's an active trip in progress, auto-redirect or prompt to view
       if (json.activeTrip && json.activeTrip.state === 'in_progress') {
         router.push(`/driver/trip/${json.activeTrip.id}`);

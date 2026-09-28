@@ -26,6 +26,17 @@ export async function POST(request: Request) {
     if (!existingTrip) return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
     if (existingTrip.driver_id !== driver.driverId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
+    // Check driver approval status
+    const { data: driverRec } = await supabase
+      .from('drivers')
+      .select('state')
+      .eq('id', driver.driverId)
+      .single();
+
+    if (!driverRec || driverRec.state !== 'approved') {
+      return NextResponse.json({ error: 'Driver account is not approved to operate trips' }, { status: 403 });
+    }
+
     const { data: trip, error: tripErr } = await supabase
       .from('trips')
       .update({

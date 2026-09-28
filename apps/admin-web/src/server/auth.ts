@@ -481,8 +481,10 @@ export async function verifyPhoneOtpDriver(
     phone: string;
     displayName: string | null;
     role: 'driver';
+    status?: string;
   };
   driverId: string;
+  status?: string;
 }> {
   const phone = normalizePhone(rawPhone);
   const code = (tokenInput || '').trim();
@@ -545,6 +547,7 @@ export async function verifyPhoneOtpDriver(
   }
 
   const driverId = driverRecord.id;
+  const driverState = driverRecord.state || 'pending_verification';
 
   const exp = Date.now() + 30 * 24 * 60 * 60 * 1000;
   const sessionToken = signSessionToken({
@@ -553,7 +556,7 @@ export async function verifyPhoneOtpDriver(
     phone,
     role: 'driver',
     displayName,
-    onboardingStatus: 'complete',
+    onboardingStatus: driverState === 'approved' ? 'complete' : 'incomplete',
     exp,
   });
 
@@ -566,8 +569,10 @@ export async function verifyPhoneOtpDriver(
       phone,
       displayName,
       role: 'driver',
+      status: driverState,
     },
     driverId,
+    status: driverState,
   };
 }
 
