@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { TinyRideIPhone } from '@/components/TinyRideIPhone';
 import { TinyRideMobileTrackingApp } from '@/components/TinyRideMobileTrackingApp';
 import { isAuthenticatedParent } from '@/lib/parentAuth';
+import { DEMO_DATA } from '@/lib/demoData';
 
 // Lightweight, performant Scroll-Reveal Component using native IntersectionObserver
 function ScrollReveal({
@@ -76,10 +77,15 @@ export default function TinyRideLandingPage() {
   const [activeParentTab, setActiveParentTab] = useState<'status' | 'driver' | 'absence'>('status');
 
   // Early access form
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    parentName: string;
+    phone: string;
+    schoolName: string;
+    area: string;
+  }>({
     parentName: '',
     phone: '',
-    schoolName: 'Olive Mount',
+    schoolName: DEMO_DATA.schoolName,
     area: 'Gachibowli',
   });
 
@@ -181,7 +187,7 @@ export default function TinyRideLandingPage() {
       setFormData({
         parentName: '',
         phone: '',
-        schoolName: 'Olive Mount',
+        schoolName: DEMO_DATA.schoolName,
         area: 'Gachibowli',
       });
     }, 2200);
@@ -233,10 +239,10 @@ export default function TinyRideLandingPage() {
       
       {/* 1. FIXED MODERN NAVIGATION (ALL DEVICES: DESKTOP + TABLET + MOBILE) */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
           scrolled
             ? 'bg-white/95 backdrop-blur-md shadow-xs py-2.5 sm:py-3 border-b border-slate-200/80'
-            : 'bg-white/90 backdrop-blur-md py-3 sm:py-3.5 lg:py-4 border-b border-slate-200/50'
+            : 'bg-white/85 backdrop-blur-md py-3 sm:py-3.5 border-b border-slate-200/40'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 flex items-center justify-between">
@@ -244,8 +250,8 @@ export default function TinyRideLandingPage() {
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <img
               src="/brand/logo-horizontal.png"
-              alt="TinyRide — School transportation and live ride tracking"
-              className="h-8 sm:h-9 md:h-9 lg:h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+              alt="TinyRide — School transportation, simplified"
+              className="h-8 sm:h-9 md:h-9 lg:h-9.5 w-auto object-contain transition-transform duration-150 group-hover:scale-[1.01]"
             />
           </Link>
 
@@ -264,7 +270,7 @@ export default function TinyRideLandingPage() {
               For Drivers
             </a>
             <a href="#trust" className="hover:text-emerald-800 transition-colors duration-150">
-              Trust & Safety
+              Safety
             </a>
             <a href="#faq" className="hover:text-emerald-800 transition-colors duration-150">
               FAQ
@@ -272,7 +278,7 @@ export default function TinyRideLandingPage() {
           </nav>
 
           {/* TABLET LANDSCAPE NAV LINKS (1024px – 1199px, lg:flex xl:hidden) */}
-          <nav className="hidden lg:flex xl:hidden items-center gap-4 lg:gap-5 text-[13px] font-medium text-slate-600 whitespace-nowrap">
+          <nav className="hidden lg:flex xl:hidden items-center gap-5 text-[13px] font-medium text-slate-600 whitespace-nowrap">
             <a href="#how-it-works" className="hover:text-emerald-800 transition-colors duration-150">
               How It Works
             </a>
@@ -290,62 +296,60 @@ export default function TinyRideLandingPage() {
             </a>
           </nav>
 
-          {/* TABLET PORTRAIT CENTER/MENU (768px – 1023px, md:flex lg:hidden) */}
-          <div className="hidden md:flex lg:hidden items-center gap-3">
+          {/* RIGHT ACTIONS: TABLET & DESKTOP (>= 1024px) */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <Link
+              href={isParentAuth ? '/parent' : '/parent/login'}
+              className="cursor-pointer text-xs sm:text-sm font-semibold px-3.5 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors min-h-[44px] flex items-center"
+            >
+              Log In
+            </Link>
+            <Link
+              href={parentHref}
+              className="cursor-pointer text-xs sm:text-sm font-semibold px-5 py-2.5 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-[0.98] text-white rounded-xl shadow-xs hover:shadow-md transition-all duration-150 min-h-[44px] inline-flex items-center justify-center btn-micro select-none"
+            >
+              Get Started
+            </Link>
+          </div>
+
+          {/* TABLET PORTRAIT (768px – 1023px, md:flex lg:hidden) */}
+          <div className="hidden md:flex lg:hidden items-center gap-2.5">
+            <Link
+              href={isParentAuth ? '/parent' : '/parent/login'}
+              className="text-xs font-semibold px-3 py-2 text-slate-700 hover:text-slate-900 rounded-lg min-h-[44px] flex items-center"
+            >
+              Log In
+            </Link>
+            <Link
+              href={parentHref}
+              className="text-xs font-semibold px-4 py-2 bg-[#006B2F] hover:bg-[#005525] active:scale-[0.98] text-white rounded-lg shadow-xs min-h-[44px] inline-flex items-center btn-micro"
+            >
+              Get Started
+            </Link>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100/80 hover:bg-slate-200/80 rounded-lg transition-colors min-h-[44px]"
+              className="p-2 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Toggle navigation menu"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 {mobileMenuOpen ? (
                   <path d="M18 6L6 18M6 6l12 12" />
                 ) : (
                   <path d="M4 6h16M4 12h16M4 18h16" />
                 )}
               </svg>
-              <span>Menu</span>
-            </button>
-          </div>
-
-          {/* ACTIONS: TABLET LANDSCAPE & DESKTOP (>= 1024px) */}
-          <div className="hidden lg:flex items-center gap-3 shrink-0">
-            <Link
-              href="/ops"
-              className="cursor-pointer text-xs font-semibold px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors min-h-[44px] flex items-center"
-            >
-              Ops Portal
-            </Link>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="cursor-pointer text-xs sm:text-sm font-semibold px-5 py-2.5 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white rounded-lg shadow-xs hover:shadow-md transition-all duration-150 min-h-[44px] inline-flex items-center justify-center select-none"
-            >
-              Get Started
-            </button>
-          </div>
-
-          {/* TABLET PORTRAIT RIGHT ACTION (768px – 1023px, md:flex lg:hidden) */}
-          <div className="hidden md:flex lg:hidden items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="cursor-pointer text-xs font-semibold px-4 py-2.5 bg-[#006B2F] hover:bg-[#005525] active:scale-95 text-white rounded-lg shadow-xs min-h-[44px] inline-flex items-center"
-            >
-              Get Started
             </button>
           </div>
 
           {/* MOBILE CONTROLS (< 768px, md:hidden) */}
           <div className="flex items-center gap-2 md:hidden">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
+            <Link
+              href={parentHref}
               className="cursor-pointer text-xs font-semibold px-3.5 py-1.5 bg-[#006B2F] text-white rounded-lg shadow-xs active:scale-95 transition-all min-h-[44px] flex items-center"
             >
               Get Started
-            </button>
+            </Link>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -417,11 +421,11 @@ export default function TinyRideLandingPage() {
             </a>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
               <Link
-                href="/ops"
+                href={isParentAuth ? '/parent' : '/parent/login'}
                 onClick={() => setMobileMenuOpen(false)}
-                className="cursor-pointer w-full text-center py-3 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg min-h-[44px] flex items-center justify-center"
+                className="cursor-pointer w-full text-center py-2.5 text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg min-h-[44px] flex items-center justify-center"
               >
-                Operations Portal
+                Log In to Parent Portal
               </Link>
               <div className="flex items-center justify-center gap-3 pt-2 text-[11px] text-slate-500">
                 <a href="#" className="hover:text-emerald-800">Privacy</a>
@@ -445,148 +449,131 @@ export default function TinyRideLandingPage() {
         </div>
       )}
 
-      {/* 2. HERO SECTION — DUAL VIEWPORT STRATEGY */}
-      <section className="relative pt-20 pb-12 sm:pt-24 sm:pb-16 lg:pt-32 lg:pb-36 overflow-hidden bg-gradient-to-b from-white via-[#FAFAF9] to-[#FAFAF9]">
-        {/* Subtle, ambient background road curvature */}
-        <div className="absolute inset-0 pointer-events-none opacity-25">
+      {/* 2. HERO SECTION — BALANCED TWO-COLUMN RESPONSIVE ARCHITECTURE */}
+      <section className="relative pt-24 pb-12 sm:pt-28 sm:pb-16 lg:pt-32 lg:pb-24 overflow-hidden bg-gradient-to-b from-white via-[#FAFAF9] to-[#FAFAF9]">
+        {/* Subtle, restrained ambient background road curvature (low opacity to prevent competing with content) */}
+        <div className="absolute inset-0 pointer-events-none opacity-10">
           <svg className="w-full h-full" viewBox="0 0 1440 900" fill="none">
             <path
               d="M -100 250 C 300 250, 480 650, 900 600 C 1300 550, 1420 300, 1600 350"
-              stroke="#E2E8F0"
-              strokeWidth="2.5"
-              strokeDasharray="6 8"
+              stroke="#CBD5E1"
+              strokeWidth="2"
+              strokeDasharray="4 6"
             />
             <path
               d="M 100 120 C 500 140, 720 500, 1150 440 C 1350 410, 1520 220, 1680 240"
-              stroke="#CBD5E1"
+              stroke="#E2E8F0"
               strokeWidth="1.5"
             />
           </svg>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 relative">
-          
-          {/* MOBILE APP-LIKE HERO & REAL-TIME TRACKING (< 768px, md:hidden) */}
-          <div className="block md:hidden space-y-5">
-            <div className="space-y-3 text-center sm:text-left">
-              {/* Eyebrow */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wider uppercase">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-8 lg:gap-12 xl:gap-14 items-center">
+            
+            {/* LEFT COLUMN (Full width on mobile, 6 cols on md+) */}
+            <div className="md:col-span-6 lg:col-span-6 xl:col-span-6 space-y-5 md:space-y-6 text-left">
+              {/* Eyebrow: 12-14px, medium/semibold, moderate letter spacing */}
+              <div className="animate-staged-2 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs sm:text-[13px] font-medium tracking-wide">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                School Transportation, Reimagined
+                School transportation, reimagined
               </div>
 
-              {/* Headline */}
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
-                School rides, <br />
+              {/* EXACTLY ONE H1 ON THE ENTIRE HOMEPAGE */}
+              {/* Mobile ~40-48px, line-height 0.95-1.05. Desktop ~64-76px, font-weight 700-800, max-width ~740px */}
+              <h1 className="animate-staged-3 text-[2.5rem] sm:text-[2.85rem] md:text-[2.75rem] lg:text-[3.5rem] xl:text-[4.25rem] font-extrabold tracking-tight text-slate-900 leading-[1.02] md:leading-[1.08] max-w-[740px]">
+                School rides,<br />
                 <span className="text-[#006B2F]">without the worry.</span>
               </h1>
 
-              {/* Supporting Copy */}
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-lg">
-                See the ride. Know the driver. Know when your child arrives. Real-time school transportation right in your pocket.
+              {/* Supporting Copy: 18-20px desktop, max-width 600-650px, line-height 1.5-1.6 */}
+              <p className="animate-staged-4 text-base sm:text-lg lg:text-[19px] text-slate-600 max-w-[620px] font-normal leading-[1.55]">
+                See the ride. Know who’s driving. Know when your child boards and arrives at school — all in one simple experience.
               </p>
 
-              {/* Mobile CTA */}
-              <div className="pt-1 flex flex-col sm:flex-row gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className="cursor-pointer h-12 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] text-white font-bold text-sm rounded-xl shadow-xs btn-micro"
-                >
-                  <span>Get Started with TinyRide</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* MOBILE PRIMARY PRODUCT HERO: THE NATIVE APP EXPERIENCE (NO PHONE FRAME) */}
-            <div id="tracking" className="pt-2">
-              <div className="mb-2 flex items-center justify-between text-xs font-semibold px-1">
-                <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold">
-                  Active Commute Preview
-                </span>
-                <span className="text-emerald-700 flex items-center gap-1 font-bold text-[11px]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                  Live Telemetry
-                </span>
-              </div>
-              <TinyRideMobileTrackingApp />
-            </div>
-          </div>
-
-          {/* TABLET & DESKTOP BALANCED HERO (>= 768px, md:grid) */}
-          <div className="hidden md:grid md:grid-cols-12 md:gap-6 lg:gap-10 xl:gap-12 items-center">
-            {/* Left Column: Editorial Headline & Copy (~45% on tablet) */}
-            <div className="md:col-span-6 lg:col-span-5 xl:col-span-6 space-y-5 md:space-y-6 text-left">
-              {/* Eyebrow */}
-              <div className="animate-staged-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wider uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                School Transportation, Reimagined
-              </div>
-
-              {/* Main Headline (48–64px range on tablet/desktop) */}
-              <h1 className="animate-staged-3 text-3xl sm:text-4xl md:text-[2.6rem] lg:text-[3.25rem] xl:text-[3.6rem] font-bold tracking-tight text-slate-900 leading-[1.12]">
-                School rides, <br />
-                <span className="text-[#006B2F]">without the worry.</span>
-              </h1>
-
-              {/* Supporting Copy (16–18px on tablet) */}
-              <p className="animate-staged-4 text-base md:text-base lg:text-lg text-slate-600 max-w-xl font-normal leading-relaxed">
-                See the ride. Know the driver. Know when your child arrives. One connected, calm experience for parents, schools and drivers.
-              </p>
-
-              {/* CTAs (48px touch targets) */}
-              <div className="animate-staged-5 pt-1 md:pt-2 flex flex-wrap items-center gap-3.5">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-6 md:px-7 h-12 min-h-[48px] bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow-md btn-micro group cursor-pointer"
+              {/* CTA Hierarchy: 52-56px height, 150-180px width, clear primary dominance */}
+              <div className="animate-staged-5 pt-1 md:pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5">
+                <Link
+                  href={parentHref}
+                  className="inline-flex items-center justify-center gap-2 px-7 h-[54px] min-h-[52px] min-w-[160px] bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-[0.98] text-white font-semibold text-sm sm:text-base rounded-xl shadow-xs hover:shadow-md transition-all duration-150 btn-micro group cursor-pointer"
                 >
                   <span>Get Started</span>
                   <svg
-                    className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"
+                    className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-1"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
-                </button>
+                </Link>
                 <a
                   href="#how-it-works"
-                  className="inline-flex items-center justify-center px-5 md:px-6 h-12 min-h-[48px] text-slate-700 bg-white hover:bg-slate-50 active:scale-95 border border-slate-200 text-sm font-semibold rounded-xl btn-micro"
+                  className="inline-flex items-center justify-center px-6 h-[54px] min-h-[52px] text-slate-700 bg-white hover:bg-slate-50 active:scale-[0.98] border border-slate-200/90 text-sm sm:text-base font-semibold rounded-xl transition-all duration-150 btn-micro"
                 >
                   See how it works
                 </a>
               </div>
 
-              {/* Factual Reassurance Pills */}
-              <div className="animate-staged-7 pt-2 md:pt-4 flex flex-wrap items-center gap-3 md:gap-4 text-xs text-slate-500 font-medium">
+              {/* DESKTOP & TABLET TRUST ROW (>= 768px, hidden on mobile) */}
+              <div className="animate-staged-7 pt-2 md:pt-3 hidden md:flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-[13px] text-slate-600 font-medium">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Verified driver
+                  <span className="text-emerald-700 font-bold text-sm">✓</span>
+                  Driver information
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  SafeKey boarding
+                  <span className="text-emerald-700 font-bold text-sm">✓</span>
+                  Live ride updates
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Live GPS updates
+                  <span className="text-emerald-700 font-bold text-sm">✓</span>
+                  Boarding notifications
                 </span>
               </div>
             </div>
 
-            {/* Right Column: Authentic iPhone Frame (~55% on tablet) */}
-            <div className="md:col-span-6 lg:col-span-7 xl:col-span-6 flex justify-center md:justify-end animate-staged-iphone">
-              <div className="relative">
+            {/* RIGHT COLUMN (Product Demonstration) */}
+            <div className="md:col-span-6 lg:col-span-6 xl:col-span-6 flex justify-center md:justify-end animate-staged-iphone">
+              {/* Mobile Native App View (< 768px, md:hidden) */}
+              <div id="tracking" className="w-full block md:hidden pt-2 space-y-4">
+                <div className="mb-2 flex items-center justify-between text-xs font-semibold px-1">
+                  <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                    Active Commute Preview
+                  </span>
+                  <span className="text-emerald-700 flex items-center gap-1 font-bold text-[11px]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    Live Telemetry
+                  </span>
+                </div>
+                <TinyRideMobileTrackingApp />
+
+                {/* Mobile Trust Indicators Row (Appears below product on mobile) */}
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-600 font-medium text-center">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="text-emerald-700 font-bold text-sm">✓</span>
+                    Driver information
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="text-emerald-700 font-bold text-sm">✓</span>
+                    Live ride updates
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="text-emerald-700 font-bold text-sm">✓</span>
+                    Boarding notifications
+                  </span>
+                </div>
+              </div>
+
+              {/* Tablet & Desktop Authentic iPhone Visual (>= 768px, hidden md:block) */}
+              <div className="hidden md:block relative">
                 <TinyRideIPhone mode="parent_tracking" />
               </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -1069,11 +1056,11 @@ export default function TinyRideLandingPage() {
                     <span className="text-[10px] text-slate-400">Just now</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-800 transition-opacity duration-200">
-                    {activeJourneyStep === 0 && 'Driver Ravi has started the morning route TR-102.'}
-                    {activeJourneyStep === 1 && 'TR-102 is 500m away. Please proceed to the pickup gate.'}
-                    {activeJourneyStep === 2 && 'Aarav has safely boarded TR-102. SafeKey token confirmed.'}
-                    {activeJourneyStep === 3 && 'TR-102 is on Jubilee Hills Road No. 36. Speed: 34 km/h.'}
-                    {activeJourneyStep === 4 && 'TR-102 has arrived at Olive Mount Bay 3.'}
+                    {activeJourneyStep === 0 && `Driver ${DEMO_DATA.driverFirstName} has started morning route ${DEMO_DATA.vehicleShortId}.`}
+                    {activeJourneyStep === 1 && `${DEMO_DATA.vehicleShortId} is 500m away. Please proceed to the pickup gate.`}
+                    {activeJourneyStep === 2 && `${DEMO_DATA.childFirstName} has safely boarded ${DEMO_DATA.vehicleShortId}. SafeKey token confirmed.`}
+                    {activeJourneyStep === 3 && `${DEMO_DATA.vehicleShortId} is on Jubilee Hills Road No. 36. Speed: 34 km/h.`}
+                    {activeJourneyStep === 4 && `${DEMO_DATA.vehicleShortId} has arrived at ${DEMO_DATA.schoolName} Bay 3.`}
                   </p>
                 </div>
               </div>
@@ -1177,7 +1164,7 @@ export default function TinyRideLandingPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-xs text-slate-500">Child Commute</p>
-                        <h4 className="font-bold text-slate-900 text-sm">Aarav — Morning School Trip</h4>
+                        <h4 className="font-bold text-slate-900 text-sm">{DEMO_DATA.childFirstName} — Morning School Trip</h4>
                       </div>
                       <span className="px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-bold flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
@@ -1195,7 +1182,7 @@ export default function TinyRideLandingPage() {
                       </div>
                       <div className="flex justify-between text-slate-600">
                         <span>Assigned Vehicle:</span>
-                        <strong className="text-slate-900">TR-102 (TS09-TR-102)</strong>
+                        <strong className="text-slate-900">{DEMO_DATA.vehicleShortId} ({DEMO_DATA.vehiclePlate})</strong>
                       </div>
                     </div>
                     <p className="text-[11px] text-slate-500 italic">
@@ -1208,11 +1195,11 @@ export default function TinyRideLandingPage() {
                   <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 space-y-4 animate-in fade-in duration-200">
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center font-bold text-slate-700 text-sm">
-                        RK
+                        {DEMO_DATA.driverInitials}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <h4 className="font-bold text-slate-900 text-sm">Ravi Kumar</h4>
+                          <h4 className="font-bold text-slate-900 text-sm">{DEMO_DATA.driverName}</h4>
                           <span className="text-emerald-700 font-bold text-xs" title="Verified Driver">✓ Verified</span>
                         </div>
                         <p className="text-xs text-slate-500">Assigned Driver • 6 Years Safe Driving</p>
@@ -1221,15 +1208,15 @@ export default function TinyRideLandingPage() {
                     <div className="p-3 bg-slate-50 rounded-lg text-xs space-y-1">
                       <div className="flex justify-between text-slate-600">
                         <span>Vehicle Model:</span>
-                        <strong className="text-slate-900">Force Traveller 3350</strong>
+                        <strong className="text-slate-900">{DEMO_DATA.vehicleModel}</strong>
                       </div>
                       <div className="flex justify-between text-slate-600">
                         <span>Registration:</span>
-                        <strong className="text-slate-900">TS 09 TR 102</strong>
+                        <strong className="text-slate-900">{DEMO_DATA.vehiclePlate}</strong>
                       </div>
                       <div className="flex justify-between text-slate-600">
                         <span>School Route:</span>
-                        <strong className="text-slate-900">Route 04 (Olive Mount)</strong>
+                        <strong className="text-slate-900">{DEMO_DATA.routeNumber} ({DEMO_DATA.schoolName})</strong>
                       </div>
                     </div>
                   </div>
@@ -1244,7 +1231,7 @@ export default function TinyRideLandingPage() {
                       </p>
                     </div>
                     <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-lg flex items-center justify-between text-xs text-amber-900 font-medium">
-                      <span>Mark Aarav as absent for today?</span>
+                      <span>Mark {DEMO_DATA.childFirstName} as absent for today?</span>
                       <button className="cursor-pointer px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded font-bold text-[11px] btn-micro">
                         Notify Driver
                       </button>
@@ -1424,7 +1411,7 @@ export default function TinyRideLandingPage() {
                 <div className="mt-4 bg-slate-900 rounded-xl p-4 border border-slate-800 space-y-2">
                   <span className="text-[10px] uppercase font-bold text-slate-400">Next Scheduled Stop</span>
                   <h4 className="font-bold text-base text-white">Rainbow Vistas Gate 2</h4>
-                  <p className="text-xs text-slate-400">Student: Aarav Sharma (Grade 3A)</p>
+                  <p className="text-xs text-slate-400">Student: {DEMO_DATA.childName} (Grade 3A)</p>
                   <div className="pt-1 flex items-center justify-between text-xs">
                     <span className="text-slate-400">SafeKey Token:</span>
                     <strong className="font-mono text-emerald-400 font-bold bg-slate-800 px-2 py-0.5 rounded">
@@ -1884,7 +1871,7 @@ export default function TinyRideLandingPage() {
                       onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
                       className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent text-xs bg-white"
                     >
-                      <option value="Olive Mount">Olive Mount, Gachibowli</option>
+                      <option value={DEMO_DATA.schoolName}>{DEMO_DATA.schoolName}, Gachibowli</option>
                       <option value="Delhi Public School">Delhi Public School (DPS), Khajaguda</option>
                       <option value="Chirec International School">Chirec International School, Kondapur</option>
                       <option value="Silver Oaks International">Silver Oaks International School, Bachupally</option>

@@ -12,9 +12,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://tinyride.in'),
-  title: 'TinyRide | School Transportation & Live School Ride Tracking',
+  title: 'TinyRide | School Transportation, Simplified',
   description:
-    'TinyRide makes school transportation simpler for parents, schools and drivers. Track school rides, see live vehicle status and know when your child arrives.',
+    'TinyRide connects parents, schools and drivers with live school ride tracking, boarding updates, driver information and arrival notifications.',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -51,9 +51,9 @@ export const metadata: Metadata = {
     canonical: 'https://tinyride.in',
   },
   openGraph: {
-    title: 'TinyRide | School Transportation & Live School Ride Tracking',
+    title: 'TinyRide | School Transportation, Simplified',
     description:
-      'TinyRide makes school transportation simpler for parents, schools and drivers. Track school rides, see live vehicle status and know when your child arrives.',
+      'TinyRide connects parents, schools and drivers with live school ride tracking, boarding updates, driver information and arrival notifications.',
     url: 'https://tinyride.in',
     siteName: 'TinyRide',
     images: [
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
         url: '/brand/logo-horizontal.png',
         width: 1200,
         height: 630,
-        alt: 'TinyRide — School Transportation & Live Ride Tracking',
+        alt: 'TinyRide — School Transportation, Simplified',
       },
     ],
     locale: 'en_IN',
@@ -69,9 +69,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TinyRide | School Transportation & Live School Ride Tracking',
+    title: 'TinyRide | School Transportation, Simplified',
     description:
-      'TinyRide makes school transportation simpler for parents, schools and drivers. Track school rides, see live vehicle status and know when your child arrives.',
+      'TinyRide connects parents, schools and drivers with live school ride tracking, boarding updates, driver information and arrival notifications.',
     images: ['/brand/logo-horizontal.png'],
   },
   robots: {

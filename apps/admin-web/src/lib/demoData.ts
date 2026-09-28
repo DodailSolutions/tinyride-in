@@ -5,6 +5,21 @@
  */
 
 export const DEMO_DATA = {
+  // Flat convenience aliases for fast interpolation
+  childName: 'Aarav Sharma',
+  childFirstName: 'Aarav',
+  schoolName: 'Olive Mount',
+  schoolFullName: 'Olive Mount School',
+  driverName: 'Ravi Kumar',
+  driverFirstName: 'Ravi',
+  driverInitials: 'RK',
+  vehicleModel: 'Force Traveller 3350',
+  vehiclePlate: 'TS 09 TR 102',
+  vehicleShortId: 'TR-102',
+  routeNumber: 'Route 04',
+  pickupLocation: 'Rainbow Vistas Gate 2',
+  safeKeyToken: '482-910',
+
   child: {
     name: 'Aarav Sharma',
     firstName: 'Aarav',

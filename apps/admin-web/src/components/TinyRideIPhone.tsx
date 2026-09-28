@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { DEMO_DATA } from '@/lib/demoData';
 
 export interface TinyRideIPhoneProps {
   mode?: 'parent_tracking' | 'driver';
@@ -15,15 +16,15 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
 
   // High-level reactive state for UI labels
   const [trackingState, setTrackingState] = useState({
-    stage: 'en_route',
-    etaMinutes: 12,
-    etaLabel: '8:04 AM',
-    statusBadge: 'BOARDED',
-    subText: 'En route to school',
-    remainingDistance: '4.2 km',
-    locationSubtext: 'Road No. 36 • Traffic: Clear',
+    stage: 'to_school',
+    etaMinutes: 7,
+    etaLabel: '8:35 AM',
+    statusBadge: '● BOARDED',
+    subText: `En route to ${DEMO_DATA.school.name}`,
+    remainingDistance: '2.4 km',
+    locationSubtext: 'Jubilee Hills Rd No. 36 • Speed: 34 km/h',
     speed: 34,
-    progressPercent: 35,
+    progressPercent: 55,
   });
 
   const [atStopHighlight, setAtStopHighlight] = useState(false);
@@ -148,14 +149,14 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
         stageLock = 'none';
         setTrackingState({
           stage: 'en_route',
-          etaMinutes: 12,
-          etaLabel: '8:04 AM',
-          statusBadge: 'BOARDED',
-          subText: 'En route to school',
-          remainingDistance: '4.2 km',
-          locationSubtext: 'Road No. 36 • Traffic: Clear',
+          etaMinutes: 7,
+          etaLabel: '8:35 AM',
+          statusBadge: '● BOARDED',
+          subText: `En route to ${DEMO_DATA.school.name}`,
+          remainingDistance: '2.4 km',
+          locationSubtext: 'Jubilee Hills Rd No. 36 • Traffic: Clear',
           speed: 34,
-          progressPercent: 10,
+          progressPercent: 20,
         });
       }
 
@@ -171,7 +172,7 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
             statusBadge: 'APPROACHING',
             subText: `Arriving in ${rem} min at your gate`,
             remainingDistance: `${((STOP_PROGRESS - currentProgress) * 4).toFixed(1)} km`,
-            locationSubtext: currentProgress < 0.25 ? 'Approaching Road No. 36' : 'Approaching Rainbow Vistas',
+            locationSubtext: currentProgress < 0.25 ? 'Approaching Road No. 36' : `Approaching ${DEMO_DATA.schedule.pickupLocation}`,
             speed: 32,
             progressPercent: Math.round(currentProgress * 100),
           }));
@@ -181,9 +182,9 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
             ...prev,
             stage: 'to_school',
             etaMinutes: rem,
-            etaLabel: '8:04 AM',
-            statusBadge: 'BOARDED',
-            subText: `En route to school • ${rem} min away`,
+            etaLabel: '8:50 AM',
+            statusBadge: '● BOARDED',
+            subText: `En route to ${DEMO_DATA.school.name} • ${rem} min away`,
             remainingDistance: `${((1 - currentProgress) * 5.2).toFixed(1)} km`,
             locationSubtext: 'Expressway Flyover • Speed: 36 km/h',
             speed: 36,
@@ -261,9 +262,9 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span className="font-bold text-slate-900 text-xs">Aarav Sharma</span>
+                    <span className="font-bold text-slate-900 text-xs">{DEMO_DATA.child.name}</span>
                   </div>
-                  <p className="text-[10px] text-slate-500">Grade 3A • Route 04 (Olive Mount)</p>
+                  <p className="text-[10px] text-slate-500">{DEMO_DATA.child.fullGrade} • {DEMO_DATA.transport.routeName}</p>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200/60">
                   {trackingState.statusBadge}
@@ -457,16 +458,16 @@ export function TinyRideIPhone({ mode = 'parent_tracking', className = '' }: Tin
                   </div>
                   <div>
                     <div className="flex items-center gap-1 font-semibold text-slate-900 text-xs">
-                      Ravi Kumar
+                      {DEMO_DATA.transport.driver}
                       <span className="text-emerald-700 font-bold" title="Verified Driver">✓</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">TR-102 • Force Traveller</p>
+                    <p className="text-[10px] text-slate-500">{DEMO_DATA.transport.shortVehicleNumber} • {DEMO_DATA.transport.vehicle}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="text-[9px] text-slate-400 block font-medium">Handover Token</span>
                   <span className="font-mono text-[10px] font-bold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded">
-                    482-910
+                    {DEMO_DATA.security.safeKey}
                   </span>
                 </div>
               </div>

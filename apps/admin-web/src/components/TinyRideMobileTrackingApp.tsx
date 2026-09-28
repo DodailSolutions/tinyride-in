@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { DEMO_DATA } from '@/lib/demoData';
 
 export function TinyRideMobileTrackingApp({ className = '' }: { className?: string }) {
   // Path references for real-time SVG traversal
@@ -10,15 +11,15 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
 
   // High-level reactive state for UI labels
   const [trackingState, setTrackingState] = useState({
-    stage: 'en_route',
-    etaMinutes: 12,
-    etaLabel: '8:04 AM',
-    statusBadge: 'BOARDED',
-    subText: 'En route to school',
-    remainingDistance: '4.2 km',
-    locationSubtext: 'Road No. 36 • Traffic: Clear',
+    stage: 'to_school',
+    etaMinutes: 7,
+    etaLabel: '8:35 AM',
+    statusBadge: '● BOARDED',
+    subText: `En route to ${DEMO_DATA.school.name}`,
+    remainingDistance: '2.4 km',
+    locationSubtext: 'Jubilee Hills Rd No. 36 • Speed: 34 km/h',
     speed: 34,
-    progressPercent: 35,
+    progressPercent: 55,
   });
 
   const [atStopHighlight, setAtStopHighlight] = useState(false);
@@ -220,8 +221,8 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: "Aarav's School Ride Live Status",
-        text: 'Tracking Aarav on TinyRide Route 04 (Olive Mount). SafeKey: 482-910.',
+        title: `${DEMO_DATA.child.firstName}'s School Ride Live Status`,
+        text: `Tracking ${DEMO_DATA.child.firstName} on TinyRide ${DEMO_DATA.transport.routeName}. SafeKey: ${DEMO_DATA.security.safeKey}.`,
         url: window.location.href,
       }).catch(() => {});
     } else {
@@ -237,9 +238,9 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <h3 className="font-bold text-slate-900 text-sm">Aarav Sharma</h3>
+            <h3 className="font-bold text-slate-900 text-sm">{DEMO_DATA.child.name}</h3>
           </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Grade 3A • Route 04 (Olive Mount)</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">{DEMO_DATA.child.fullGrade} • {DEMO_DATA.transport.routeName}</p>
         </div>
         {isOnline ? (
           <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200/80">
@@ -434,7 +435,7 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
             </span>
           </div>
           <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">
-            TS09-TR-102
+            {DEMO_DATA.transport.vehicleNumber}
           </span>
         </div>
       </div>
@@ -448,16 +449,16 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
             </div>
             <div>
               <div className="flex items-center gap-1.5 font-bold text-slate-900 text-sm">
-                Ravi Kumar
+                {DEMO_DATA.transport.driver}
                 <span className="text-emerald-700 font-bold text-xs" title="Verified Driver">✓ Verified</span>
               </div>
-              <p className="text-xs text-slate-500">Force Traveller 18-Seater • TS09-TR-102</p>
+              <p className="text-xs text-slate-500">{DEMO_DATA.transport.vehicle} • {DEMO_DATA.transport.vehicleNumber}</p>
             </div>
           </div>
           <div className="text-right">
             <span className="text-[9.5px] uppercase font-bold text-slate-400">SafeKey</span>
             <div className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
-              482-910
+              {DEMO_DATA.security.safeKey}
             </div>
           </div>
         </div>
@@ -465,7 +466,7 @@ export function TinyRideMobileTrackingApp({ className = '' }: { className?: stri
         {/* 5. LARGE TOUCH ACTIONS (48px+ touch target) */}
         <div className="pt-2 flex gap-3">
           <a
-            href="tel:+919876543210"
+            href={`tel:${DEMO_DATA.transport.driverPhone}`}
             className="cursor-pointer flex-1 h-12 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors btn-micro"
           >
             <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
