@@ -10,9 +10,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.0",
     "@tinyride/design-system": "workspace:*",
     "@tinyride/shared-types": "workspace:*",
     "@tinyride/shared-validation": "workspace:*",
+    "@types/leaflet": "^1.9.22",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.16.0",
     "next": "^15.1.0",
     "react": "^19.0.0",

@@ -161,34 +161,70 @@ export default function ParentOnboardingPage() {
     setError('');
   };
 
-  const handleCompleteOnboarding = () => {
+  const handleCompleteOnboarding = async () => {
     setIsSubmitting(true);
+    setError('');
+
     const primaryChild = childrenList[0] || { name: 'Aarav Sharma', grade: '3A' };
-    const randomKey = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}`;
-    setGeneratedSafeKey(randomKey);
+    const nameParts = (primaryChild.name.trim() || 'Aarav Sharma').split(' ');
+    const firstName = nameParts[0] || 'Aarav';
+    const lastName = nameParts.slice(1).join(' ') || 'Sharma';
 
-    const childData: Omit<ParentChild, 'id' | 'safeKey' | 'vehicleNumber' | 'vehicleModel' | 'driverName' | 'driverPhone'> = {
-      name: primaryChild.name.trim() || 'Aarav Sharma',
-      grade: primaryChild.grade.trim() || '3A',
-      age: 8,
-      schoolName: selectedSchool.name,
-      schoolBranch: selectedSchool.campus,
-      pickupLocation: pickupAddress.trim(),
-      pickupTime: '8:35 AM',
-      dropTime: '3:30 PM',
-      medicalNotes: primaryChild.notes?.trim() || undefined,
-    };
+    try {
+      const res = await fetch('/api/parent/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parentName: parentName.trim() || 'Parent',
+          parentEmail: parentEmail.trim() || undefined,
+          children: [
+            {
+              firstName,
+              lastName,
+              grade: primaryChild.grade.trim() || 'Grade 3A',
+              medicalNotes: primaryChild.notes?.trim() || undefined,
+              pickupAddress: pickupAddress.trim() || 'Gate 2, Rainbow Vistas, Hitec City',
+            },
+          ],
+        }),
+      });
 
-    completeOnboarding(childData, {
-      name: parentName.trim(),
-      email: parentEmail.trim() || undefined,
-    });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to complete registration. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
 
-    setTimeout(() => {
+      if (data.safeKey) {
+        setGeneratedSafeKey(data.safeKey);
+      }
+
+      // Sync local session cache
+      const childData: Omit<ParentChild, 'id' | 'safeKey' | 'vehicleNumber' | 'vehicleModel' | 'driverName' | 'driverPhone'> = {
+        name: primaryChild.name.trim() || 'Aarav Sharma',
+        grade: primaryChild.grade.trim() || '3A',
+        age: 8,
+        schoolName: selectedSchool.name,
+        schoolBranch: selectedSchool.campus,
+        pickupLocation: pickupAddress.trim(),
+        pickupTime: '8:35 AM',
+        dropTime: '3:30 PM',
+        medicalNotes: primaryChild.notes?.trim() || undefined,
+      };
+
+      completeOnboarding(childData, {
+        name: parentName.trim(),
+        email: parentEmail.trim() || undefined,
+      });
+
       setIsSubmitting(false);
       setStep(8); // Move to Screen 10 — Success
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 450);
+    } catch {
+      setError('Connection error. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   return (

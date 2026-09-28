@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import {
   getPendingAuth,
-  createOrResumeParentLoginSession,
-  createPendingSignupSession,
+  saveParentSession,
 } from '@/lib/parentAuth';
 
 export default function ParentVerifyPage() {
@@ -106,7 +105,7 @@ export default function ParentVerifyPage() {
     }
   };
 
-  const verifyCode = (code: string) => {
+  const verifyCode = async (code: string) => {
     if (code.length !== 6) {
       setError('Please enter the complete 6-digit verification code.');
       return;
@@ -115,34 +114,71 @@ export default function ParentVerifyPage() {
     setIsVerifying(true);
     setError('');
 
-    setTimeout(() => {
-      if (authMode === 'login') {
-        // Log in parent directly with complete session into Parent App
-        createOrResumeParentLoginSession(phoneTarget);
+    try {
+      const cleanDigits = phoneTarget.replace(/\D/g, '');
+      const e164 = `+91${cleanDigits.slice(-10)}`;
+      const res = await fetch('/api/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: e164, token: code }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Invalid verification code. Please try again.');
+        setIsVerifying(false);
+        return;
+      }
+
+      // Save real session in parentAuth
+      saveParentSession({
+        token: data.token,
+        user: data.user,
+        children: data.children || [],
+        activeChildId: data.children?.[0]?.id || '',
+      });
+
+      if (data.user?.onboardingStatus === 'complete' && data.children && data.children.length > 0) {
         router.push('/parent');
       } else {
-        // Signup mode: create session and proceed to setup child & school
-        createPendingSignupSession(phoneTarget);
         router.push('/parent/onboarding');
       }
-    }, 350);
+    } catch {
+      setError('Network connection error. Please try again.');
+      setIsVerifying(false);
+    }
   };
 
   const handleUseDemoOtp = () => {
-    const demoCode = ['1', '2', '3', '4', '5', '6'];
+    const demoCode = ['4', '8', '2', '9', '1', '0'];
     setDigits(demoCode);
     setError('');
-    verifyCode('123456');
+    verifyCode('482910');
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (timer > 0) return;
     setIsResending(true);
     setError('');
-    setTimeout(() => {
-      setTimer(24);
+    try {
+      const cleanDigits = phoneTarget.replace(/\D/g, '');
+      const e164 = `+91${cleanDigits.slice(-10)}`;
+      const res = await fetch('/api/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: e164 }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to resend code');
+      } else {
+        setTimer(30);
+      }
+    } catch {
+      setError('Failed to resend code. Please try again.');
+    } finally {
       setIsResending(false);
-    }, 400);
+    }
   };
 
   return (

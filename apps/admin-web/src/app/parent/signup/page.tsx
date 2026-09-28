@@ -30,7 +30,7 @@ export default function ParentSignupPage() {
     setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rawDigits) {
       setError('Please enter your mobile number.');
@@ -42,16 +42,34 @@ export default function ParentSignupPage() {
     }
 
     setIsSubmitting(true);
+    setError('');
+
     const formattedPhone = `+91 ${rawDigits.slice(0, 5)} ${rawDigits.slice(5)}`;
+    const e164Phone = `+91${rawDigits}`;
 
-    setPendingAuth({
-      phone: formattedPhone,
-      mode: 'signup',
-    });
+    try {
+      const res = await fetch('/api/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: e164Phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to send verification code. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
 
-    setTimeout(() => {
+      setPendingAuth({
+        phone: formattedPhone,
+        mode: 'signup',
+      });
+
       router.push('/parent/verify');
-    }, 250);
+    } catch {
+      setError('Network connection error. Please check your internet connection.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
