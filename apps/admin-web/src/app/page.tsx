@@ -82,6 +82,25 @@ export default function TinyRideLandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Close modal on Escape and prevent body scrolling when modal is open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isModalOpen]);
+
   // Journey auto-advance demonstration loop (pauses if user clicked)
   useEffect(() => {
     if (userInteractedJourney) return;
@@ -189,13 +208,14 @@ export default function TinyRideLandingPage() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/ops"
-              className="text-xs font-semibold px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors btn-micro"
+              className="cursor-pointer text-xs font-semibold px-3.5 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors btn-micro"
             >
               Operations Portal
             </Link>
             <button
+              type="button"
               onClick={() => setIsModalOpen(true)}
-              className="text-xs sm:text-sm font-semibold px-4.5 py-2.5 bg-[#006B2F] hover:bg-[#005525] text-white rounded-lg shadow-xs hover:shadow-sm btn-micro"
+              className="cursor-pointer text-xs sm:text-sm font-semibold px-5 py-2.5 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white rounded-lg shadow-xs hover:shadow-md transition-all duration-150 btn-micro select-none inline-flex items-center justify-center"
             >
               Get Started
             </button>
@@ -259,16 +279,17 @@ export default function TinyRideLandingPage() {
               <Link
                 href="/ops"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 rounded-lg btn-micro"
+                className="cursor-pointer w-full text-center py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg btn-micro"
               >
                 Operations Portal
               </Link>
               <button
+                type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   setIsModalOpen(true);
                 }}
-                className="w-full py-2.5 text-sm font-semibold bg-[#006B2F] text-white rounded-lg shadow-xs btn-micro"
+                className="cursor-pointer w-full py-2.5 text-sm font-semibold bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] text-white rounded-lg shadow-xs btn-micro"
               >
                 Get Started
               </button>
@@ -1081,7 +1102,7 @@ export default function TinyRideLandingPage() {
       </section>
 
       {/* 11. FINAL CONVERSION CTA — PREMIUM DARK SECTION */}
-      <section className="py-20 sm:py-28 bg-white">
+      <section id="get-started" className="py-20 sm:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal yOffset={20}>
             <div className="bg-slate-950 text-white rounded-3xl p-10 sm:p-14 lg:p-20 text-center relative overflow-hidden shadow-2xl">
@@ -1191,11 +1212,18 @@ export default function TinyRideLandingPage() {
 
       {/* 13. INTERACTIVE "GET STARTED" MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-8 animate-in zoom-in-95 duration-200">
+        <div
+          onClick={() => setIsModalOpen(false)}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-8 animate-in zoom-in-95 duration-200"
+          >
             <button
+              type="button"
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors"
+              className="cursor-pointer absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
               aria-label="Close modal"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
