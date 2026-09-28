@@ -96,6 +96,7 @@ interface ParentDashboardData {
     registrationNumber: string;
     makeModel: string;
     type: string;
+    vehicleType?: string;
     capacity?: number;
   } | null;
   tripChild: {
@@ -680,6 +681,7 @@ export default function ParentDashboardPage() {
                   vehicleNumber={vehicle?.registrationNumber || 'TS09-TR-102'}
                   childName={activeChild?.name || 'Student'}
                   tripState={childState}
+                  vehicleType={vehicle?.vehicleType}
                 />
               </div>
 

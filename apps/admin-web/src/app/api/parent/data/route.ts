@@ -155,12 +155,13 @@ export async function GET(request: Request) {
     let vehicleInfo = {
       model: 'Force Traveller 18-Seater',
       registrationNumber: 'TS09-TR-102',
+      vehicleType: 'van' as string,
     };
 
     if (trip.vehicle_id) {
       const { data: vehicle } = await supabase
         .from('vehicles')
-        .select('make_model, registration_number')
+        .select('make_model, registration_number, vehicle_type')
         .eq('id', trip.vehicle_id)
         .maybeSingle();
 
@@ -168,6 +169,7 @@ export async function GET(request: Request) {
         vehicleInfo = {
           model: vehicle.make_model || vehicleInfo.model,
           registrationNumber: vehicle.registration_number,
+          vehicleType: vehicle.vehicle_type || vehicleInfo.vehicleType,
         };
       }
     }
@@ -367,6 +369,7 @@ export async function GET(request: Request) {
         id: trip.vehicle_id || 'veh-1',
         registrationNumber: vehicleInfo.registrationNumber,
         makeModel: vehicleInfo.model,
+        vehicleType: vehicleInfo.vehicleType,
         type: 'Minibus',
       },
       tripChild: {
