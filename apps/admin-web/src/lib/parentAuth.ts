@@ -110,7 +110,9 @@ export function isAuthenticatedParent(): boolean {
 export function setPendingAuth(data: { name?: string; phone: string; email?: string; mode: 'signup' | 'login' }): void {
   if (typeof window === 'undefined') return;
   try {
-    sessionStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify(data));
+    const payload = JSON.stringify(data);
+    sessionStorage.setItem(PENDING_SIGNUP_KEY, payload);
+    localStorage.setItem(PENDING_SIGNUP_KEY, payload);
   } catch (err) {
     console.warn('Failed to store pending auth:', err);
   }
@@ -122,12 +124,73 @@ export function setPendingAuth(data: { name?: string; phone: string; email?: str
 export function getPendingAuth(): { name?: string; phone: string; email?: string; mode: 'signup' | 'login' } | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(PENDING_SIGNUP_KEY);
+    const raw = sessionStorage.getItem(PENDING_SIGNUP_KEY) || localStorage.getItem(PENDING_SIGNUP_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch {
     return null;
   }
+}
+
+/**
+ * Log in an existing or demo parent user with completed profile, routing to parent app
+ */
+export function createOrResumeParentLoginSession(phone: string): ParentSession {
+  const existing = getParentSession();
+  if (existing && existing.token && existing.user) {
+    const updated: ParentSession = {
+      ...existing,
+      token: existing.token || `tr-parent-${Date.now()}`,
+      user: {
+        ...existing.user,
+        phone: phone || existing.user.phone,
+        onboardingStatus: 'complete',
+      },
+    };
+    saveParentSession(updated);
+    return updated;
+  }
+
+  // Create active completed session for logging-in parent
+  const session: ParentSession = {
+    token: `tr-parent-${Date.now()}`,
+    user: {
+      id: `usr-${Date.now()}`,
+      name: 'Radhika Sharma',
+      phone: phone || '+91 98765 43210',
+      email: 'radhika.sharma@example.com',
+      role: 'parent',
+      onboardingStatus: 'complete',
+      createdAt: new Date().toISOString(),
+    },
+    children: [DEFAULT_DEMO_CHILD],
+    activeChildId: DEFAULT_DEMO_CHILD.id,
+  };
+  saveParentSession(session);
+  return session;
+}
+
+/**
+ * Create a fresh pending signup session that will proceed to onboarding
+ */
+export function createPendingSignupSession(phone: string): ParentSession {
+  const existing = getParentSession();
+  const session: ParentSession = {
+    token: `tr-parent-${Date.now()}`,
+    user: {
+      id: `usr-${Date.now()}`,
+      name: existing?.user?.name || '',
+      phone: phone || '+91 98765 43210',
+      email: existing?.user?.email || '',
+      role: 'parent',
+      onboardingStatus: 'incomplete',
+      createdAt: new Date().toISOString(),
+    },
+    children: existing?.children?.length ? existing.children : [DEFAULT_DEMO_CHILD],
+    activeChildId: existing?.activeChildId || DEFAULT_DEMO_CHILD.id,
+  };
+  saveParentSession(session);
+  return session;
 }
 
 /**

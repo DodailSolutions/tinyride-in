@@ -24,12 +24,20 @@ export default function ParentLoginPage() {
   }, []);
 
   const rawDigits = phone.replace(/\D/g, '');
-  const isValid = rawDigits.length === 10 && /^[6-9]/.test(rawDigits);
+  const isValid = rawDigits.length === 10;
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+    let val = e.target.value.replace(/\D/g, '');
+    if (val.startsWith('91') && val.length > 10) val = val.slice(2);
+    if (val.startsWith('0') && val.length > 10) val = val.slice(1);
+    val = val.slice(0, 10);
     setPhone(val);
     if (error) setError('');
+  };
+
+  const handleUseDemoPhone = () => {
+    setPhone('9876543210');
+    setError('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -53,7 +61,7 @@ export default function ParentLoginPage() {
 
     setTimeout(() => {
       router.push('/parent/verify');
-    }, 350);
+    }, 250);
   };
 
   const handleResumeSession = () => {
@@ -169,9 +177,18 @@ export default function ParentLoginPage() {
                   />
                 </div>
 
-                <p id="login-helper" className="mt-2 text-xs text-slate-500">
-                  Passwordless login. We&apos;ll send you a fast 6-digit verification code.
-                </p>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <p id="login-helper" className="text-slate-500">
+                    We&apos;ll send you a 6-digit verification code.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleUseDemoPhone}
+                    className="text-[11px] font-semibold text-[#006B2F] hover:underline cursor-pointer select-none"
+                  >
+                    Use demo number
+                  </button>
+                </div>
               </div>
 
               {/* Primary CTA */}

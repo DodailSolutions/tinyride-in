@@ -99,6 +99,14 @@ export default function ParentOnboardingPage() {
       s.campus.toLowerCase().includes(schoolSearch.toLowerCase())
   );
 
+  const handleQuickFillDemo = () => {
+    setParentName('Radhika Sharma');
+    setParentEmail('radhika.sharma@example.com');
+    setChildrenList([{ name: 'Aarav Sharma', grade: '3A', notes: 'Dust allergy' }]);
+    setPickupAddress('Gate 2, Rainbow Vistas, Hitec City');
+    setError('');
+  };
+
   const handleNext = () => {
     setError('');
 
@@ -267,12 +275,21 @@ export default function ParentOnboardingPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <label
-                      htmlFor="parent-full-name"
-                      className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2"
-                    >
-                      Full name
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label
+                        htmlFor="parent-full-name"
+                        className="block text-xs font-bold text-slate-800 uppercase tracking-wider"
+                      >
+                        Full name
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleQuickFillDemo}
+                        className="text-[11px] font-semibold text-[#006B2F] hover:underline cursor-pointer select-none"
+                      >
+                        Fill demo profile
+                      </button>
+                    </div>
                     <input
                       id="parent-full-name"
                       type="text"

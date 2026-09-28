@@ -6,10 +6,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import {
   getPendingAuth,
-  getParentSession,
-  saveParentSession,
-  DEFAULT_DEMO_CHILD,
-  type ParentSession,
+  createOrResumeParentLoginSession,
+  createPendingSignupSession,
 } from '@/lib/parentAuth';
 
 export default function ParentVerifyPage() {
@@ -40,41 +38,71 @@ export default function ParentVerifyPage() {
     return () => clearInterval(interval);
   }, [timer]);
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+
+    const newDigits = ['', '', '', '', '', ''];
+    for (let i = 0; i < 6; i++) {
+      newDigits[i] = pasted[i] || '';
+    }
+    setDigits(newDigits);
+    setError('');
+
+    const nextIndex = Math.min(pasted.length, 5);
+    inputRefs.current[nextIndex]?.focus();
+
+    if (pasted.length === 6) {
+      verifyCode(pasted);
+    }
+  };
+
   const handleDigitChange = (index: number, val: string) => {
     const clean = val.replace(/\D/g, '');
-    const newDigits = [...digits];
 
-    if (clean.length > 1) {
-      // Pasted complete code
-      const pasted = clean.slice(0, 6).split('');
-      for (let i = 0; i < 6; i++) {
-        newDigits[i] = pasted[i] || '';
-      }
-      setDigits(newDigits);
-      if (pasted.length === 6) {
-        verifyCode(newDigits.join(''));
-      }
+    // Full 6 digits autofilled by browser/SMS
+    if (clean.length === 6) {
+      const fullDigits = clean.split('');
+      setDigits(fullDigits);
+      setError('');
+      verifyCode(clean);
       return;
     }
 
-    newDigits[index] = clean;
+    // Take the last typed digit if input already had a value
+    const singleChar = clean ? clean.slice(-1) : '';
+    const newDigits = [...digits];
+    newDigits[index] = singleChar;
     setDigits(newDigits);
     if (error) setError('');
 
-    // Auto-advance
-    if (clean && index < 5) {
+    // Advance to next input
+    if (singleChar && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-submit when all 6 filled
+    // Auto-verify when all 6 digits are complete
     if (newDigits.every((d) => d.length === 1)) {
       verifyCode(newDigits.join(''));
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !digits[index] && index > 0) {
+    if (e.key === 'Backspace') {
+      if (!digits[index] && index > 0) {
+        e.preventDefault();
+        const newDigits = [...digits];
+        newDigits[index - 1] = '';
+        setDigits(newDigits);
+        inputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault();
       inputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      e.preventDefault();
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -88,36 +116,23 @@ export default function ParentVerifyPage() {
     setError('');
 
     setTimeout(() => {
-      // Any 6-digit numeric input is accepted in demo/evaluation mode
-      const existingSession = getParentSession();
-      const isExistingUser =
-        existingSession &&
-        existingSession.user &&
-        (existingSession.user.phone === phoneTarget || authMode === 'login');
-
-      if (isExistingUser && existingSession.user.onboardingStatus === 'complete') {
-        // Returning parent with completed onboarding -> Straight to Parent App
+      if (authMode === 'login') {
+        // Log in parent directly with complete session into Parent App
+        createOrResumeParentLoginSession(phoneTarget);
         router.push('/parent');
       } else {
-        // New parent or incomplete onboarding -> create session & move to onboarding
-        const newSession: ParentSession = {
-          token: `tr-parent-${Date.now()}`,
-          user: {
-            id: `usr-${Date.now()}`,
-            name: existingSession?.user?.name || '',
-            phone: phoneTarget,
-            role: 'parent',
-            onboardingStatus: 'incomplete',
-            createdAt: new Date().toISOString(),
-          },
-          children: existingSession?.children?.length ? existingSession.children : [DEFAULT_DEMO_CHILD],
-          activeChildId: existingSession?.activeChildId || DEFAULT_DEMO_CHILD.id,
-        };
-
-        saveParentSession(newSession);
+        // Signup mode: create session and proceed to setup child & school
+        createPendingSignupSession(phoneTarget);
         router.push('/parent/onboarding');
       }
-    }, 450);
+    }, 350);
+  };
+
+  const handleUseDemoOtp = () => {
+    const demoCode = ['1', '2', '3', '4', '5', '6'];
+    setDigits(demoCode);
+    setError('');
+    verifyCode('123456');
   };
 
   const handleResend = () => {
@@ -181,24 +196,38 @@ export default function ParentVerifyPage() {
             )}
 
             {/* 6 Digit OTP Inputs */}
-            <div className="flex justify-between gap-2 sm:gap-2.5 mb-6">
-              {digits.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => {
-                    inputRefs.current[idx] = el;
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  value={digit}
-                  onChange={(e) => handleDigitChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(idx, e)}
-                  aria-label={`Digit ${idx + 1} of verification code`}
-                  className="w-11 h-14 sm:w-13 sm:h-16 text-center text-xl font-bold rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006B2F]/20 focus:border-[#006B2F] transition-all"
-                />
-              ))}
+            <div className="space-y-3 mb-6">
+              <div onPaste={handlePaste} className="flex justify-between gap-2 sm:gap-2.5">
+                {digits.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => {
+                      inputRefs.current[idx] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete={idx === 0 ? 'one-time-code' : 'off'}
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleDigitChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(idx, e)}
+                    aria-label={`Digit ${idx + 1} of verification code`}
+                    className="w-11 h-14 sm:w-13 sm:h-16 text-center text-xl font-bold rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006B2F]/20 focus:border-[#006B2F] transition-all select-none"
+                  />
+                ))}
+              </div>
+
+              {/* Demo Helper Button */}
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="text-slate-400">Demo code: 123456</span>
+                <button
+                  type="button"
+                  onClick={handleUseDemoOtp}
+                  className="font-semibold text-xs text-[#006B2F] hover:underline cursor-pointer select-none"
+                >
+                  Auto-fill demo code
+                </button>
+              </div>
             </div>
 
             {/* Primary Verify CTA */}
