@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, realtimeBus } from '@/server/supabase';
+import { getAuthenticatedDriver } from '@/server/auth';
 
 export async function POST(request: Request) {
   try {
+    const driver = await getAuthenticatedDriver(request);
+    if (!driver) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const body = await request.json().catch(() => ({}));
-    const { tripId } = body;
+    const { tripId, stopId } = body;
 
     if (!tripId) {
       return NextResponse.json({ error: 'tripId is required' }, { status: 400 });
@@ -16,12 +20,16 @@ export async function POST(request: Request) {
     // 1. Fetch trip and enrolled children
     const { data: trip } = await supabase
       .from('trips')
-      .select('id, route_id, routes!inner(name, school_id, schools!inner(name))')
+      .select('id, driver_id, route_id, routes!inner(name, school_id, schools!inner(name))')
       .eq('id', tripId)
       .single();
 
     if (!trip) {
       return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
+    }
+    
+    if (trip.driver_id !== driver.driverId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const schoolName = (trip.routes as any)?.schools?.name || 'Olive Mount Global School';
@@ -44,7 +52,7 @@ export async function POST(request: Request) {
       trip_id: tripId,
       event_type: 'trip_ended',
       occurred_at: nowIso,
-      payload: { location: 'school_campus_bay', schoolName },
+      payload: { location: 'school_campus_bay', schoolName, stopId },
     });
 
     // 4. Send real parent notifications to all enrolled parents

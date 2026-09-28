@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, parsePointHex } from '@/server/supabase';
+import { getAuthenticatedDriver } from '@/server/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const driver = await getAuthenticatedDriver(request);
+    if (!driver) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const supabase = getServiceSupabase();
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -11,6 +15,7 @@ export async function GET() {
       .from('trips')
       .select('id, state, scheduled_start, actual_start, direction, route_id, driver_id, vehicle_id')
       .eq('trip_date', todayStr)
+      .eq('driver_id', driver.driverId)
       .limit(1);
 
     const trip = trips?.[0];
@@ -19,7 +24,7 @@ export async function GET() {
     }
 
     // Driver & vehicle details
-    const { data: driver } = await supabase
+    const { data: driverRec } = await supabase
       .from('drivers')
       .select('id, profiles!inner(display_name, phone_e164)')
       .eq('id', trip.driver_id)
@@ -84,8 +89,8 @@ export async function GET() {
         actualStart: trip.actual_start,
         routeName: route?.name || 'Route 04 Express',
         schoolName: (route?.schools as any)?.name || 'Olive Mount Global School',
-        driverName: (driver?.profiles as any)?.display_name || 'Ravi Kumar',
-        driverPhone: (driver?.profiles as any)?.phone_e164 || '+91 98765 00001',
+        driverName: (driverRec?.profiles as any)?.display_name || 'Ravi Kumar',
+        driverPhone: (driverRec?.profiles as any)?.phone_e164 || '+91 98765 00001',
         vehicleNumber: vehicle?.registration_number || 'TS09-TR-102',
         vehicleModel: vehicle?.make_model || 'Force Traveller 18-Seater',
         routeStops,

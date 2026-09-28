@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, formatPointWKT, realtimeBus } from '@/server/supabase';
+import { getAuthenticatedDriver } from '@/server/auth';
 
 export async function POST(request: Request) {
   try {
+    const driver = await getAuthenticatedDriver(request);
+    if (!driver) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const body = await request.json().catch(() => ({}));
     const {
       tripId,
@@ -37,12 +41,16 @@ export async function POST(request: Request) {
     // Verify trip is active
     const { data: trip } = await supabase
       .from('trips')
-      .select('id, state')
+      .select('id, state, driver_id')
       .eq('id', tripId)
       .single();
 
     if (!trip) {
       return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
+    }
+    
+    if (trip.driver_id !== driver.driverId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Insert into trip_locations table
@@ -52,6 +60,7 @@ export async function POST(request: Request) {
       geo: geoWkt,
       speed_kph: speedKph,
       accuracy_m: accuracyM,
+      heading: Number(heading) || 0,
       recorded_at: recordedAt,
     });
 

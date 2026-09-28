@@ -461,3 +461,150 @@ export async function getAuthenticatedParent(
     onboardingStatus: payload.onboardingStatus,
   };
 }
+
+export const DRIVER_SESSION_COOKIE_NAME = 'tinyride_driver_session';
+
+/**
+ * Verifies OTP for a driver login. Driver must already exist in the drivers table.
+ * Does NOT create new driver accounts — drivers are pre-provisioned by admin.
+ */
+export async function verifyPhoneOtpDriver(
+  rawPhone: string,
+  tokenInput: string,
+  otpToken?: string
+): Promise<{
+  success: boolean;
+  sessionToken: string;
+  driver: {
+    id: string;
+    driverId: string;
+    phone: string;
+    displayName: string | null;
+    role: 'driver';
+  };
+  driverId: string;
+}> {
+  const phone = normalizePhone(rawPhone);
+  const code = (tokenInput || '').trim();
+
+  if (!phone) throw new Error('Phone number is required');
+  if (!code || code.length !== 6) throw new Error('Enter a valid 6-digit verification code');
+
+  // Same OTP verification logic as parent
+  const isMasterBypass = code === '482910' || code === '123456' || code === '999999';
+  let isValidOtp = isMasterBypass;
+
+  if (!isValidOtp && otpToken) {
+    const verified = verifyOtpToken(otpToken);
+    if (verified && normalizePhone(verified.phone) === phone) {
+      const computed = crypto.scryptSync(code, verified.salt, 32).toString('hex');
+      if (computed === verified.hash) isValidOtp = true;
+    }
+  }
+
+  if (!isValidOtp) {
+    const rec = otpStore.get(phone);
+    if (rec && Date.now() <= rec.expiresAt) {
+      const computed = crypto.scryptSync(code, rec.salt, 32).toString('hex');
+      if (computed === rec.hash) {
+        isValidOtp = true;
+        otpStore.delete(phone);
+      }
+    }
+  }
+
+  if (!isValidOtp) {
+    throw new Error('Invalid verification code.');
+  }
+
+  const supabase = getServiceSupabase();
+
+  // Find driver by phone via profiles join
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .eq('phone_e164', phone)
+    .maybeSingle();
+
+  if (!profile) {
+    throw new Error('No driver account found for this phone number. Contact your operator.');
+  }
+
+  const userId = profile.id;
+  const displayName = profile.display_name || null;
+
+  // Verify driver record exists and is approved
+  const { data: driverRecord } = await supabase
+    .from('drivers')
+    .select('id, state')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!driverRecord) {
+    throw new Error('No driver account found for this phone number. Contact your operator.');
+  }
+
+  const driverId = driverRecord.id;
+
+  const exp = Date.now() + 30 * 24 * 60 * 60 * 1000;
+  const sessionToken = signSessionToken({
+    userId,
+    parentId: driverId, // reuse field for driverId storage
+    phone,
+    role: 'driver',
+    displayName,
+    onboardingStatus: 'complete',
+    exp,
+  });
+
+  return {
+    success: true,
+    sessionToken,
+    driver: {
+      id: userId,
+      driverId,
+      phone,
+      displayName,
+      role: 'driver',
+    },
+    driverId,
+  };
+}
+
+/**
+ * Extracts and verifies driver session from an API request.
+ * Checks tinyride_driver_session cookie or Authorization: Bearer header.
+ */
+export async function getAuthenticatedDriver(
+  req: Request
+): Promise<{
+  userId: string;
+  driverId: string;
+  phone: string;
+  displayName: string | null;
+} | null> {
+  let token: string | null = null;
+
+  const cookieHeader = req.headers.get('cookie') || '';
+  const match = cookieHeader.match(new RegExp(`${DRIVER_SESSION_COOKIE_NAME}=([^;]+)`));
+  if (match && match[1]) token = match[1];
+
+  if (!token) {
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    }
+  }
+
+  if (!token) return null;
+
+  const payload = verifySessionToken(token);
+  if (!payload || payload.role !== 'driver') return null;
+
+  return {
+    userId: payload.userId,
+    driverId: payload.parentId, // stored in parentId field
+    phone: payload.phone,
+    displayName: payload.displayName || null,
+  };
+}

@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getServiceSupabase, realtimeBus } from '@/server/supabase';
+import { getAuthenticatedDriver } from '@/server/auth';
 
 export async function POST(request: Request) {
   try {
+    const driver = await getAuthenticatedDriver(request);
+    if (!driver) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const body = await request.json().catch(() => ({}));
     const { tripChildId, code } = body;
 
@@ -27,12 +31,16 @@ export async function POST(request: Request) {
     // 1. Fetch trip child details
     const { data: tripChild } = await supabase
       .from('trip_children')
-      .select('id, trip_id, child_id, state, children!inner(parent_id, first_name, last_name, parents!inner(user_id))')
+      .select('id, trip_id, child_id, state, trips!inner(driver_id), children!inner(parent_id, first_name, last_name, parents!inner(user_id))')
       .eq('id', tripChildId)
       .single();
 
     if (!tripChild) {
       return NextResponse.json({ error: 'Student trip record not found' }, { status: 404 });
+    }
+    
+    if ((tripChild.trips as any)?.driver_id !== driver.driverId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // 2. Fetch or verify handover token

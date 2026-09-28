@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, realtimeBus } from '@/server/supabase';
+import { getAuthenticatedDriver } from '@/server/auth';
 
 export async function POST(request: Request) {
   try {
+    const driver = await getAuthenticatedDriver(request);
+    if (!driver) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const body = await request.json().catch(() => ({}));
     const { tripId } = body;
 
@@ -12,6 +16,10 @@ export async function POST(request: Request) {
 
     const supabase = getServiceSupabase();
     const nowIso = new Date().toISOString();
+    
+    const { data: existingTrip } = await supabase.from('trips').select('id, driver_id').eq('id', tripId).single();
+    if (!existingTrip) return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
+    if (existingTrip.driver_id !== driver.driverId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const { data: trip, error: tripErr } = await supabase
       .from('trips')
