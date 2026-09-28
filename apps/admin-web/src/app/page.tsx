@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { TinyRideIPhone } from '@/components/TinyRideIPhone';
 import { TinyRideMobileTrackingApp } from '@/components/TinyRideMobileTrackingApp';
+import { isAuthenticatedParent } from '@/lib/parentAuth';
 
 // Lightweight, performant Scroll-Reveal Component using native IntersectionObserver
 function ScrollReveal({
@@ -64,6 +65,9 @@ export default function TinyRideLandingPage() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
+  // Parent Auth State
+  const [isParentAuth, setIsParentAuth] = useState(false);
+
   // Journey Stepper state + auto-advance demonstration loop
   const [activeJourneyStep, setActiveJourneyStep] = useState(2); // 0-indexed: 2 = Child boards
   const [userInteractedJourney, setUserInteractedJourney] = useState(false);
@@ -88,10 +92,11 @@ export default function TinyRideLandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Connectivity and PWA install prompt listeners
+  // Connectivity, PWA install prompt listeners, and Parent Auth detection
   useEffect(() => {
     if (typeof window === 'undefined') return;
     setIsOnline(navigator.onLine);
+    setIsParentAuth(isAuthenticatedParent());
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
@@ -221,6 +226,7 @@ export default function TinyRideLandingPage() {
   ];
 
   const currentStep = journeySteps[activeJourneyStep] ?? journeySteps[0]!;
+  const parentHref = isParentAuth ? '/parent' : '/parents';
 
   return (
     <div id="top" className="min-h-screen bg-[#FAFAF9] text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden pb-[calc(84px+env(safe-area-inset-bottom,0px))] xl:pb-0">
@@ -248,9 +254,9 @@ export default function TinyRideLandingPage() {
             <a href="#how-it-works" className="hover:text-emerald-800 transition-colors duration-150">
               How It Works
             </a>
-            <a href="#for-parents" className="hover:text-emerald-800 transition-colors duration-150">
+            <Link href={parentHref} className="hover:text-emerald-800 transition-colors duration-150">
               For Parents
-            </a>
+            </Link>
             <a href="#for-schools" className="hover:text-emerald-800 transition-colors duration-150">
               For Schools
             </a>
@@ -270,9 +276,9 @@ export default function TinyRideLandingPage() {
             <a href="#how-it-works" className="hover:text-emerald-800 transition-colors duration-150">
               How It Works
             </a>
-            <a href="#for-parents" className="hover:text-emerald-800 transition-colors duration-150">
+            <Link href={parentHref} className="hover:text-emerald-800 transition-colors duration-150">
               For Parents
-            </a>
+            </Link>
             <a href="#for-schools" className="hover:text-emerald-800 transition-colors duration-150">
               For Schools
             </a>
@@ -374,13 +380,13 @@ export default function TinyRideLandingPage() {
             >
               How It Works
             </a>
-            <a
-              href="#for-parents"
+            <Link
+              href={parentHref}
               onClick={() => setMobileMenuOpen(false)}
               className="block py-2.5 text-sm font-medium text-slate-700 hover:text-emerald-800 min-h-[44px] flex items-center"
             >
               For Parents
-            </a>
+            </Link>
             <a
               href="#for-schools"
               onClick={() => setMobileMenuOpen(false)}
@@ -1115,13 +1121,13 @@ export default function TinyRideLandingPage() {
               </ul>
 
               <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className="cursor-pointer h-12 min-h-[48px] w-full sm:w-auto px-6 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white text-sm font-semibold rounded-xl shadow-xs btn-micro flex items-center justify-center"
+                <Link
+                  href={parentHref}
+                  className="cursor-pointer h-12 min-h-[48px] w-full sm:w-auto px-6 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] active:scale-95 text-white text-sm font-semibold rounded-xl shadow-xs btn-micro inline-flex items-center justify-center gap-2"
                 >
-                  Join as a Parent
-                </button>
+                  <span>Explore TinyRide for Parents</span>
+                  <span>→</span>
+                </Link>
               </div>
             </div>
 
@@ -1656,7 +1662,7 @@ export default function TinyRideLandingPage() {
               <h5 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Product</h5>
               <ul className="space-y-1.5">
                 <li><a href="#how-it-works" className="hover:text-emerald-800 transition-colors">How It Works</a></li>
-                <li><a href="#for-parents" className="hover:text-emerald-800 transition-colors">For Parents</a></li>
+                <li><Link href={parentHref} className="hover:text-emerald-800 transition-colors">For Parents</Link></li>
                 <li><a href="#for-schools" className="hover:text-emerald-800 transition-colors">For Schools</a></li>
                 <li><a href="#for-drivers" className="hover:text-emerald-800 transition-colors">For Drivers</a></li>
                 <li><a href="#trust" className="hover:text-emerald-800 transition-colors">Trust & Safety</a></li>
@@ -1744,15 +1750,15 @@ export default function TinyRideLandingPage() {
           <span>Journey</span>
         </a>
 
-        <a
-          href="#for-parents"
+        <Link
+          href={parentHref}
           className="flex flex-col items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-emerald-800 min-h-[44px] justify-center px-2 py-1 active:scale-95 transition-transform"
         >
           <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
           <span>Parents</span>
-        </a>
+        </Link>
 
         <button
           type="button"

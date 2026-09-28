@@ -14,8 +14,13 @@ export function AdminShell({ children }: AdminShellProps) {
     'admin',
   );
 
-  // If on public consumer landing page, bypass admin sidebar
-  if (pathname === '/' || pathname === '/landing') {
+  // If on public consumer landing page or parent portal flow, bypass admin sidebar
+  if (
+    pathname === '/' ||
+    pathname === '/landing' ||
+    pathname === '/parents' ||
+    pathname?.startsWith('/parent')
+  ) {
     return <>{children}</>;
   }
 
