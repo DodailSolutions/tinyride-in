@@ -1,7 +1,20 @@
 -- =============================================================================
---  TinyRide v3 schema — 00 · Extensions, schemas, helper functions
+--  TinyRide v3 schema — Complete Consolidated Production Schema
 --  Target: Supabase (PostgreSQL 15+), pilot in Hyderabad (Asia/Kolkata, INR)
 -- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- Clean Reset: Drops any partially applied public tables and functions
+-- so the schema runs cleanly from start to finish without collision errors.
+-- -----------------------------------------------------------------------------
+drop schema if exists public cascade;
+create schema public;
+
+-- Restore standard Supabase role permissions on the public schema
+grant all on schema public to postgres;
+grant all on schema public to anon;
+grant all on schema public to authenticated;
+grant all on schema public to service_role;
 
 -- Supabase convention: keep extensions out of `public` so PostgREST does not
 -- expose their functions and so `public` stays app-owned.
