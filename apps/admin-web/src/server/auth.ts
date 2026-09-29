@@ -1,12 +1,19 @@
 import crypto from 'crypto';
-import { getServiceSupabase } from './supabase';
+import { getServiceSupabase, getAnonSupabase } from './supabase';
 
 const SESSION_SECRET =
   process.env.SESSION_SECRET ||
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'tinyride-production-parent-auth-secret-key-2026';
+  (process.env.NODE_ENV !== 'production' ? 'tinyride-dev-session-key-insecure-local' : '');
+
+if (!SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('SESSION_SECRET or SUPABASE_SERVICE_ROLE_KEY must be configured in production environment.');
+}
 
 export const SESSION_COOKIE_NAME = 'tinyride_session';
+export const DRIVER_SESSION_COOKIE_NAME = 'tinyride_driver_session';
+export const SCHOOL_SESSION_COOKIE_NAME = 'tinyride_school_session';
+export const ADMIN_SESSION_COOKIE_NAME = 'tinyride_admin_session';
 
 interface OtpRecord {
   phone: string;
@@ -188,12 +195,10 @@ export async function sendPhoneOtp(rawPhone: string): Promise<{
   };
 }
 
-export const SCHOOL_SESSION_COOKIE_NAME = 'tinyride_school_session';
-export const ADMIN_SESSION_COOKIE_NAME = 'tinyride_admin_session';
-
-export function signAdminSessionToken(_email: string, displayName = 'Central Controller (Platform Admin)'): string {
+export function signAdminSessionToken(email: string, displayName = 'Central Controller (Platform Admin)', userId = 'admin-controller'): string {
   const payload: SessionPayload = {
-    userId: 'admin-controller',
+    userId,
+    email,
     parentId: '',
     phone: '',
     role: 'admin',
@@ -204,15 +209,16 @@ export function signAdminSessionToken(_email: string, displayName = 'Central Con
   return signSessionToken(payload);
 }
 
-
 export interface SessionPayload {
   userId: string;
-  parentId: string;
-  phone: string;
+  email?: string;
+  parentId?: string;
+  phone?: string;
   role: 'parent' | 'driver' | 'admin' | 'school';
   displayName?: string | null;
-  onboardingStatus: 'incomplete' | 'complete';
+  onboardingStatus?: 'incomplete' | 'complete';
   schoolId?: string;
+  driverId?: string;
   staffRole?: string;
   schoolStatus?: string;
   exp: number;
@@ -502,14 +508,12 @@ export async function getAuthenticatedParent(
 
   return {
     userId: payload.userId,
-    parentId: payload.parentId,
-    phone: payload.phone,
+    parentId: payload.parentId || '',
+    phone: payload.phone || '',
     displayName: payload.displayName || null,
-    onboardingStatus: payload.onboardingStatus,
+    onboardingStatus: payload.onboardingStatus || 'incomplete',
   };
 }
-
-export const DRIVER_SESSION_COOKIE_NAME = 'tinyride_driver_session';
 
 /**
  * Verifies OTP for a driver login. Driver must already exist in the drivers table.
@@ -663,8 +667,8 @@ export async function getAuthenticatedDriver(
 
   return {
     userId: payload.userId,
-    driverId: payload.parentId, // stored in parentId field
-    phone: payload.phone,
+    driverId: payload.driverId || payload.parentId || '',
+    phone: payload.phone || '',
     displayName: payload.displayName || null,
   };
 }
@@ -704,9 +708,448 @@ export async function getAuthenticatedSchool(
   return {
     userId: payload.userId,
     schoolId: payload.schoolId,
-    phone: payload.phone,
+    phone: payload.phone || '',
     displayName: payload.displayName || null,
     staffRole: payload.staffRole || 'viewer',
     schoolStatus: payload.schoolStatus || 'pending',
+  };
+}
+
+/**
+ * Extracts and verifies administrator session from an incoming API request.
+ * Checks tinyride_admin_session cookie or Authorization: Bearer header.
+ */
+export async function getAuthenticatedAdmin(
+  req: Request
+): Promise<{
+  userId: string;
+  email?: string;
+  role: 'admin';
+  displayName?: string | null;
+} | null> {
+  let token: string | null = null;
+
+  const cookieHeader = req.headers.get('cookie') || '';
+  const match = cookieHeader.match(new RegExp(`${ADMIN_SESSION_COOKIE_NAME}=([^;]+)`));
+  if (match && match[1]) token = match[1];
+
+  if (!token) {
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    }
+  }
+
+  if (!token) return null;
+
+  const payload = verifySessionToken(token);
+  if (!payload || payload.role !== 'admin') return null;
+
+  return {
+    userId: payload.userId,
+    email: payload.email,
+    role: 'admin',
+    displayName: payload.displayName || 'Central Controller',
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// RATE LIMITING STORE
+// ─────────────────────────────────────────────────────────────
+interface RateLimitRecord {
+  count: number;
+  resetAt: number;
+}
+const rateLimitStore = new Map<string, RateLimitRecord>();
+
+export function checkRateLimit(key: string, limit: number, windowMs: number): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const record = rateLimitStore.get(key);
+  if (!record || now > record.resetAt) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remaining: limit - 1 };
+  }
+  if (record.count >= limit) {
+    return { allowed: false, remaining: 0 };
+  }
+  record.count += 1;
+  return { allowed: true, remaining: limit - record.count };
+}
+
+// ─────────────────────────────────────────────────────────────
+// REAL SUPABASE EMAIL AUTHENTICATION
+// ─────────────────────────────────────────────────────────────
+
+export interface EmailLoginResult {
+  success: boolean;
+  user: {
+    id: string;
+    email: string;
+    displayName: string | null;
+    role: 'parent' | 'driver' | 'school' | 'admin';
+  };
+  sessionToken: string;
+  cookieName: string;
+  redirectTo: string;
+}
+
+/**
+ * Authenticates user via Supabase Auth using email + password,
+ * checks database-backed role authorization, and issues role-scoped session cookie.
+ */
+export async function loginWithEmail(
+  rawEmail: string,
+  rawPasscode: string,
+  portalRole?: 'parent' | 'driver' | 'school' | 'admin'
+): Promise<EmailLoginResult> {
+  const email = (rawEmail || '').trim().toLowerCase();
+  const password = (rawPasscode || '').trim();
+
+  if (!email || !email.includes('@')) {
+    throw new Error('Please enter a valid email address');
+  }
+  if (!password || password.length < 6) {
+    throw new Error('Please provide your password (minimum 6 characters)');
+  }
+
+  // Rate limiting: 10 attempts per 5 minutes per email
+  const rlKey = `login:${email}`;
+  const rl = checkRateLimit(rlKey, 10, 5 * 60 * 1000);
+  if (!rl.allowed) {
+    throw new Error('Too many login attempts. Please wait 5 minutes before trying again.');
+  }
+
+  const supabaseAnon = getAnonSupabase();
+  const supabaseAdmin = getServiceSupabase();
+
+  // 1. Authenticate with Supabase Auth
+  const { data: authData, error: authError } = await supabaseAnon.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (authError || !authData.user) {
+    if (authError?.message?.toLowerCase().includes('email not confirmed')) {
+      throw new Error('Email verification required. Please click the confirmation link sent to your email.');
+    }
+    throw new Error('Invalid email or password.');
+  }
+
+  const userId = authData.user.id;
+  const userEmail = authData.user.email || email;
+
+  // 2. Fetch User Profile
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('id, display_name, phone_e164, state')
+    .eq('id', userId)
+    .maybeSingle();
+
+  const displayName = profile?.display_name || authData.user.user_metadata?.display_name || null;
+
+  // 3. Query assigned roles from public.user_roles + public.roles
+  const { data: userRoles } = await supabaseAdmin
+    .from('user_roles')
+    .select('role_id, active, roles(code)')
+    .eq('user_id', userId);
+
+  const activeRoleCodes: string[] = (userRoles || [])
+    .filter((r) => r.active !== false)
+    .map((r) => (r.roles as any)?.code)
+    .filter(Boolean);
+
+  // 4. Enforce role-based portal authorization
+  let resolvedRole: 'parent' | 'driver' | 'school' | 'admin' = 'parent';
+  let cookieName = SESSION_COOKIE_NAME;
+  let redirectTo = '/parent';
+  let parentId = '';
+  let schoolId = '';
+  let driverId = '';
+  let staffRole = 'viewer';
+  let schoolStatus = 'pending';
+  let onboardingStatus: 'incomplete' | 'complete' = 'incomplete';
+
+  if (portalRole === 'admin') {
+    const hasAdminRole = activeRoleCodes.includes('admin') || activeRoleCodes.includes('operator');
+    if (!hasAdminRole) {
+      throw new Error('Access denied. This account does not have Central Administrator permissions.');
+    }
+    resolvedRole = 'admin';
+    cookieName = ADMIN_SESSION_COOKIE_NAME;
+    redirectTo = '/admin';
+  } else if (portalRole === 'driver') {
+    const hasDriverRole = activeRoleCodes.includes('driver');
+    if (!hasDriverRole) {
+      throw new Error('Access denied. This account is not registered as an authorized driver.');
+    }
+    resolvedRole = 'driver';
+    cookieName = DRIVER_SESSION_COOKIE_NAME;
+    redirectTo = '/driver';
+
+    const { data: driverRec } = await supabaseAdmin
+      .from('drivers')
+      .select('id, state')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    driverId = driverRec?.id || userId;
+    if (driverRec?.state === 'pending_verification') {
+      redirectTo = '/driver/onboarding';
+    }
+  } else if (portalRole === 'school') {
+    const hasSchoolRole = activeRoleCodes.includes('school_staff') || activeRoleCodes.includes('admin');
+    const { data: schoolUser } = await supabaseAdmin
+      .from('school_users')
+      .select('id, school_id, staff_role, schools(name, verification_status)')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!hasSchoolRole && !schoolUser) {
+      throw new Error('Access denied. This account is not authorized as school administrative staff.');
+    }
+
+    resolvedRole = 'school';
+    cookieName = SCHOOL_SESSION_COOKIE_NAME;
+    redirectTo = '/school';
+
+    if (schoolUser) {
+      schoolId = schoolUser.school_id;
+      staffRole = schoolUser.staff_role;
+      schoolStatus = (schoolUser.schools as any)?.verification_status || 'verified';
+    }
+  } else {
+    // Default to parent portal
+    resolvedRole = 'parent';
+    cookieName = SESSION_COOKIE_NAME;
+    redirectTo = '/parent';
+
+    // Auto-grant parent role if not yet linked
+    if (!activeRoleCodes.includes('parent')) {
+      const { data: pRole } = await supabaseAdmin.from('roles').select('id').eq('code', 'parent').maybeSingle();
+      if (pRole) {
+        await supabaseAdmin.from('user_roles').upsert(
+          { user_id: userId, role_id: pRole.id },
+          { onConflict: 'user_id, role_id', ignoreDuplicates: true }
+        );
+      }
+    }
+
+    // Ensure parents record exists
+    const { data: existingParent } = await supabaseAdmin
+      .from('parents')
+      .select('id, onboarding_completed')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existingParent) {
+      parentId = existingParent.id;
+      if (existingParent.onboarding_completed) onboardingStatus = 'complete';
+    } else {
+      const { data: newParent } = await supabaseAdmin
+        .from('parents')
+        .insert({ user_id: userId })
+        .select('id')
+        .single();
+      parentId = newParent?.id || userId;
+    }
+
+    if (onboardingStatus === 'incomplete') {
+      const { count: childCount } = await supabaseAdmin
+        .from('children')
+        .select('id', { count: 'exact', head: true })
+        .eq('parent_id', parentId);
+
+      if (childCount && childCount > 0) {
+        onboardingStatus = 'complete';
+      } else {
+        redirectTo = '/parent/onboarding';
+      }
+    }
+  }
+
+  // 5. Sign role-scoped session token
+  const exp = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
+  const sessionToken = signSessionToken({
+    userId,
+    email: userEmail,
+    role: resolvedRole,
+    displayName,
+    phone: profile?.phone_e164 || '',
+    parentId,
+    schoolId,
+    driverId,
+    staffRole,
+    schoolStatus,
+    onboardingStatus,
+    exp,
+  });
+
+  return {
+    success: true,
+    user: {
+      id: userId,
+      email: userEmail,
+      displayName,
+      role: resolvedRole,
+    },
+    sessionToken,
+    cookieName,
+    redirectTo,
+  };
+}
+
+/**
+ * Registers new user via Supabase Auth email signup,
+ * creates database profile and role record, and returns verification status.
+ */
+export async function registerWithEmail(params: {
+  email: string;
+  password: string;
+  displayName: string;
+  role: 'parent' | 'driver' | 'school';
+  phone?: string;
+  metadata?: Record<string, any>;
+}): Promise<{
+  success: boolean;
+  needsVerification: boolean;
+  message: string;
+  sessionResult?: EmailLoginResult;
+}> {
+  const { email, password, displayName, role, phone, metadata } = params;
+
+  if (!email || !email.includes('@')) throw new Error('Valid email required');
+  if (!password || password.length < 6) throw new Error('Password must be at least 6 characters');
+  if (!displayName || displayName.trim().length < 2) throw new Error('Name is required');
+
+  if (role === ('admin' as any)) {
+    throw new Error('Administrator accounts cannot be registered publicly.');
+  }
+
+  // Rate limiting: 5 registrations per 15 minutes per IP/client
+  const rl = checkRateLimit(`reg:${email.toLowerCase().trim()}`, 5, 15 * 60 * 1000);
+  if (!rl.allowed) {
+    throw new Error('Too many registration attempts. Please try again later.');
+  }
+
+  const supabaseAnon = getAnonSupabase();
+  const supabaseAdmin = getServiceSupabase();
+
+  const { data: authData, error: authError } = await supabaseAnon.auth.signUp({
+    email: email.toLowerCase().trim(),
+    password,
+    options: {
+      data: {
+        display_name: displayName.trim(),
+        role,
+      },
+    },
+  });
+
+  if (authError || !authData.user) {
+    throw new Error(authError?.message || 'Failed to create account. Please try again.');
+  }
+
+  const userId = authData.user.id;
+
+  // Provision public.profiles
+  await supabaseAdmin.from('profiles').upsert(
+    {
+      id: userId,
+      email: email.toLowerCase().trim(),
+      display_name: displayName.trim(),
+      phone_e164: phone ? normalizePhone(phone) : null,
+      state: 'active',
+    },
+    { onConflict: 'id', ignoreDuplicates: false }
+  );
+
+  // Map to roles table code
+  const roleCode = role === 'school' ? 'school_staff' : role;
+  const { data: roleRow } = await supabaseAdmin.from('roles').select('id').eq('code', roleCode).maybeSingle();
+
+  if (roleRow) {
+    await supabaseAdmin.from('user_roles').upsert(
+      {
+        user_id: userId,
+        role_id: roleRow.id,
+      },
+      { onConflict: 'user_id, role_id', ignoreDuplicates: true }
+    );
+  }
+
+  // Provision specific entity tables
+  if (role === 'parent') {
+    await supabaseAdmin.from('parents').upsert(
+      { user_id: userId },
+      { onConflict: 'user_id', ignoreDuplicates: true }
+    );
+  } else if (role === 'driver') {
+    await supabaseAdmin.from('drivers').upsert(
+      {
+        user_id: userId,
+        license_number: metadata?.licenseNumber || 'PENDING',
+        state: 'pending_verification',
+      },
+      { onConflict: 'user_id', ignoreDuplicates: true }
+    );
+  } else if (role === 'school') {
+    if (metadata?.schoolId) {
+      await supabaseAdmin.from('school_users').upsert(
+        {
+          user_id: userId,
+          school_id: metadata.schoolId,
+          staff_role: 'admin',
+        },
+        { onConflict: 'school_id, user_id', ignoreDuplicates: true }
+      );
+    }
+  }
+
+  // If email confirmation is enabled, notify user
+  if (!authData.session) {
+    return {
+      success: true,
+      needsVerification: true,
+      message: 'Verification link sent to your email. Please check your inbox and verify your address before logging in.',
+    };
+  }
+
+  // If automatically logged in, create session
+  const sessionResult = await loginWithEmail(email, password, role);
+  return {
+    success: true,
+    needsVerification: false,
+    message: 'Account created and authenticated successfully.',
+    sessionResult,
+  };
+}
+
+/**
+ * Triggers official Supabase password reset email.
+ * Guarantees zero user enumeration by always returning a neutral message.
+ */
+export async function requestPasswordReset(rawEmail: string, redirectTo: string): Promise<{ success: boolean; message: string }> {
+  const email = (rawEmail || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    throw new Error('Please enter a valid email address');
+  }
+
+  // Rate limiting: 3 password reset requests per 15 minutes
+  const rl = checkRateLimit(`reset:${email}`, 3, 15 * 60 * 1000);
+  if (!rl.allowed) {
+    throw new Error('Too many password reset requests. Please wait a few minutes before trying again.');
+  }
+
+  try {
+    const supabase = getAnonSupabase();
+    await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  } catch (err) {
+    console.warn('[TinyRide Auth] Password reset request notice:', err);
+  }
+
+  // Neutral message preventing user enumeration
+  return {
+    success: true,
+    message: 'If an account exists with this email address, you will receive password reset instructions shortly.',
   };
 }

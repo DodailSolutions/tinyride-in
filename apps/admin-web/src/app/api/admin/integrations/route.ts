@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/server/supabase';
+import { getAuthenticatedAdmin } from '@/server/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +10,14 @@ function maskKey(key?: string): string | null {
   return `${key.slice(0, 4)}••••••••${key.slice(-4)}`;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const admin = await getAuthenticatedAdmin(request);
+  if (!admin) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Central Administrator session required' },
+      { status: 401 }
+    );
+  }
   const mapProvider = process.env.NEXT_PUBLIC_MAP_PROVIDER || 'osm';
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
   const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;

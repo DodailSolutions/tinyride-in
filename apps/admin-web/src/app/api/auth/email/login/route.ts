@@ -1,33 +1,33 @@
 import { NextResponse } from 'next/server';
-import { loginWithEmail, ADMIN_SESSION_COOKIE_NAME } from '@/server/auth';
+import { loginWithEmail } from '@/server/auth';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, passcode } = body || {};
+    const { email, password, role } = body || {};
 
-    if (!email || !passcode) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and administrator password are required.' },
+        { error: 'Email and password are required.' },
         { status: 400 }
       );
     }
 
-    const result = await loginWithEmail(email, passcode, 'admin');
+    const result = await loginWithEmail(email, password, role);
 
     const response = NextResponse.json({
       success: true,
-      message: 'Admin console authenticated successfully.',
+      message: 'Authentication successful',
       user: result.user,
-      redirectTo: '/admin',
+      redirectTo: result.redirectTo,
     });
 
     response.cookies.set({
-      name: ADMIN_SESSION_COOKIE_NAME,
+      name: result.cookieName,
       value: result.sessionToken,
       httpOnly: true,
       path: '/',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 30 * 24 * 60 * 60, // 30 days
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
@@ -35,8 +35,8 @@ export async function POST(request: Request) {
     return response;
   } catch (err: any) {
     return NextResponse.json(
-      { error: err.message || 'Administrator authentication failed.' },
-      { status: 401 }
+      { error: err.message || 'Authentication failed' },
+      { status: 400 }
     );
   }
 }

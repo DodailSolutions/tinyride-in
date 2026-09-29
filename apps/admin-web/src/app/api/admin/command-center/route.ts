@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, parsePointHex, realtimeBus } from '@/server/supabase';
+import { getAuthenticatedAdmin } from '@/server/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  const admin = await getAuthenticatedAdmin(request);
+  if (!admin) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Central Administrator session required' },
+      { status: 401 }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const isDemoExplicit = searchParams.get('demo') === 'true' || process.env.DEMO_MODE === 'true';
 

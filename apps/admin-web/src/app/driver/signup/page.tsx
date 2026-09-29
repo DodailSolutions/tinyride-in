@@ -36,7 +36,6 @@ export default function DriverSignupPage() {
   const [otp, setOtp] = useState('');
   const [otpToken, setOtpToken] = useState('');
   const [phoneE164, setPhoneE164] = useState('');
-  const [debugCode, setDebugCode] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   const [error, setError] = useState('');
@@ -94,7 +93,6 @@ export default function DriverSignupPage() {
 
       setPhoneE164(data.phoneE164 || `+91${rawPhone}`);
       setOtpToken(data.otpToken || '');
-      if (data.debugCode) setDebugCode(data.debugCode);
       setResendCooldown(30);
       setStep('otp');
     } catch (err: unknown) {
@@ -372,13 +370,6 @@ export default function DriverSignupPage() {
                 Enter the 6-digit verification code sent to{' '}
                 <span className="font-bold text-slate-800">{phoneE164}</span>
               </p>
-
-              {debugCode && (
-                <div className="mt-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl">
-                  <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Dev Test Code</p>
-                  <p className="text-2xl font-mono font-black text-amber-900 tracking-[0.25em]">{debugCode}</p>
-                </div>
-              )}
             </div>
 
             {error && (

@@ -14,21 +14,24 @@ realtimeBus.setMaxListeners(200);
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  'https://bfdcxaenmdomjsbvcbpj.supabase.co';
+  '';
 
-const SUPABASE_SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZGN4YWVubWRvbWpzYnZjYnBqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDEwMDE5NywiZXhwIjoyMTA1Njc2MTk3fQ.HPDqVlYay99Vo9IovoEvng4TV_JzNk8FfSg4qWk03kQ';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   process.env.SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZGN4YWVubWRvbWpzYnZjYnBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMDAxOTcsImV4cCI6MjEwNTY3NjE5N30.ngaWwnbpmEFjxpHYYZ-v43v3vdxNKBgUClwfb77_O1A';
+  '';
 
 let serviceClient: SupabaseClient | null = null;
 let anonClient: SupabaseClient | null = null;
 
 export function getServiceSupabase(): SupabaseClient {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      'Missing required Supabase configuration: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in server environment.'
+    );
+  }
   if (!serviceClient) {
     serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: {
@@ -41,6 +44,11 @@ export function getServiceSupabase(): SupabaseClient {
 }
 
 export function getAnonSupabase(): SupabaseClient {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(
+      'Missing required Supabase configuration: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set.'
+    );
+  }
   if (!anonClient) {
     anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
@@ -50,6 +58,7 @@ export function getAnonSupabase(): SupabaseClient {
   }
   return anonClient;
 }
+
 
 /**
  * Parses PostGIS EWKB geometry hex string into longitude and latitude

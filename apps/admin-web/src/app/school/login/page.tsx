@@ -3,84 +3,90 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Building2, KeyRound, Phone, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, Lock, Mail, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { saveSchoolProfile } from '@/lib/schoolAuth';
 
 export default function SchoolLoginPage() {
   const router = useRouter();
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpToken, setOtpToken] = useState('');
-  const [debugCode, setDebugCode] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
+
+    if (!email.trim() || !password) {
+      setError('Please provide your school administrator email and password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/school/login', {
+      const res = await fetch('/api/auth/email/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+          role: 'school',
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to dispatch verification code');
+        throw new Error(data.error || 'Authentication failed. Please verify credentials.');
       }
 
-      setOtpToken(data.otpToken || '');
-      if (data.debugCode) setDebugCode(data.debugCode);
-      setStep('otp');
-    } catch (err: any) {
-      setError(err?.message || 'Something went wrong');
+      if (data.user) {
+        saveSchoolProfile({
+          userId: data.user.id,
+          schoolId: '',
+          schoolName: 'School Transport Operations',
+          adminName: data.user.displayName || email.split('@')[0],
+          phone: '',
+          staffRole: 'admin',
+          verificationStatus: 'verified',
+        });
+      }
+
+      router.push(data.redirectTo || '/school');
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
+
+    if (!email.trim() || !email.includes('@')) {
+      setError('Please enter a valid school administrator email address.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/school/login/confirm', {
+      const res = await fetch('/api/auth/email/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code: otp, otpToken }),
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Verification failed');
-      }
-
-      if (data.school && data.user) {
-        saveSchoolProfile({
-          userId: data.user.id,
-          schoolId: data.school.id,
-          schoolName: data.school.name,
-          adminName: data.user.name,
-          phone: data.user.phone,
-          staffRole: data.user.staffRole,
-          verificationStatus: data.school.verificationStatus,
-        });
-
-        if (data.school.verificationStatus === 'verified') {
-          router.push('/school');
-        } else {
-          router.push(`/school/onboarding?status=${data.school.verificationStatus}`);
-        }
-      } else {
-        router.push('/school');
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Verification failed');
+      setSuccessMessage(data.message || 'If a registered account exists, you will receive password reset instructions.');
+    } catch {
+      setError('Network connection error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -114,12 +120,12 @@ export default function SchoolLoginPage() {
               <Building2 className="w-6 h-6" />
             </div>
             <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              School Transport Login
+              {isForgotPassword ? 'Reset Password' : 'School Transport Login'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 mt-1">
-              {step === 'phone'
-                ? 'Sign in to access your school transport operations console'
-                : `Enter the 6-digit code sent to ${phone}`}
+              {isForgotPassword
+                ? 'Enter your institutional email address to recover your password.'
+                : 'Sign in to access your school transport operations console.'}
             </p>
           </div>
 
@@ -130,80 +136,116 @@ export default function SchoolLoginPage() {
             </div>
           )}
 
-          {step === 'phone' ? (
-            <form onSubmit={handleSendOtp} className="space-y-4">
+          {successMessage && (
+            <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-xs text-emerald-800">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>{successMessage}</span>
+            </div>
+          )}
+
+          {isForgotPassword ? (
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Mobile Number
+                  Institutional Email
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                    +91
-                  </span>
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ''))}
-                    maxLength={10}
-                    placeholder="98765 43210"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full pl-12 pr-4 py-3 bg-[#FAFAF9] border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#006B2F] focus:bg-white transition-all"
+                    placeholder="transport@school.edu.in"
+                    className="w-full pl-10 pr-4 py-3 bg-[#FAFAF9] border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#006B2F] focus:bg-white transition-all"
                   />
-                  <Phone className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
               <button
                 type="submit"
-                disabled={loading || phone.length < 10}
+                disabled={loading}
                 className="w-full py-3.5 bg-[#006B2F] hover:bg-[#005525] active:scale-[0.98] disabled:opacity-50 text-white font-extrabold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 min-h-[46px]"
               >
-                <span>{loading ? 'Sending Code...' : 'Continue with OTP'}</span>
-                <ArrowRight className="w-4 h-4" />
+                {loading ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <span>Send Recovery Instructions</span>}
               </button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(false);
+                    setError(null);
+                    setSuccessMessage(null);
+                  }}
+                  className="text-xs font-semibold text-[#006B2F] hover:underline"
+                >
+                  Back to Sign In
+                </button>
+              </div>
             </form>
           ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Institutional Email
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="transport@school.edu.in"
+                    className="w-full pl-10 pr-4 py-3 bg-[#FAFAF9] border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#006B2F] focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    6-Digit Verification Code
+                    Password
                   </label>
                   <button
                     type="button"
-                    onClick={() => setStep('phone')}
+                    onClick={() => {
+                      setIsForgotPassword(true);
+                      setError(null);
+                      setSuccessMessage(null);
+                    }}
                     className="text-[11px] font-bold text-[#006B2F] hover:underline"
                   >
-                    Edit Phone
+                    Forgot password?
                   </button>
                 </div>
                 <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/[^\d]/g, ''))}
-                    maxLength={6}
-                    placeholder="••••••"
-                    autoFocus
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full px-4 py-3 bg-[#FAFAF9] border border-slate-200 rounded-xl text-center text-lg font-mono font-bold tracking-widest text-slate-900 focus:outline-none focus:border-[#006B2F] focus:bg-white transition-all"
+                    placeholder="••••••••••••"
+                    className="w-full pl-10 pr-4 py-3 bg-[#FAFAF9] border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#006B2F] focus:bg-white transition-all"
                   />
-                  <KeyRound className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
-                {debugCode && (
-                  <p className="mt-2 text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
-                    Test verification code: <strong>{debugCode}</strong> (or 482910)
-                  </p>
-                )}
               </div>
 
               <button
                 type="submit"
-                disabled={loading || otp.length !== 6}
+                disabled={loading}
                 className="w-full py-3.5 bg-[#006B2F] hover:bg-[#005525] active:scale-[0.98] disabled:opacity-50 text-white font-extrabold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 min-h-[46px]"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{loading ? 'Verifying...' : 'Verify & Enter School Portal'}</span>
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                ) : (
+                  <>
+                    <span>Enter School Portal</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </form>
           )}

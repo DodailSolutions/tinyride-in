@@ -1,31 +1,75 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Phone, ArrowRight, RefreshCw, ChevronLeft, ShieldCheck } from 'lucide-react';
+import { Phone, ArrowRight, RefreshCw, ChevronLeft, Mail, Lock, AlertCircle } from 'lucide-react';
 import { saveDriverProfile } from '@/lib/driverAuth';
 
-type Step = 'phone' | 'otp' | 'loading';
+type AuthMode = 'email' | 'phone';
+type PhoneStep = 'phone' | 'otp';
 
 export default function DriverLoginPage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>('phone');
+  const [authMode, setAuthMode] = useState<AuthMode>('email');
+
+  // Email form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Phone form state
+  const [phoneStep, setPhoneStep] = useState<PhoneStep>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpToken, setOtpToken] = useState('');
   const [phoneE164, setPhoneE164] = useState('');
-  const [debugCode, setDebugCode] = useState<string | null>(null);
+
   const [error, setError] = useState('');
   const [isBusy, setIsBusy] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Resend countdown
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const t = setInterval(() => setResendCooldown((c) => Math.max(0, c - 1)), 1000);
-    return () => clearInterval(t);
-  }, [resendCooldown]);
+  // Email login submit
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (!email.trim() || !password) {
+      setError('Please provide your driver account email and password.');
+      return;
+    }
 
+    setIsBusy(true);
+
+    try {
+      const res = await fetch('/api/auth/email/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+          role: 'driver',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Authentication failed. Please verify driver credentials.');
+      }
+
+      saveDriverProfile({
+        name: data.user?.displayName || null,
+        phone: '',
+        driverId: data.user?.id || '',
+        status: 'approved',
+      });
+
+      router.replace(data.redirectTo || '/driver');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  // Phone send OTP
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -37,12 +81,10 @@ export default function DriverLoginPage() {
         body: JSON.stringify({ phone: phone.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send code');
+      if (!res.ok) throw new Error(data.error || 'Failed to dispatch code');
       setPhoneE164(data.phoneE164 || phone.trim());
       setOtpToken(data.otpToken || '');
-      if (data.debugCode) setDebugCode(data.debugCode);
-      setResendCooldown(30);
-      setStep('otp');
+      setPhoneStep('otp');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unable to send code. Try again.');
     } finally {
@@ -50,6 +92,7 @@ export default function DriverLoginPage() {
     }
   }
 
+  // Phone verify OTP
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -68,64 +111,152 @@ export default function DriverLoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Verification failed');
 
-        // Save minimal public profile for UI
-        const driverStatus = data.driver?.status || data.status || 'approved';
-        saveDriverProfile({
-          name: data.driver?.displayName || null,
-          phone: phoneE164,
-          driverId: data.driverId || data.driver?.driverId || '',
-          status: driverStatus,
-        });
+      const driverStatus = data.driver?.status || data.status || 'approved';
+      saveDriverProfile({
+        name: data.driver?.displayName || null,
+        phone: phoneE164,
+        driverId: data.driverId || data.driver?.driverId || '',
+        status: driverStatus,
+      });
 
-        if (driverStatus === 'approved') {
-          router.replace('/driver');
-        } else {
-          // Send to onboarding / status review page
-          router.replace(`/driver/onboarding?status=${encodeURIComponent(driverStatus)}`);
-        }
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Invalid code. Try again.');
-      } finally {
-        setIsBusy(false);
+      if (driverStatus === 'approved') {
+        router.replace('/driver');
+      } else {
+        router.replace(`/driver/onboarding?status=${encodeURIComponent(driverStatus)}`);
       }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Invalid code. Try again.');
+    } finally {
+      setIsBusy(false);
     }
+  }
 
   return (
     <div className="min-h-dvh bg-[#006B2F] flex flex-col">
       {/* Header bar */}
-      <div className="px-5 pt-12 pb-4 flex items-center gap-3">
-        {step === 'otp' && (
-          <button
-            type="button"
-            onClick={() => { setStep('phone'); setOtp(''); setError(''); }}
-            className="text-white/70 hover:text-white -ml-1 p-2"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-        )}
-        <div>
-          <p className="text-[10px] font-semibold text-white/60 tracking-widest uppercase">TinyRide</p>
-          <h1 className="text-lg font-bold text-white leading-tight">Driver App</h1>
+      <div className="px-5 pt-12 pb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {authMode === 'phone' && phoneStep === 'otp' && (
+            <button
+              type="button"
+              onClick={() => { setPhoneStep('phone'); setOtp(''); setError(''); }}
+              className="text-white/70 hover:text-white -ml-1 p-2"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          )}
+          <div>
+            <p className="text-[10px] font-semibold text-white/60 tracking-widest uppercase">TinyRide</p>
+            <h1 className="text-lg font-bold text-white leading-tight">Driver Portal</h1>
+          </div>
         </div>
+
+        <Link
+          href="/drivers"
+          className="text-xs text-white/80 hover:text-white font-medium px-3 py-1.5 rounded-lg bg-white/10 transition-colors"
+        >
+          Public Page
+        </Link>
       </div>
 
       {/* White card body */}
-      <div className="flex-1 bg-white rounded-t-3xl px-6 pt-8 pb-10 flex flex-col">
-        
-        {step === 'phone' && (
-          <>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-1">Welcome back</h2>
-              <p className="text-sm text-slate-500">Enter your registered mobile number to continue.</p>
+      <div className="flex-1 bg-white rounded-t-3xl px-6 pt-6 pb-10 flex flex-col">
+        {/* Toggle between Email and Phone */}
+        <div className="flex p-1 bg-slate-100 rounded-xl mb-6">
+          <button
+            type="button"
+            onClick={() => { setAuthMode('email'); setError(''); }}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              authMode === 'email'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Email &amp; Password
+          </button>
+          <button
+            type="button"
+            onClick={() => { setAuthMode('phone'); setError(''); setPhoneStep('phone'); }}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              authMode === 'phone'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Mobile SMS
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-xs text-rose-700">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {authMode === 'email' ? (
+          /* Email Login Form */
+          <form onSubmit={handleEmailLogin} className="flex flex-col gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
+                Driver Email Address
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="driver@example.com"
+                  required
+                  autoFocus
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#006B2F] focus:bg-white"
+                />
+              </div>
             </div>
 
-            <form onSubmit={handleSendOtp} className="flex flex-col gap-5">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  required
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#006B2F] focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isBusy}
+              className="w-full py-3.5 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] disabled:opacity-50 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all mt-2 min-h-[46px]"
+            >
+              {isBusy ? (
+                <RefreshCw className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <>
+                  <span>Sign In as Driver</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        ) : (
+          /* Phone OTP Flow */
+          phoneStep === 'phone' ? (
+            <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
                   Mobile Number
                 </label>
-                <div className="flex items-center border-2 border-slate-200 rounded-2xl overflow-hidden focus-within:border-[#006B2F] transition-colors">
-                  <span className="pl-4 pr-2 text-slate-500 text-sm font-medium select-none">+91</span>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-xs font-bold text-slate-500 pointer-events-none">+91</span>
                   <input
                     type="tel"
                     inputMode="numeric"
@@ -134,62 +265,36 @@ export default function DriverLoginPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     placeholder="98765 43210"
-                    className="flex-1 py-4 pr-4 text-lg font-medium text-slate-900 bg-transparent outline-none placeholder:text-slate-300"
-                    autoComplete="tel-national"
-                    autoFocus
+                    required
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#006B2F] focus:bg-white"
                   />
-                  <Phone className="w-4 h-4 text-slate-300 mr-4" />
+                  <Phone className="w-4 h-4 text-slate-400 absolute right-3.5 pointer-events-none" />
                 </div>
               </div>
-
-              {error && (
-                <p className="text-sm text-red-600 font-medium px-1">{error}</p>
-              )}
 
               <button
                 type="submit"
                 disabled={isBusy || phone.length < 10}
-                className="w-full py-4 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-2"
+                className="w-full py-3.5 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] disabled:opacity-50 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all mt-2 min-h-[46px]"
               >
-                {isBusy ? (
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <span>Get Verification Code</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
+                {isBusy ? <RefreshCw className="w-4 h-4 animate-spin text-white" /> : <span>Request SMS Code</span>}
               </button>
             </form>
-
-            <p className="text-xs text-slate-400 text-center mt-8 leading-relaxed">
-              Only registered TinyRide drivers can log in.<br />
-              Contact your operator if you can&apos;t access your account.
-            </p>
-          </>
-        )}
-
-        {step === 'otp' && (
-          <>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-1">Enter code</h2>
-              <p className="text-sm text-slate-500">
-                A 6-digit code was sent to{' '}
-                <span className="font-semibold text-slate-700">{phoneE164}</span>
-              </p>
-              {debugCode && (
-                <div className="mt-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-                  <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-0.5">Dev mode code</p>
-                  <p className="text-2xl font-bold text-amber-800 tracking-[0.25em]">{debugCode}</p>
-                </div>
-              )}
-            </div>
-
-            <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5">
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
-                  Verification Code
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                    6-Digit SMS Code
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setPhoneStep('phone')}
+                    className="text-xs font-bold text-[#006B2F] hover:underline"
+                  >
+                    Change Phone
+                  </button>
+                </div>
                 <input
                   type="tel"
                   inputMode="numeric"
@@ -197,45 +302,32 @@ export default function DriverLoginPage() {
                   maxLength={6}
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="• • • • • •"
-                  className="w-full border-2 border-slate-200 rounded-2xl px-5 py-4 text-center text-3xl font-bold text-slate-900 tracking-[0.4em] bg-transparent outline-none focus:border-[#006B2F] transition-colors placeholder:text-slate-200 placeholder:text-2xl"
+                  placeholder="••••••"
+                  required
                   autoFocus
-                  autoComplete="one-time-code"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-lg font-mono font-bold tracking-widest text-slate-900 focus:outline-none focus:border-[#006B2F] focus:bg-white"
                 />
               </div>
-
-              {error && (
-                <p className="text-sm text-red-600 font-medium px-1">{error}</p>
-              )}
 
               <button
                 type="submit"
                 disabled={isBusy || otp.length !== 6}
-                className="w-full py-4 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                className="w-full py-3.5 bg-[#006B2F] hover:bg-[#005525] active:bg-[#00441d] disabled:opacity-50 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all mt-2 min-h-[46px]"
               >
-                {isBusy ? (
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <ShieldCheck className="w-5 h-5" />
-                    <span>Verify &amp; Log In</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSendOtp}
-                disabled={resendCooldown > 0 || isBusy}
-                className="text-sm text-[#006B2F] font-semibold py-2 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
-              >
-                {resendCooldown > 0
-                  ? `Resend code in ${resendCooldown}s`
-                  : 'Resend code'}
+                {isBusy ? <RefreshCw className="w-4 h-4 animate-spin text-white" /> : <span>Verify &amp; Enter</span>}
               </button>
             </form>
-          </>
+          )
         )}
+
+        <div className="mt-8 pt-5 border-t border-slate-100 text-center">
+          <p className="text-xs text-slate-500">
+            Want to drive for TinyRide?{' '}
+            <Link href="/driver/signup" className="font-bold text-[#006B2F] hover:underline">
+              Submit Driver Application
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

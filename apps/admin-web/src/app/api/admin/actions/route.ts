@@ -1,10 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/server/supabase';
+import { getAuthenticatedAdmin } from '@/server/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
+    const admin = await getAuthenticatedAdmin(request);
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Central Administrator session required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const { action, targetId, note = '', metadata = {} } = body;
 
