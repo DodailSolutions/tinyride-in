@@ -15,3 +15,4 @@
 \ir sql/08_safety_ops.sql
 \ir sql/09_comms_support_audit.sql
 \ir sql/10_rls.sql
+\ir sql/11_seed_production_initial.sql

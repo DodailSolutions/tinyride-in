@@ -32,9 +32,8 @@ create index idx_zones_boundary on public.zones using gist(boundary);
 -- -----------------------------------------------------------------------------
 create table public.profiles (
   id            uuid primary key references auth.users(id) on delete restrict,
-  display_name  text,
-  -- OTP auth is phone-first: store normalised E.164 and enforce uniqueness.
-  phone_e164    text not null,
+  -- Profiles support both email-first and phone-first auth.
+  phone_e164    text,
   email         citext,
   city_id       uuid references public.cities(id) on delete set null,
   locale        text not null default 'en-IN',
@@ -44,11 +43,11 @@ create table public.profiles (
   deleted_at    timestamptz,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
-  constraint chk_profiles_phone check (phone_e164 ~ '^\+[1-9][0-9]{7,14}$'),
+  constraint chk_profiles_phone check (phone_e164 is null or phone_e164 ~ '^\+[1-9][0-9]{7,14}$'),
   constraint fk_profiles_state foreign key (state_domain, state)
     references public.states(domain, code)
 );
-create unique index uq_profiles_phone on public.profiles(phone_e164) where deleted_at is null;
+create unique index uq_profiles_phone on public.profiles(phone_e164) where phone_e164 is not null and deleted_at is null;
 create unique index uq_profiles_email on public.profiles(email) where email is not null and deleted_at is null;
 create index idx_profiles_state on public.profiles(state);
 create trigger profiles_updated_at before update on public.profiles
