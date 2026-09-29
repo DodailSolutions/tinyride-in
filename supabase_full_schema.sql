@@ -204,60 +204,134 @@ $$;
 -- -----------------------------------------------------------------------------
 set search_path = public, extensions;
 
-create type consent_type as enum (
-  'terms_of_service','privacy_policy','marketing','photo_release','medical_info','location_sharing'
-);
-create type guardian_relationship as enum (
-  'mother','father','grandparent','aunt','uncle','sibling','nanny','family_friend','other'
-);
-create type school_staff_role as enum ('admin','principal','teacher','office','viewer');
-create type document_subject as enum ('driver','vehicle','owner','school');
-create type document_type as enum (
-  'license','insurance','registration','background_check','police_verification',
-  'medical_certificate','vehicle_inspection','fitness_certificate','permit',
-  'owner_authorization','school_authorization','other'
-);
-create type review_subject as enum ('driver','vehicle','owner','route','school','document');
-create type verification_decision as enum ('approved','rejected','needs_info');
-create type stop_type as enum ('pickup','dropoff','school','waypoint');
-create type trip_direction as enum ('am','pm');           -- AM = home->school, PM = school->home
-create type assignment_type as enum ('primary','backup','temporary');
-create type billing_period as enum ('one_time','weekly','monthly','term');
-create type ledger_entry_type as enum (
-  'charge','refund','adjustment','platform_fee','gateway_fee','payout','credit','chargeback'
-);
-create type ledger_account_type as enum (
-  'parent_receivable','platform_revenue','gateway_clearing','owner_payable','cash'
-);
-create type handover_leg as enum ('home_pickup','school_receipt','school_release','home_dropoff');
-create type handover_method as enum ('otp','qr_code','photo','signature','guardian_confirm','ops_override');
-create type trip_event_type as enum (
-  'trip_started','trip_ended','delay','breakdown','traffic','route_deviation',
-  'gps_unavailable','offline_sync','readiness_check','note'
-);
-create type trip_child_event_type as enum (
-  'marked_absent','pickup_confirmed','pickup_failed','school_received','school_released',
-  'dropoff_confirmed','dropoff_failed','no_show','note'
-);
-create type incident_event_type as enum (
-  'reported','action_taken','evidence_added','status_changed','assigned','resolved','note'
-);
-create type exception_type as enum (
-  'handover_failed','handover_missing','child_no_show','driver_absent','vehicle_breakdown',
-  'unapproved_substitution','school_mismatch','capacity_conflict','payment_mismatch',
-  'document_expired','offline_conflict','other'
-);
-create type reassignment_request_type as enum ('backup','substitution');
-create type notification_type as enum (
-  'booking_confirmed','booking_cancelled','trip_started','trip_ended','child_picked_up',
-  'child_dropped_off','child_absent','payment','refund','incident','exception','system'
-);
-create type notification_channel as enum ('push','sms','email','in_app');
-create type ticket_category as enum ('billing','booking','trip','safety','account','other');
-create type audit_action as enum (
-  'insert','update','delete','login','admin_override','role_change','data_export',
-  'privileged_read','suspend','reinstate'
-);
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'consent_type') then
+    create type consent_type as enum (
+      'terms_of_service','privacy_policy','marketing','photo_release','medical_info','location_sharing'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'guardian_relationship') then
+    create type guardian_relationship as enum (
+      'mother','father','grandparent','aunt','uncle','sibling','nanny','family_friend','other'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'school_staff_role') then
+    create type school_staff_role as enum ('admin','principal','teacher','office','viewer');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'document_subject') then
+    create type document_subject as enum ('driver','vehicle','owner','school');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'document_type') then
+    create type document_type as enum (
+      'license','insurance','registration','background_check','police_verification',
+      'medical_certificate','vehicle_inspection','fitness_certificate','permit',
+      'owner_authorization','school_authorization','other'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'review_subject') then
+    create type review_subject as enum ('driver','vehicle','owner','route','school','document');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'verification_decision') then
+    create type verification_decision as enum ('approved','rejected','needs_info');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'stop_type') then
+    create type stop_type as enum ('pickup','dropoff','school','waypoint');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'trip_direction') then
+    create type trip_direction as enum ('am','pm');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'assignment_type') then
+    create type assignment_type as enum ('primary','backup','temporary');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'billing_period') then
+    create type billing_period as enum ('one_time','weekly','monthly','term');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'ledger_entry_type') then
+    create type ledger_entry_type as enum (
+      'charge','refund','adjustment','platform_fee','gateway_fee','payout','credit','chargeback'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'ledger_account_type') then
+    create type ledger_account_type as enum (
+      'parent_receivable','platform_revenue','gateway_clearing','owner_payable','cash'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'handover_leg') then
+    create type handover_leg as enum ('home_pickup','school_receipt','school_release','home_dropoff');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'handover_method') then
+    create type handover_method as enum ('otp','qr_code','photo','signature','guardian_confirm','ops_override');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'trip_event_type') then
+    create type trip_event_type as enum (
+      'trip_started','trip_ended','delay','breakdown','traffic','route_deviation',
+      'gps_unavailable','offline_sync','readiness_check','note'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'trip_child_event_type') then
+    create type trip_child_event_type as enum (
+      'marked_absent','pickup_confirmed','pickup_failed','school_received','school_released',
+      'dropoff_confirmed','dropoff_failed','no_show','note'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'incident_event_type') then
+    create type incident_event_type as enum (
+      'reported','action_taken','evidence_added','status_changed','assigned','resolved','note'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'exception_type') then
+    create type exception_type as enum (
+      'handover_failed','handover_missing','child_no_show','driver_absent','vehicle_breakdown',
+      'unapproved_substitution','school_mismatch','capacity_conflict','payment_mismatch',
+      'document_expired','offline_conflict','other'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'reassignment_request_type') then
+    create type reassignment_request_type as enum ('backup','substitution');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'notification_type') then
+    create type notification_type as enum (
+      'booking_confirmed','booking_cancelled','trip_started','trip_ended','child_picked_up',
+      'child_dropped_off','child_absent','payment','refund','incident','exception','system'
+    );
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'notification_channel') then
+    create type notification_channel as enum ('push','sms','email','in_app');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'ticket_category') then
+    create type ticket_category as enum ('billing','booking','trip','safety','account','other');
+  end if;
+
+  if not exists (select 1 from pg_type where typname = 'audit_action') then
+    create type audit_action as enum (
+      'insert','update','delete','login','admin_override','role_change','data_export',
+      'privileged_read','suspend','reinstate'
+    );
+  end if;
+end $$;
 
 -- -----------------------------------------------------------------------------
 -- Lookup tables (lifecycle states)
